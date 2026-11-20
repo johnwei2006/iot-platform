@@ -1,0 +1,22 @@
+# Frontend / Node
+**/node_modules/
+**/dist/
+**/.vite/
+
+# Java / Maven
+**/target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+**/DebugConfig/
+
+# Keil / MDK user-specific files
+*.uvguix.*
+uv2csolution.log
+
+# OS / logs
+.DS_Store
+Thumbs.db
+*.log

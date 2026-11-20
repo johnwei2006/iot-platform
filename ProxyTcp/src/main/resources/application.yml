@@ -1,0 +1,86 @@
+server:
+  port: 8010
+
+spring:
+  application:
+    name: proxytcp
+  profiles:
+    active: ${dbtype:mongo}
+  h2:
+    console:
+      enabled: true
+  main:
+    allow-bean-definition-overriding: true
+  data:
+    mongodb:
+      uri: mongodb://127.0.0.1:27017/proxy
+  rabbitmq:
+    host: ${mq_server_url}
+    port: ${mq_server_port}
+    username: ${mq_server_user}
+    password: ${mq_server_password}
+    virtual-host: ${mq_server_vhost}
+
+# ===== 业务/网络参数（原 proxy.properties） =====
+bindaddress: 0.0.0.0
+tcpport: 50001
+serviceproxy: http://127.0.0.1:8020/uplinkService
+sendfailureproxy: http://127.0.0.1:8020/sendfailureproxy
+maxResendTimes: 3
+resendIntervalSeconds: 60
+downlinkResendCron: "0 0/1 * * * ?"
+deleteObsoleteFailedMessageCron: "0 0/30 * * * ?"
+dbtype: mongo
+duplicateMessageDurationMinutes: 1
+onlineCheckJudgeMinutes: 3
+judgeSendFailedAferMinutes: 10
+
+# ===== RabbitMQ 连接参数（供上面 ${} 引用） =====
+mq_server_vhost: ${MQ_VHOST:/iot_host}
+mq_server_url: localhost
+mq_server_port: 5672
+mq_server_user: guest
+mq_server_password: guest
+
+#mq_server_vhost: /caipos_mqtt
+#mq_server_url: 47.104.160.158
+#mq_server_port: 35677
+#mq_server_user: kebai
+#mq_server_password: Caipos010
+
+# ===== MongoDB 备选 uri（按需取消注释切换） =====
+# spring.data.mongodb.uri=mongodb://40.73.2.172:27017/proxy
+# spring.data.mongodb.uri=mongodb://39.107.77.230:27017/proxy
+# spring.data.mongodb.uri=mongodb://root:huiren%40123@8.142.136.4:27017/huiren-rfid?authSource=admin
+
+# ===== H2 文件库（仅 profile=h2 生效） =====
+# 关键修复：未显式配置时 Spring Boot 会把 H2 自动配成内存库（jdbc:h2:mem），
+# 导致 dbtype=h2 时下行重发缓存/设备在线态/失败通知在 ProxyTcp 重启后全部丢失。
+# 改为文件库 + ddl-auto=update，使数据跨重启存活。
+---
+spring:
+  config.activate.on-profile: h2
+  datasource:
+    url: jdbc:h2:file:./data/proxy;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: false
+  autoconfigure:
+    # h2 模式下不加载 Mongo 自动配置
+    exclude: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+
+# ===== Mongo 模式（仅 profile=mongo 生效） =====
+# 排除 H2/JPA 自动配置，避免无用的内存库与 EntityManagerFactory 被创建。
+---
+spring:
+  config.activate.on-profile: mongo
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+

@@ -1,0 +1,83 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: platform-java
+  # platform_java 以 MongoDB 为主库；TDengine 的 DataSource/JdbcTemplate 由 TdEngineConfig 手工创建，
+  # 关闭 JDBC 自动配置，避免 classpath 上出现 spring-jdbc 后触发内嵌数据源探测。
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/iot_platform}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000
+          multiplier: 2.0
+          max-interval: 10000
+        default-requeue-rejected: false
+  # 设备实时状态缓存。Lettuce 为懒连接，未部署 Redis 时应用仍可启动。
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DATABASE:0}
+    timeout: ${REDIS_TIMEOUT:2000}
+
+app:
+  # 鉴权统一委托独立 auth-service：本地不持有 JWT 密钥，也不签发令牌。
+  # 过滤器调用 /api/auth/verify 验签（含签名、过期、黑名单校验），认证服务不可达时 fail-closed。
+  auth-service:
+    base-url: ${AUTH_SERVICE_BASE_URL:http://localhost:8083}
+    verify-path: ${AUTH_SERVICE_VERIFY_PATH:/api/auth/verify}
+    connect-timeout-ms: ${AUTH_SERVICE_CONNECT_TIMEOUT_MS:2000}
+    read-timeout-ms: ${AUTH_SERVICE_READ_TIMEOUT_MS:2000}
+  mq:
+    exchange: iot.exchange
+    platform-uplink: platform.uplink
+    platform-downlink: platform.downlink
+
+# 传感器时序数据（TDengine）。连接参数直接在配置文件中提供默认值，
+# 需要时可用同名环境变量覆盖；口令不写日志。
+# 默认 enabled=true 但采用懒连接：无时序库时应用仍可启动，写入失败只告警不影响上行 ACK。
+tdengine:
+  enabled: ${TDENGINE_ENABLED:true}
+  host: ${TDENGINE_HOST:47.104.160.158}
+  port: ${TDENGINE_PORT:6041}
+  # true 走 REST JDBC(TAOS-RS, 6041)；false 走原生 JDBC(TAOS, 6030)
+  rest: ${TDENGINE_REST:true}
+  username: ${TDENGINE_USER:kebai}
+  password: ${TDENGINE_PASSWORD:Caipos010}
+  database: ${TDENGINE_DATABASE:iot}
+  stable: sensordata
+  # 传感器类型码 -> 单位；未配置的类型使用空串
+  unit-by-sensor-type:
+    "1": "C"
+    "2": "%"
+    "3": "hPa"
+
+# 设备实时状态（Redis String JSON + TTL）。TTL 过期即视为 OFFLINE，不做定时离线扫描。
+# 默认 enabled=true 但写入失败只告警，不影响上行 ACK；口令不写日志。
+realtime:
+  enabled: ${REDIS_ENABLED:true}
+  ttl-seconds: ${REDIS_TTL_SECONDS:120}
+  key-prefix: ${REDIS_KEY_PREFIX:device:status:}
+  max-json-bytes: ${REDIS_MAX_JSON_BYTES:8192}
+  scan-count: ${REDIS_SCAN_COUNT:200}
+  max-list-size: ${REDIS_MAX_LIST_SIZE:1000}
+
+logging:
+  level:
+    com.iot.platform: info

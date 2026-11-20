@@ -1,0 +1,1597 @@
+{
+  "version": "5.0",
+  "source": "Protocal5.0.xlsx / 平台-网关协议 + 平台网关协议明细",
+  "protocols": [
+    {
+      "hex": "0X01",
+      "ordinal": 1,
+      "name": "GATEWAY_HEART_BEAT",
+      "cn": "网关心跳",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 2,
+      "empty": true,
+      "unsupported": false,
+      "fields": []
+    },
+    {
+      "hex": "0X03",
+      "ordinal": 3,
+      "name": "GATEWAY_TIME_SYNC_RESPONSE",
+      "cn": "时间同步反馈",
+      "direction": "downlink",
+      "transactionType": "downlink",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 6,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "year",
+          "type": "u8"
+        },
+        {
+          "name": "month",
+          "type": "u8"
+        },
+        {
+          "name": "date",
+          "type": "u8"
+        },
+        {
+          "name": "hour",
+          "type": "u8"
+        },
+        {
+          "name": "minute",
+          "type": "u8"
+        },
+        {
+          "name": "second",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "hex": "0X04",
+      "ordinal": 4,
+      "name": "GATEWAY_TIME_SYNC_REQUEST",
+      "cn": "时间同步申请",
+      "direction": "uplink_callback",
+      "transactionType": "uplink_callback",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 6,
+      "empty": true,
+      "unsupported": false,
+      "fields": []
+    },
+    {
+      "hex": "0X05",
+      "ordinal": 5,
+      "name": "GATEWAY_INFO_QUERY",
+      "cn": "网关信息查询",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 15,
+      "empty": true,
+      "unsupported": false,
+      "fields": []
+    },
+    {
+      "hex": "0X06",
+      "ordinal": 6,
+      "name": "GATEWAY_INFO_REPORT",
+      "cn": "网关信息上报",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "1、主动上报；2、查询后上报",
+      "excelRow": 15,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "configVersion",
+          "type": "u8"
+        },
+        {
+          "name": "gatewayId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "projectId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "heartbeatInterval",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "reportInterval",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "rtcTime",
+          "type": "time6"
+        },
+        {
+          "name": "systemServerUrl",
+          "type": "string",
+          "length": 40
+        },
+        {
+          "name": "systemServerPort",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "hardwareVersion",
+          "type": "hex",
+          "length": 3
+        },
+        {
+          "name": "firmwareVersion",
+          "type": "hex",
+          "length": 3
+        },
+        {
+          "name": "gatewayMcuid",
+          "type": "string",
+          "length": 12
+        },
+        {
+          "name": "memoryTotal",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "memoryUsed",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "flashTotal",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "flashUsed",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "uplinkMessageSize",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "downlinkMessageSize",
+          "type": "u16",
+          "endian": "little"
+        },
+        {
+          "name": "battery",
+          "type": "hex",
+          "length": 4
+        },
+        {
+          "name": "adapterExists",
+          "type": "u8"
+        },
+        {
+          "name": "chargingEnabled",
+          "type": "u8"
+        },
+        {
+          "name": "latestRebootTime",
+          "type": "time6"
+        }
+      ]
+    },
+    {
+      "hex": "0X07",
+      "ordinal": 7,
+      "name": "GATEWAY_CONFIG_QUERY",
+      "cn": "网关配置信息查询",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 39,
+      "empty": true,
+      "unsupported": false,
+      "fields": []
+    },
+    {
+      "hex": "0X08",
+      "ordinal": 8,
+      "name": "GATEWAY_CONFIG_REPORT",
+      "cn": "网关配置信息查询反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "反馈系统配置信息",
+      "excelRow": 39,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "configVersion",
+          "type": "u8"
+        },
+        {
+          "name": "gatewayId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "projectId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "systemServerUrl",
+          "type": "string",
+          "length": 40
+        },
+        {
+          "name": "systemServerPort",
+          "type": "u16",
+          "endian": "big"
+        },
+        {
+          "name": "heartbeatInterval",
+          "type": "u16",
+          "endian": "big"
+        },
+        {
+          "name": "reportInterval",
+          "type": "u16",
+          "endian": "big"
+        },
+        {
+          "name": "loraFreqGroup",
+          "type": "u8"
+        },
+        {
+          "name": "configTime",
+          "type": "time6"
+        },
+        {
+          "name": "loraSf",
+          "type": "u8"
+        },
+        {
+          "name": "loraBw",
+          "type": "u8"
+        },
+        {
+          "name": "loraCr",
+          "type": "u8"
+        },
+        {
+          "name": "loraTxPower",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "hex": "0X09",
+      "ordinal": 9,
+      "name": "GATEWAY_CONFIG",
+      "cn": "网关远程配置[通信频段]",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "远程配置网关",
+      "excelRow": 55,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "configVersion",
+          "type": "u8"
+        },
+        {
+          "name": "gatewayId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "projectId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "systemServerUrl",
+          "type": "string",
+          "length": 40
+        },
+        {
+          "name": "systemServerPort",
+          "type": "u16",
+          "endian": "big"
+        },
+        {
+          "name": "businessServerUrl",
+          "type": "string",
+          "length": 30
+        },
+        {
+          "name": "heartbeatInterval",
+          "type": "u16",
+          "endian": "big"
+        },
+        {
+          "name": "reportInterval",
+          "type": "u16",
+          "endian": "big"
+        },
+        {
+          "name": "loraFreqGroup",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "hex": "0X0A",
+      "ordinal": 10,
+      "name": "GATEWAY_CONFIG_RESPONSE",
+      "cn": "网关远程配置反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "1、主动上报；2、查询后上报",
+      "excelRow": 55,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "result",
+          "type": "u8"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "variable": true
+        }
+      ]
+    },
+    {
+      "hex": "0X0B",
+      "ordinal": 11,
+      "name": "GATEWAY_CONFIG_NODE_QUERY",
+      "cn": "网关节点配置信息查询",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 68,
+      "empty": true,
+      "unsupported": false,
+      "fields": []
+    },
+    {
+      "hex": "0X0C",
+      "ordinal": 12,
+      "name": "GATEWAY_CONFIG_NODE_REPORT",
+      "cn": "网关节点配置信息上报",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 68,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeSize",
+          "type": "u8"
+        },
+        {
+          "name": "nodes",
+          "type": "repeat",
+          "countRef": "nodeSize",
+          "fields": [
+            {
+              "name": "nodeType",
+              "type": "u8"
+            },
+            {
+              "name": "nodeId",
+              "type": "string",
+              "length": 11
+            },
+            {
+              "name": "reportInterval",
+              "type": "u16",
+              "endian": "little"
+            },
+            {
+              "name": "sensorCount",
+              "type": "u8"
+            },
+            {
+              "name": "deviceCount",
+              "type": "u8"
+            }
+          ]
+        },
+        {
+          "name": "configTime",
+          "type": "time6"
+        }
+      ]
+    },
+    {
+      "hex": "0X0D",
+      "ordinal": 13,
+      "name": "GATEWAY_CONFIG_NODE",
+      "cn": "网关节点配置",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 79,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeSize",
+          "type": "u8"
+        },
+        {
+          "name": "nodes",
+          "type": "repeat",
+          "countRef": "nodeSize",
+          "fields": [
+            {
+              "name": "nodeType",
+              "type": "u8"
+            },
+            {
+              "name": "nodeId",
+              "type": "string",
+              "length": 11
+            },
+            {
+              "name": "reportInterval",
+              "type": "u16",
+              "endian": "big"
+            },
+            {
+              "name": "loraFreqGroup",
+              "type": "u8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X0E",
+      "ordinal": 14,
+      "name": "GATEWAY_CONFIG_NODE_RESPONSE",
+      "cn": "网关节点配置反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 79,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "result",
+          "type": "u8"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "variable": true
+        }
+      ]
+    },
+    {
+      "hex": "0X0F",
+      "ordinal": 15,
+      "name": "GATEWAY_CONFIG_SENSOR_QUERY",
+      "cn": "网关传感器配置查询",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 89,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        }
+      ]
+    },
+    {
+      "hex": "0X10",
+      "ordinal": 16,
+      "name": "GATEWAY_CONFIG_SENSOR_REPORT",
+      "cn": "网关传感器配置上报",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 89,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "result",
+          "type": "u8"
+        },
+        {
+          "name": "sensorSize",
+          "type": "u8"
+        },
+        {
+          "name": "sensors",
+          "type": "repeat",
+          "countRef": "sensorSize",
+          "fields": [
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "sensorType",
+              "type": "u16",
+              "endian": "big"
+            },
+            {
+              "name": "sensorCode",
+              "type": "string",
+              "length": 13
+            },
+            {
+              "name": "readHex",
+              "type": "hex",
+              "length": 20
+            }
+          ]
+        },
+        {
+          "name": "configTime",
+          "type": "time6"
+        }
+      ]
+    },
+    {
+      "hex": "0X11",
+      "ordinal": 17,
+      "name": "GATEWAY_CONFIG_SENSOR",
+      "cn": "网关节点传感器配置",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 100,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "sensorSize",
+          "type": "u8"
+        },
+        {
+          "name": "sensors",
+          "type": "repeat",
+          "countRef": "sensorSize",
+          "fields": [
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "sensorType",
+              "type": "u16",
+              "endian": "big"
+            },
+            {
+              "name": "sensorCode",
+              "type": "string",
+              "length": 13
+            },
+            {
+              "name": "readHex",
+              "type": "hex",
+              "length": 26
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X12",
+      "ordinal": 18,
+      "name": "GATEWAY_CONFIG_SENSOR_RESPONSE",
+      "cn": "网关节点传感器配置反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "1、主动上报；2、查询后上报",
+      "excelRow": 100,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "result",
+          "type": "u8"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "variable": true
+        }
+      ]
+    },
+    {
+      "hex": "0X13",
+      "ordinal": 19,
+      "name": "GATEWAY_CONFIG_DEVICE_QUERY",
+      "cn": "网关控制设备配置查询",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 111,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        }
+      ]
+    },
+    {
+      "hex": "0X14",
+      "ordinal": 20,
+      "name": "GATEWAY_CONFIG_DEVICE_REPORT",
+      "cn": "网关控制设备配置上报",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 111,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "result",
+          "type": "u8"
+        },
+        {
+          "name": "deviceSize",
+          "type": "u8"
+        },
+        {
+          "name": "devices",
+          "type": "repeat",
+          "countRef": "deviceSize",
+          "fields": [
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "switchType",
+              "type": "u8"
+            },
+            {
+              "name": "deviceType",
+              "type": "u16",
+              "endian": "big"
+            },
+            {
+              "name": "deviceCode",
+              "type": "string",
+              "length": 13
+            },
+            {
+              "name": "onHex",
+              "type": "hex",
+              "length": 26
+            },
+            {
+              "name": "offHex",
+              "type": "hex",
+              "length": 26
+            },
+            {
+              "name": "setHex",
+              "type": "hex",
+              "length": 26
+            }
+          ]
+        },
+        {
+          "name": "configTime",
+          "type": "time6"
+        }
+      ]
+    },
+    {
+      "hex": "0X15",
+      "ordinal": 21,
+      "name": "GATEWAY_CONFIG_DEVICE",
+      "cn": "网关控制设备配置",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 126,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "deviceSize",
+          "type": "u8"
+        },
+        {
+          "name": "devices",
+          "type": "repeat",
+          "countRef": "deviceSize",
+          "fields": [
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "switchType",
+              "type": "u8"
+            },
+            {
+              "name": "deviceType",
+              "type": "u16",
+              "endian": "big"
+            },
+            {
+              "name": "deviceCode",
+              "type": "string",
+              "length": 13
+            },
+            {
+              "name": "onHex",
+              "type": "hex",
+              "length": 26
+            },
+            {
+              "name": "offHex",
+              "type": "hex",
+              "length": 26
+            },
+            {
+              "name": "setHex",
+              "type": "hex",
+              "length": 26
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X16",
+      "ordinal": 22,
+      "name": "GATEWAY_CONFIG_DEVICE_RESPONSE",
+      "cn": "网关控制设备配置反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 126,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "result",
+          "type": "u8"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "variable": true
+        }
+      ]
+    },
+    {
+      "hex": "0X17",
+      "ordinal": 23,
+      "name": "GATEWAY_SENSOR_DATA_UPLOAD_NOTICE",
+      "cn": "通知节点传感器数据上报",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 140,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        }
+      ]
+    },
+    {
+      "hex": "0X18",
+      "ordinal": 24,
+      "name": "GATEWAY_SENSOR_DATA_REPORT",
+      "cn": "网关节点传感器数据上报",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 140,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "collectTime",
+          "type": "time6"
+        },
+        {
+          "name": "collectResponse",
+          "type": "u8"
+        },
+        {
+          "name": "sensorSize",
+          "type": "u8"
+        },
+        {
+          "name": "sensors",
+          "type": "repeat",
+          "countRef": "sensorSize",
+          "fields": [
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "channelResult",
+              "type": "u8"
+            },
+            {
+              "name": "sensorValue",
+              "type": "u32",
+              "endian": "big"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X19",
+      "ordinal": 25,
+      "name": "GATEWAY_DEVICE_CONTROL",
+      "cn": "网关设备控制指令",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 152,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "deviceSize",
+          "type": "u8"
+        },
+        {
+          "name": "devices",
+          "type": "repeat",
+          "countRef": "deviceSize",
+          "fields": [
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "action",
+              "type": "u8"
+            },
+            {
+              "name": "value",
+              "type": "u32",
+              "endian": "big"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X1A",
+      "ordinal": 26,
+      "name": "GATEWAY_DEVICE_CONTROL_RESPONSE",
+      "cn": "网关设备控制反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 152,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        },
+        {
+          "name": "controlResponse",
+          "type": "u8"
+        },
+        {
+          "name": "deviceSize",
+          "type": "u8"
+        },
+        {
+          "name": "devices",
+          "type": "repeat",
+          "countRef": "deviceSize",
+          "fields": [
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "channelResult",
+              "type": "u8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X1B",
+      "ordinal": 27,
+      "name": "GATEWAY_DEVICE_CONTROL_BATCH",
+      "cn": "网关设备批量控制指令",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 163,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeSize",
+          "type": "u8"
+        },
+        {
+          "name": "nodes",
+          "type": "repeat",
+          "countRef": "nodeSize",
+          "fields": [
+            {
+              "name": "nodeId",
+              "type": "string",
+              "length": 11
+            },
+            {
+              "name": "deviceSize",
+              "type": "u8"
+            },
+            {
+              "name": "devices",
+              "type": "repeat",
+              "countRef": "deviceSize",
+              "fields": [
+                {
+                  "name": "channel",
+                  "type": "u8"
+                },
+                {
+                  "name": "action",
+                  "type": "u8"
+                },
+                {
+                  "name": "value",
+                  "type": "u32",
+                  "endian": "big"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X1C",
+      "ordinal": 28,
+      "name": "GATEWAY_DEVICE_CONTROL_BATCH_RESPONSE",
+      "cn": "网关设备批量控制反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 163,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "nodeSize",
+          "type": "u8"
+        },
+        {
+          "name": "nodes",
+          "type": "repeat",
+          "countRef": "nodeSize",
+          "fields": [
+            {
+              "name": "nodeId",
+              "type": "string",
+              "length": 11
+            },
+            {
+              "name": "deviceSize",
+              "type": "u8"
+            },
+            {
+              "name": "devices",
+              "type": "repeat",
+              "countRef": "deviceSize",
+              "fields": [
+                {
+                  "name": "result",
+                  "type": "u8"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X21",
+      "ordinal": 33,
+      "name": "GATEWAY_CONFIG_TASK_QUERY",
+      "cn": "任务配置查询",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 175,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "result",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "hex": "0X22",
+      "ordinal": 34,
+      "name": "GATEWAY_CONFIG_TASK_REPORT",
+      "cn": "任务配置上报",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "1、主动上报；2、查询后上报",
+      "excelRow": 175,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "taskCount",
+          "type": "u8"
+        },
+        {
+          "name": "tasks",
+          "type": "repeat",
+          "countRef": "taskCount",
+          "fields": [
+            {
+              "name": "taskId",
+              "type": "u8"
+            },
+            {
+              "name": "enabled",
+              "type": "u8"
+            },
+            {
+              "name": "triggerType",
+              "type": "u8"
+            },
+            {
+              "name": "triggerTime",
+              "type": "time3"
+            },
+            {
+              "name": "triggerSize",
+              "type": "u8"
+            },
+            {
+              "name": "triggers",
+              "type": "repeat",
+              "countRef": "triggerSize",
+              "fields": [
+                {
+                  "name": "joinType",
+                  "type": "u8"
+                },
+                {
+                  "name": "nodeId",
+                  "type": "string",
+                  "length": 11
+                },
+                {
+                  "name": "channel",
+                  "type": "u8"
+                },
+                {
+                  "name": "compareType",
+                  "type": "u8"
+                },
+                {
+                  "name": "value",
+                  "type": "u32",
+                  "endian": "big"
+                }
+              ]
+            },
+            {
+              "name": "actionSize",
+              "type": "u8"
+            },
+            {
+              "name": "actions",
+              "type": "repeat",
+              "countRef": "actionSize",
+              "fields": [
+                {
+                  "name": "nodeId",
+                  "type": "string",
+                  "length": 11
+                },
+                {
+                  "name": "channel",
+                  "type": "u8"
+                },
+                {
+                  "name": "action",
+                  "type": "u8"
+                },
+                {
+                  "name": "value",
+                  "type": "u32",
+                  "endian": "big"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X23",
+      "ordinal": 35,
+      "name": "GATEWAY_CONFIG_TASK",
+      "cn": "任务配置",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 194,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "taskId",
+          "type": "u8"
+        },
+        {
+          "name": "enabled",
+          "type": "u8"
+        },
+        {
+          "name": "triggerType",
+          "type": "u8"
+        },
+        {
+          "name": "triggerTime",
+          "type": "time3"
+        },
+        {
+          "name": "triggerSize",
+          "type": "u8"
+        },
+        {
+          "name": "triggers",
+          "type": "repeat",
+          "countRef": "triggerSize",
+          "fields": [
+            {
+              "name": "joinType",
+              "type": "u8"
+            },
+            {
+              "name": "nodeId",
+              "type": "string",
+              "length": 11
+            },
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "compareType",
+              "type": "u8"
+            },
+            {
+              "name": "value",
+              "type": "u32",
+              "endian": "big"
+            }
+          ]
+        },
+        {
+          "name": "actionSize",
+          "type": "u8"
+        },
+        {
+          "name": "actions",
+          "type": "repeat",
+          "countRef": "actionSize",
+          "fields": [
+            {
+              "name": "nodeId",
+              "type": "string",
+              "length": 11
+            },
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "action",
+              "type": "u8"
+            },
+            {
+              "name": "value",
+              "type": "u32",
+              "endian": "big"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X24",
+      "ordinal": 36,
+      "name": "GATEWAY_CONFIG_TASK_RESPONSE",
+      "cn": "任务配置反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 194,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "result",
+          "type": "u8"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "variable": true
+        }
+      ]
+    },
+    {
+      "hex": "0X25",
+      "ordinal": 37,
+      "name": "GATEWAY_CONFIG_TASK_LIST",
+      "cn": "任务列表配置",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 212,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "taskCount",
+          "type": "u8"
+        },
+        {
+          "name": "tasks",
+          "type": "repeat",
+          "countRef": "taskCount",
+          "fields": [
+            {
+              "name": "taskId",
+              "type": "u8"
+            },
+            {
+              "name": "enabled",
+              "type": "u8"
+            },
+            {
+              "name": "triggerType",
+              "type": "u8"
+            },
+            {
+              "name": "triggerTime",
+              "type": "time3"
+            },
+            {
+              "name": "triggerSize",
+              "type": "u8"
+            },
+            {
+              "name": "triggers",
+              "type": "repeat",
+              "countRef": "triggerSize",
+              "fields": [
+                {
+                  "name": "joinType",
+                  "type": "u8"
+                },
+                {
+                  "name": "nodeId",
+                  "type": "string",
+                  "length": 11
+                },
+                {
+                  "name": "channel",
+                  "type": "u8"
+                },
+                {
+                  "name": "compareType",
+                  "type": "u8"
+                },
+                {
+                  "name": "value",
+                  "type": "u32",
+                  "endian": "big"
+                }
+              ]
+            },
+            {
+              "name": "actionSize",
+              "type": "u8"
+            },
+            {
+              "name": "actions",
+              "type": "repeat",
+              "countRef": "actionSize",
+              "fields": [
+                {
+                  "name": "nodeId",
+                  "type": "string",
+                  "length": 11
+                },
+                {
+                  "name": "channel",
+                  "type": "u8"
+                },
+                {
+                  "name": "action",
+                  "type": "u8"
+                },
+                {
+                  "name": "value",
+                  "type": "u32",
+                  "endian": "big"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "hex": "0X26",
+      "ordinal": 38,
+      "name": "GATEWAY_CONFIG_TASK_LIST_RESPONSE",
+      "cn": "任务列表配置反馈",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "",
+      "excelRow": 212,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "taskCount",
+          "type": "u8"
+        },
+        {
+          "name": "tasks",
+          "type": "repeat",
+          "countRef": "taskCount",
+          "fields": [
+            {
+              "name": "taskId",
+              "type": "u8"
+            },
+            {
+              "name": "result",
+              "type": "u8"
+            }
+          ]
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "variable": true
+        }
+      ]
+    },
+    {
+      "hex": "0X5C",
+      "ordinal": 91,
+      "name": "GATEWAY_UPGRADE",
+      "cn": "网关OTA指令下发",
+      "direction": "downlink_callback",
+      "transactionType": "downlink_callback",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 232,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "length": 64
+        },
+        {
+          "name": "appType",
+          "type": "u8"
+        },
+        {
+          "name": "upgradeType",
+          "type": "u8"
+        },
+        {
+          "name": "version",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "url",
+          "type": "string",
+          "length": 256
+        },
+        {
+          "name": "packageSize",
+          "type": "u32",
+          "endian": "little"
+        },
+        {
+          "name": "md5",
+          "type": "string",
+          "length": 33
+        }
+      ]
+    },
+    {
+      "hex": "0X5D",
+      "ordinal": 92,
+      "name": "GATEWAY_UPGRADE_STATUS",
+      "cn": "网关OTA状态上报",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "1、收到后上报；2、不同升级状态主动上报",
+      "excelRow": 232,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "length": 64
+        },
+        {
+          "name": "appType",
+          "type": "u8"
+        },
+        {
+          "name": "status",
+          "type": "u8"
+        },
+        {
+          "name": "percent",
+          "type": "u8"
+        },
+        {
+          "name": "nodeId",
+          "type": "string",
+          "length": 11
+        }
+      ]
+    },
+    {
+      "hex": "0X60",
+      "ordinal": 96,
+      "name": "GATEWAY_GNSS",
+      "cn": "GNSS",
+      "direction": "uplink",
+      "transactionType": "uplink",
+      "initiator": "网关",
+      "description": "网关上报GNSS报文",
+      "excelRow": null,
+      "empty": false,
+      "unsupported": true,
+      "fields": []
+    },
+    {
+      "hex": "0X65",
+      "ordinal": 99,
+      "name": "GATEWAY_REBOOT",
+      "cn": "网关远程重启",
+      "direction": "downlink",
+      "transactionType": "downlink",
+      "initiator": "平台",
+      "description": "",
+      "excelRow": 242,
+      "empty": false,
+      "unsupported": false,
+      "fields": [
+        {
+          "name": "appType",
+          "type": "u8"
+        },
+        {
+          "name": "action",
+          "type": "u8"
+        }
+      ]
+    }
+  ]
+}

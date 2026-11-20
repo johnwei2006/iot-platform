@@ -1,0 +1,32 @@
+一、整体设计与 Flash 分区规划
+1. Flash 分区布局（STM32F407 1MB Flash）
+分区	              起始地址	     大小	   说明
+Bootloader	        0x08000000     32KB    启动引导程序          （section0-1）
+BootloaderDownload  0x08008000     32KB    bootloader下载区     （section2-3）
+App存储区(分区A）    0x08010000     256KB	  应用存储区 A          （section4-6）
+App下载区(分区B)     0x08060000	   256KB   应用下载区 B          （section7-8）
+Lora下载区           0x080A0000     256KB   Lora固件下载区        （section9-10）
+网关配置区           0x080E0000     124KB   存储网关配置等参数     （section11）
+升级标志存储         0x080FF000     4KB     存储升级标志upgrade_flag        
+
+2. Bootloader启动过程
+    ├─ upgrade_flag_read(&upgrade_flag)  ← 从 0x080FF000 读取升级标志
+    │
+    ├─ upgrade_status == UPGRADE_STATUS_DOWNLOADED?
+    │   ├─ YES → 验证B区固件CRC
+    │   │   ├─ CRC通过 && B区App有效
+    |   |   |    ├─  升级类型为全量升级：OTA_TYPE_FULL
+    |   |   |    |      └─ 擦除A区 → B区拷贝到A区 → 清除升级标志(status=READY)
+    |   |   |    └─  升级类型为差分升级：OTA_TYPE_DIFF
+    |   |   |           └─ .....
+    │   │   └─ CRC失败 → 标记 UPGRADE_STATUS_FAILED
+    │   └─ NO  → 跳过升级处理
+    │
+    └─ 跳转到A区(0x08010000)
+        ├─ A区有效 → jump_to_application() 启动应用
+        └─ A区无效 → 打印错误 → 原地循环
+3. 应用启动后，检查升级标志：
+   |- 如果标志为：UPGRADE_STATUS_READY
+      |- 说明升级成功，上报升级状态：真正完成
+      |- 清除升级标志（0x080FF000）清除升级标志为：UPGRADE_STATUS_IDLE
+   |- 否则正常启动
