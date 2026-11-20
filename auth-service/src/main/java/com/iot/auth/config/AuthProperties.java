@@ -1,0 +1,161 @@
+package com.iot.auth.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * 认证中心配置；必填项在启动阶段校验，缺失即 fail-fast。
+ */
+@ConfigurationProperties(prefix = "auth")
+public class AuthProperties {
+
+    /** JWT 密钥（HS256），至少 32 字符 */
+    private String jwtSecret;
+    /** access token 有效期（毫秒），默认 30 分钟 */
+    private long accessTtlMs = 30L * 60 * 1000;
+    /** refresh token 有效期（毫秒），默认 7 天 */
+    private long refreshTtlMs = 7L * 24 * 60 * 60 * 1000;
+    /** SSO ticket 有效期（毫秒），默认 5 分钟 */
+    private long ticketTtlMs = 5L * 60 * 1000;
+    /** Redis key 前缀 */
+    private String redisPrefix = "auth:";
+    /** 可信 SSO 客户端 */
+    private List<Client> clients = new ArrayList<Client>();
+    /** 内部服务 HMAC 密钥 */
+    private List<ServiceKey> serviceKeys = new ArrayList<ServiceKey>();
+    /** 微信小程序凭证 */
+    private Wechat wechat = new Wechat();
+
+    @PostConstruct
+    public void validate() {
+        if (jwtSecret == null || jwtSecret.length() < 32) {
+            throw new IllegalStateException("auth.jwt-secret must be configured with at least 32 characters");
+        }
+    }
+
+    public Client findClient(String clientId) {
+        for (Client client : clients) {
+            if (client != null && clientId != null && clientId.equals(client.getId())) {
+                return client;
+            }
+        }
+        return null;
+    }
+
+    public String findServiceSecret(String serviceId) {
+        for (ServiceKey key : serviceKeys) {
+            if (key != null && serviceId != null && serviceId.equals(key.getId())) {
+                return key.getSecret();
+            }
+        }
+        return null;
+    }
+
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    public void setJwtSecret(String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+    }
+
+    public long getAccessTtlMs() {
+        return accessTtlMs;
+    }
+
+    public void setAccessTtlMs(long accessTtlMs) {
+        this.accessTtlMs = accessTtlMs;
+    }
+
+    public long getRefreshTtlMs() {
+        return refreshTtlMs;
+    }
+
+    public void setRefreshTtlMs(long refreshTtlMs) {
+        this.refreshTtlMs = refreshTtlMs;
+    }
+
+    public long getTicketTtlMs() {
+        return ticketTtlMs;
+    }
+
+    public void setTicketTtlMs(long ticketTtlMs) {
+        this.ticketTtlMs = ticketTtlMs;
+    }
+
+    public String getRedisPrefix() {
+        return redisPrefix;
+    }
+
+    public void setRedisPrefix(String redisPrefix) {
+        this.redisPrefix = redisPrefix;
+    }
+
+    public List<Client> getClients() {
+        return Collections.unmodifiableList(clients);
+    }
+
+    public void setClients(List<Client> clients) {
+        this.clients = clients == null ? new ArrayList<Client>() : clients;
+    }
+
+    public List<ServiceKey> getServiceKeys() {
+        return Collections.unmodifiableList(serviceKeys);
+    }
+
+    public void setServiceKeys(List<ServiceKey> serviceKeys) {
+        this.serviceKeys = serviceKeys == null ? new ArrayList<ServiceKey>() : serviceKeys;
+    }
+
+    public Wechat getWechat() {
+        return wechat;
+    }
+
+    public void setWechat(Wechat wechat) {
+        this.wechat = wechat == null ? new Wechat() : wechat;
+    }
+
+    public static class Client {
+        private String id;
+        private String secret;
+        private List<String> redirectUris = new ArrayList<String>();
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getSecret() { return secret; }
+        public void setSecret(String secret) { this.secret = secret; }
+        public List<String> getRedirectUris() { return redirectUris; }
+        public void setRedirectUris(List<String> redirectUris) {
+            this.redirectUris = redirectUris == null ? new ArrayList<String>() : redirectUris;
+        }
+        public boolean allowsRedirect(String uri) {
+            return uri != null && redirectUris.contains(uri);
+        }
+    }
+
+    public static class ServiceKey {
+        private String id;
+        private String secret;
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getSecret() { return secret; }
+        public void setSecret(String secret) { this.secret = secret; }
+    }
+
+    public static class Wechat {
+        /** 小程序 AppID */
+        private String appId;
+        /** 小程序 AppSecret（仅后端持有） */
+        private String appSecret;
+
+        public String getAppId() { return appId; }
+        public void setAppId(String appId) { this.appId = appId; }
+        public String getAppSecret() { return appSecret; }
+        public void setAppSecret(String appSecret) { this.appSecret = appSecret; }
+    }
+}

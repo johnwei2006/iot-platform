@@ -1,0 +1,52 @@
+server:
+  port: ${AUTH_PORT:8083}
+
+spring:
+  application:
+    name: auth-service
+  data:
+    mongodb:
+      uri: ${AUTH_MONGO_URI:mongodb://localhost:27017/auth_service}
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DATABASE:0}
+    timeout: ${REDIS_TIMEOUT:2000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# 认证中心配置。jwt-secret 必须通过 AUTH_JWT_SECRET 注入（>=32 字符），不提供弱默认值。
+auth:
+  jwt-secret: ${AUTH_JWT_SECRET}
+  access-ttl-ms: ${AUTH_ACCESS_TTL_MS:1800000}
+  refresh-ttl-ms: ${AUTH_REFRESH_TTL_MS:604800000}
+  ticket-ttl-ms: ${AUTH_TICKET_TTL_MS:300000}
+  redis-prefix: ${AUTH_REDIS_PREFIX:auth:}
+  clients:
+    - id: web
+      secret: ${AUTH_CLIENT_WEB_SECRET:web-client-secret-change-me}
+      redirect-uris:
+        - ${AUTH_WEB_REDIRECT_URI:http://localhost:5173/sso/callback}
+    - id: app
+      secret: ${AUTH_CLIENT_APP_SECRET:app-client-secret-change-me}
+      redirect-uris:
+        - ${AUTH_APP_REDIRECT_URI:myapp://sso/callback}
+    - id: mini
+      secret: ${AUTH_CLIENT_MINI_SECRET:mini-client-secret-change-me}
+      redirect-uris:
+        - ${AUTH_MINI_REDIRECT_URI:mini://sso/callback}
+  service-keys:
+    - id: platform_java
+      secret: ${AUTH_SERVICE_PLATFORM_SECRET:platform-service-secret-change-me}
+    - id: dtm
+      secret: ${AUTH_SERVICE_DTM_SECRET:dtm-service-secret-change-me}
+    - id: proxytcp
+      secret: ${AUTH_SERVICE_PROXY_SECRET:proxy-service-secret-change-me}
+  wechat:
+    app-id: ${WECHAT_APPID:}
+    app-secret: ${WECHAT_APPSECRET:}
