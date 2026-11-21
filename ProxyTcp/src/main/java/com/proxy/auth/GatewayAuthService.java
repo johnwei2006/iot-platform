@@ -4,11 +4,15 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.proxy.model.CommonTransportMessage;
 import com.proxy.persistence.DeviceInfoService;
 import com.proxy.persistence.GatewayRecordService;
 import com.proxy.persistence.GatewayTokenStoreService;
@@ -35,6 +39,50 @@ public class GatewayAuthService {
 
 	@Autowired
 	private DeviceInfoService deviceInfoService;
+
+	/**
+	 * 测试用万能 token：配置 gateway.auth.master-token，支持 10 字符 ASCII 或 20 位十六进制；
+	 * 置空即关闭。该 token 绕过会话/IP/端口校验，仅用于联调测试，生产环境务必置空。
+	 */
+	@Value("${gateway.auth.master-token:}")
+	private String masterTokenConfig;
+
+	/** 已解析的万能 token（null 表示未启用） */
+	private byte[] masterToken;
+
+	@PostConstruct
+	public void initMasterToken() {
+		String value = masterTokenConfig == null ? "" : masterTokenConfig.trim();
+		if (value.isEmpty()) {
+			logger.info("Gateway master token is disabled");
+			return;
+		}
+		byte[] parsed;
+		try {
+			if (value.length() == CommonTransportMessage.TOKEN_LENGTH * 2
+					&& value.matches("(?i)[0-9a-f]+")) {
+				parsed = HexConvert.fromHexString(value);
+			} else {
+				parsed = value.getBytes(StandardCharsets.US_ASCII);
+			}
+		} catch (Exception e) {
+			logger.warn("Invalid gateway.auth.master-token (must be 10 ASCII chars or 20 hex chars): " + value);
+			return;
+		}
+		if (parsed.length != CommonTransportMessage.TOKEN_LENGTH || isAllZero(parsed)) {
+			logger.warn("Invalid gateway.auth.master-token (must decode to exactly 10 non-zero bytes): " + value);
+			return;
+		}
+		masterToken = parsed;
+		logger.warn("!!! GATEWAY MASTER TOKEN ENABLED (TEST ONLY) !!! token(hex)="
+				+ HexConvert.toHexString(masterToken) + " — disable via gateway.auth.master-token= before production");
+	}
+
+	/** 是否为测试用万能 token */
+	public boolean isMasterToken(byte[] token) {
+		return masterToken != null && token != null && token.length == masterToken.length
+				&& MessageDigest.isEqual(masterToken, token);
+	}
 
 	/** deviceId -> 已认证会话（ip:port） */
 	private final ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<String, Session>();
@@ -132,6 +180,12 @@ public class GatewayAuthService {
 	 * 校验上行报文 token：会话存在、连接匹配且 token 与当前有效 token 一致。
 	 */
 	public boolean validateToken(String deviceId, byte[] token, String ip, int port) {
+		// 测试万能 token：无需认证会话，也无需匹配来源 IP/端口
+		if (isMasterToken(token)) {
+			logger.debug("Gateway uplink accepted via master token (TEST ONLY): deviceId=" + deviceId
+					+ ", ip=" + ip + ":" + port);
+			return true;
+		}
 		if (token == null || isAllZero(token)) {
 			return false;
 		}
@@ -179,7 +233,12 @@ public class GatewayAuthService {
 	 * @return token 字节；未认证返回 null（编码时填全 0）
 	 */
 	public byte[] getTokenForDownlink(String deviceId) {
-		return gatewayTokenStoreService.getActiveToken(deviceId);
+		byte[] active = gatewayTokenStoreService.getActiveToken(deviceId);
+		if (active != null) {
+			return active;
+		}
+		// 未认证设备（测试客户端）下行填充万能 token，便于端到端联调
+		return masterToken;
 	}
 
 	private String extractSecret(byte[] serviceData) {

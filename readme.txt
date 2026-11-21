@@ -26,6 +26,8 @@ IoT 平台（iot-platform）
    （gateway_token_request_record）落库，并在 web 管理端"网关认证记录"页面查询；
    REST 接口：GET /api/gateway/reconnect-records、GET /api/gateway/token-requests。
 5. 传输版本 1（旧固件，无 token）不再被接受，网关固件需升级到配套版本。
+6. 测试万能 token：ProxyTcp 配置 gateway.auth.master-token（默认 MASTER0001，
+   置空关闭），携带它的报文无需认证即可通过；仅限测试环境，生产务必置空。
 
 版本升级注意事项
 ----------------

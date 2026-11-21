@@ -78,3 +78,12 @@
 - `GET /api/gateway/reconnect-records?deviceId=&page=&size=`
 - `GET /api/gateway/token-requests?deviceId=&page=&size=`
 - `POST /api/gateway/credentials`（h2 模式下录入网关密钥的运维接口；mongo 模式密钥由 platform_java 的 devices 集合管理）
+
+## 6. 测试用万能 token
+
+ProxyTcp 配置项 `gateway.auth.master-token`（默认 `MASTER0001`）可指定一个 10 字节万能 token，支持 10 字符 ASCII 或 20 位十六进制写法；置空即关闭。
+
+- 上行：携带该 token 的报文无需认证会话、无需匹配来源 IP/端口，直接通过校验并正常转发；认证请求（serviceType=105）仍按正常流程处理
+- 下行：设备无有效 token 时，ProxyTcp 用万能 token 填充下行报文，便于未走认证流程的测试客户端联调
+- 启动时若启用，日志会打印 `!!! GATEWAY MASTER TOKEN ENABLED (TEST ONLY) !!!` 警示
+- **仅限测试环境使用；生产环境必须将该配置置空，否则任何知道该 token 的客户端都可绕过网关认证**
