@@ -262,6 +262,24 @@ int transport_udp_service_decode(transport_udp_message_t *udp_message, void  **b
             }
             put_business_data_cache(udp_message->transport_udp_data->event_id, config_task_list);
             break;
+        case SERVICE_TYPE_GATEWAY_AUTH_RESPONSE:
+            if(udp_message->service_data->business_data_payload_length != 1 + GATEWAY_AUTH_TOKEN_LENGTH){
+                rt_kprintf("Error: Invalid business data payload length for gateway auth response, length: %d\n",
+                    udp_message->service_data->business_data_payload_length);
+                ret = -RT_EINVAL;
+                break;
+            }
+            service_data_gateway_auth_response_t* auth_response =
+                (service_data_gateway_auth_response_t *)rt_malloc(sizeof(service_data_gateway_auth_response_t));
+            if (auth_response == RT_NULL) {
+                rt_kprintf("malloc auth_response failed\n");
+                ret = -RT_ENOMEM;
+                break;
+            }
+            auth_response->result = udp_message->service_data->business_data_payload[0];
+            rt_memcpy(auth_response->token, udp_message->service_data->business_data_payload + 1, GATEWAY_AUTH_TOKEN_LENGTH);
+            *business_data = auth_response;
+            break;
         case SERVICE_TYPE_GATEWAY_INFO_QUERY:
         case SERVICE_TYPE_GATEWAY_CONFIG_QUERY:
         case SERVICE_TYPE_GATEWAY_CONFIG_NODE_QUERY:
@@ -613,6 +631,10 @@ int transport_udp_service_encode(transport_udp_message_t *udp_message){
                     udp_message->service_data->business_data_payload[i * sizeof(config_gateway_task_t) + 17 + NODE_ID_LENGTH*2+ j] = config_task_list->config_tasks[i].actions[j].value;
                 }
             }
+            break;
+        case SERVICE_TYPE_GATEWAY_AUTH_REQUEST:
+            // 认证请求的 business_data_payload（预共享密钥）由认证服务预先填充，此处保持原样
+            ret = RT_EOK;
             break;
         default:
             rt_kprintf("Encode Info: transport_udp_service_encode service_type: %d with no service data\n", service_type);

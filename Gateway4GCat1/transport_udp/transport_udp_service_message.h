@@ -18,6 +18,12 @@ typedef struct{
 
 typedef struct
 {
+    uint8_t           result;                       // 0:SUCCESS 1:UNKNOWN_DEVICE 2:INVALID_SECRET 3:ERROR
+    uint8_t           token[GATEWAY_AUTH_TOKEN_LENGTH]; // 认证成功时的新 token
+} service_data_gateway_auth_response_t;
+
+typedef struct
+{
     uint8_t           channel;
     uint8_t           action;   //1: on, 2: off, 3: stop, 4: set | control result : 1 : success, 0: failed
     uint8_t           value[4];  

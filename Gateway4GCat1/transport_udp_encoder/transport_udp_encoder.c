@@ -37,6 +37,8 @@ int transport_udp_decode(raw_udp_message_t *raw_udp_message, transport_udp_messa
                                                             (raw_udp_message->payload[TRANSPORT_HEADER_FIX_LENGTH + GATEWAY_ID_LENGTH + NODE_ID_LENGTH + CREATE_TIME_LENGTH + 10] << 8) |
                                                              (raw_udp_message->payload[TRANSPORT_HEADER_FIX_LENGTH + GATEWAY_ID_LENGTH + NODE_ID_LENGTH + CREATE_TIME_LENGTH + 11] << 16) |
                                                              (raw_udp_message->payload[TRANSPORT_HEADER_FIX_LENGTH + GATEWAY_ID_LENGTH + NODE_ID_LENGTH + CREATE_TIME_LENGTH + 12] << 24);
+		// 3.6 token decode（传输版本 2 定长段末尾 10 字节）
+    rt_memcpy( transport_udp_message->transport_udp_data->token, raw_udp_message->payload + TRANSPORT_HEADER_FIX_LENGTH + TRANSPORT_DATA_FIX_LENGTH - GATEWAY_AUTH_TOKEN_LENGTH, GATEWAY_AUTH_TOKEN_LENGTH);
 
     //4. service_data decode
     // 4.1 calculate business_data_payload length                                                       
@@ -69,7 +71,7 @@ int transport_udp_encode(transport_udp_message_t *transport_udp_message, raw_udp
      raw_udp_message->payload [index++] = transport_udp_message->transport_udp_header->transport_data_length & 0xFF;
      raw_udp_message->payload [index++] = (transport_udp_message->transport_udp_header->transport_data_length >> 8) & 0xFF;
 
-     //2. transport_udp_data : TRANSPORT_DATA_FIX_LENGTH == 41bytes
+     //2. transport_udp_data : TRANSPORT_DATA_FIX_LENGTH == 51bytes (transport version 2, includes token)
      rt_memcpy(raw_udp_message->payload + index, transport_udp_message->transport_udp_data->gateway_id,   GATEWAY_ID_LENGTH);
      rt_memcpy(raw_udp_message->payload + index + GATEWAY_ID_LENGTH, transport_udp_message->transport_udp_data->node_id,      NODE_ID_LENGTH);
      rt_memcpy(raw_udp_message->payload + index + GATEWAY_ID_LENGTH + NODE_ID_LENGTH, transport_udp_message->transport_udp_data->message_create_time, CREATE_TIME_LENGTH);
@@ -92,6 +94,9 @@ int transport_udp_encode(transport_udp_message_t *transport_udp_message, raw_udp
 	   raw_udp_message->payload[index++] = (transport_udp_message->transport_udp_data->event_id >> 8) & 0xFF;
 	   raw_udp_message->payload[index++] = (transport_udp_message->transport_udp_data->event_id >> 16) & 0xFF;
 	   raw_udp_message->payload[index++] = (transport_udp_message->transport_udp_data->event_id >> 24) & 0xFF;
+     //2.3 token（10 字节；认证请求/未认证报文为全 0）
+     rt_memcpy(&raw_udp_message->payload[index], transport_udp_message->transport_udp_data->token, GATEWAY_AUTH_TOKEN_LENGTH);
+     index += GATEWAY_AUTH_TOKEN_LENGTH;
      //3. service_data
      if(transport_udp_message->service_data->business_data_payload_length > 0 && transport_udp_message->service_data->business_data_payload != RT_NULL){
         rt_memcpy( &raw_udp_message->payload [index] ,transport_udp_message->service_data->business_data_payload, transport_udp_message->service_data->business_data_payload_length);

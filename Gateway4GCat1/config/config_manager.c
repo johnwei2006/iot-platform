@@ -103,6 +103,10 @@ flash_status update_config_gateway(config_gateway_serial_t *gateway_config){
 				if(gateway_config->config_lora.loraFreqGroup == 0){
             gateway_config->config_lora.loraFreqGroup = gateway_config_existed.config_lora.loraFreqGroup;
         }
+        // 保留已有认证密钥（GATEWAY_CONFIG 更新不带密钥时不覆盖）
+        if(gateway_config->auth_secret[0] == '\0'){
+            rt_strncpy((char *)gateway_config->auth_secret, (const char *)gateway_config_existed.auth_secret, AUTH_SECRET_MAX_LENGTH);
+        }
         // preserve existing node configs in gateway_config_existed
         gateway_config->nodes_count = gateway_config_existed.nodes_count;
         for(uint8_t i = 0; i < gateway_config->nodes_count; i++){
@@ -701,6 +705,17 @@ bool config_manager_read_config(char* key, char* value, uint32_t value_len){
         config_gateway_to_json(&gateway_config, value);
         //rt_kprintf("read_config_by_key: gateway config json: %s\n", value);
         return RT_TRUE;
+    //2.1 read GATEWAY SECRET (网关认证预共享密钥，仅限本地运维调试)
+    } else if(strncasecmp(key, "GATEWAY_SECRET", rt_strlen("GATEWAY_SECRET")) == 0){
+        config_gateway_serial_t gateway_config;
+        flash_status status = read_config_gateway_serial(&gateway_config);
+        if(status != FLASH_OK){
+            rt_kprintf("read_config_by_key: read gateway config failed!\n");
+            return RT_FALSE;
+        }
+        rt_strncpy(value, (const char *)gateway_config.auth_secret, value_len - 1);
+        value[value_len - 1] = '\0';
+        return RT_TRUE;
     //3. read NODE CONFIG
     } else if(strncasecmp(key, "CONFIG_NODE", rt_strlen("CONFIG_NODE")) == 0){
         config_gateway_serial_t gateway_config;
@@ -887,6 +902,27 @@ bool config_manager_write_config(char* key, const char* json_value){
         status = update_config_gateway(&gateway_config);
         if(status != FLASH_OK){
             rt_kprintf("write_config_by_key: update gateway config failed!\n");
+            return RT_FALSE;
+        }
+        return RT_TRUE;
+    //1.1 write GATEWAY SECRET（网关认证预共享密钥，格式: #ST GATEWAY_SECRET <secret>）
+    } else if(rt_strncmp(key, "GATEWAY_SECRET", rt_strlen("GATEWAY_SECRET")) == 0){
+        config_gateway_serial_t gateway_config;
+        flash_status secret_status = read_config_gateway_serial(&gateway_config);
+        if(secret_status != FLASH_OK){
+            rt_kprintf("write_config_by_key: read gateway config failed!\n");
+            return RT_FALSE;
+        }
+        size_t secret_len = rt_strlen(json_value);
+        if(secret_len == 0 || secret_len > AUTH_SECRET_MAX_LENGTH){
+            rt_kprintf("write_config_by_key: secret length must be 1~%d!\n", AUTH_SECRET_MAX_LENGTH);
+            return RT_FALSE;
+        }
+        rt_memset(gateway_config.auth_secret, 0, sizeof(gateway_config.auth_secret));
+        rt_strncpy((char *)gateway_config.auth_secret, json_value, AUTH_SECRET_MAX_LENGTH);
+        secret_status = update_config_gateway(&gateway_config);
+        if(secret_status != FLASH_OK){
+            rt_kprintf("write_config_by_key: update gateway secret failed!\n");
             return RT_FALSE;
         }
         return RT_TRUE;

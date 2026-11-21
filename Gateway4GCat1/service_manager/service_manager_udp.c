@@ -1,6 +1,7 @@
 #include "service_manager_udp.h"
 #include <rtthread.h>
 #include "../service_udp/service_gateway_heartbeat.h"
+#include "../service_udp/service_gateway_auth.h"
 #include "../service_udp/service_gateway_config.h"
 #include "../service_udp/service_gateway_config_query.h"
 #include "../service_udp/service_gateway_config_node.h"
@@ -229,6 +230,22 @@ int service_manager_udp_init(void){
 				return -RT_ENOMEM;				
 		}			
     cps_list_add(&service_head_node, service_gateway_heartbeat);	
+
+		//	1.2 service_gateway_auth_request（网关认证请求）
+		service_gateway_auth_t* service_gateway_auth_request = service_gateway_auth_request_create();
+    if (service_gateway_auth_request == NULL) {
+				rt_kprintf("Failed to create service_gateway_auth_request!\n");
+				return -RT_ENOMEM;				
+		}			
+    cps_list_add(&service_head_node, service_gateway_auth_request);	
+
+		//	1.3 service_gateway_auth_response（网关认证响应）
+		service_gateway_auth_t* service_gateway_auth_response = service_gateway_auth_response_create();
+    if (service_gateway_auth_response == NULL) {
+				rt_kprintf("Failed to create service_gateway_auth_response!\n");
+				return -RT_ENOMEM;				
+		}			
+    cps_list_add(&service_head_node, service_gateway_auth_response);	
 
 		//	2.2 service_time_sync_request   
 		service_gateway_time_sync_request_t* service_gateway_time_sync_request = service_gateway_time_sync_request_create();

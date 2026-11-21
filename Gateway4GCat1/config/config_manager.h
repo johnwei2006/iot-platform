@@ -9,6 +9,7 @@
 
 #define PROJECT_ID_MAX_LENGTH    11
 #define GATEWAY_ID_LENGTH        11
+#define AUTH_SECRET_MAX_LENGTH   32 // 网关认证预共享密钥最大长度（不含结束符）
 #define NODE_ID_LENGTH           11
 #define SERVER_URL_MAX_LENGTH    40
 #define FIRMWARE_VERSION_LENGTH  3
@@ -171,8 +172,9 @@ typedef struct {
   config_lora_t      config_lora;
   uint8_t            nodes_count;
   uint8_t            node_block_numbers[MAX_NODES];
-  uint8_t            config_time[6];  
-} config_gateway_serial_t; // 用于传输的网关序列化配置结构体: 1+ 12 + 12 + 40 + 2 + 2 + 2 + 1 + 15 + 6= 93 bytes
+  uint8_t            config_time[6];
+  uint8_t            auth_secret[AUTH_SECRET_MAX_LENGTH + 1]; // 网关认证预共享密钥，末尾 +1 保存结束符
+} config_gateway_serial_t; // 用于传输的网关序列化配置结构体: 93 + 33 = 126 bytes
 
 typedef struct {
   uint8_t            join_type;

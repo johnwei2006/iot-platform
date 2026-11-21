@@ -9,6 +9,7 @@
 #include "../transport_udp_encoder/transport_udp_encoder.h"
 #include "../transport_udp_encoder/transport_udp_service_encoder.h"
 #include "../transport/transport_mem_pool_manager.h"
+#include "../service_udp/service_gateway_auth.h"
 
 #define MODULE_NAME  "UDP_HANDLER"
 #include "../utils/debug_log.h"
@@ -71,8 +72,35 @@ static void cloud_downlink_process(void* data){
 
         free_raw_udp_message(raw_udp_message);
 
-        // 3. deal ack message
+        // 3. token 校验：除认证响应外，所有下行报文必须携带有效 token
+        if (transport_udp_message->transport_udp_data->service_type != SERVICE_TYPE_GATEWAY_AUTH_RESPONSE) {
+          if (!service_gateway_auth_validate_downlink_token(transport_udp_message->transport_udp_data->token)) {
+            rt_kprintf("Warning: drop downlink message (unauthenticated or invalid token), service_type: %d, message_id: %d\n",
+              transport_udp_message->transport_udp_data->service_type,
+              transport_udp_message->transport_udp_data->message_id);
+            release_transport_udp_message(transport_udp_message);
+            if(cloud_downlink_mutex != RT_NULL) {
+              rt_mutex_release(cloud_downlink_mutex);
+            }
+            rt_thread_mdelay(10);
+            continue;
+          }
+        }
+
+        // 3.1 deal ack message
         if (transport_udp_message->transport_udp_data->service_type == SERVICE_TYPE_ACK) {
+          // NAK：错误 ACK 携带 1 字节 serviceData 错误码，非 0 表示拒绝（1:token 无效 2:未认证）
+          if (transport_udp_message->service_data->business_data_payload_length >= 1 &&
+              transport_udp_message->service_data->business_data_payload[0] != 0) {
+            uint8_t nak_code = transport_udp_message->service_data->business_data_payload[0];
+            rt_kprintf("Warning: downlink ack is NAK, code: %d, message_id: %d\n",
+              nak_code, transport_udp_message->transport_udp_data->message_id);
+            if (nak_code == 1 || nak_code == 2) {
+              // token 无效/未认证：重置认证状态并立即重新申请 token
+              service_gateway_auth_invalidate();
+              service_gateway_auth_request_execute(RT_NULL, RT_NULL);
+            }
+          }
           handler_deal_ack_message(transport_udp_message);
           if(cloud_downlink_mutex != RT_NULL) {
             rt_mutex_release(cloud_downlink_mutex);
@@ -132,7 +160,7 @@ static void cloud_uplink_process(void* data){
        }
        //2. setting transport_udp_header and transport_udp_data
 				transport_udp_message->transport_udp_header->transport_data_encoding = TRANSPORT_DATA_ENCODING_BINARY;
-				transport_udp_message->transport_udp_header->transport_version       = TRANSPORT_VERSION_1;
+				transport_udp_message->transport_udp_header->transport_version       = TRANSPORT_VERSION_2;
 
 				transport_udp_message->transport_udp_data->message_id = generate_rand_short();
 				// 2.1 setting gateway_id, node_id, message_create_time
@@ -144,6 +172,8 @@ static void cloud_uplink_process(void* data){
 				transport_udp_message->transport_udp_data->service_data_encoding         = SERVICE_DATA_ENCODING_BINARY;
 				transport_udp_message->transport_udp_data->service_data_protocol_version = SERVICE_DATA_PROTOCOL_VERSION_1;
 				transport_udp_message->transport_udp_data->service_data_encryption       = SERVICE_DATA_ENCRYPTION_NONE;
+				// 2.2 填充网关认证 token（未认证/认证请求报文为全 0）
+				service_gateway_auth_fill_token(transport_udp_message->transport_udp_data->token);
 
         //3. service encode transport_udp_message  service_data->business_data to service_data->business_data_payload and set service_data->business_data_payload_length
 				int encode_result = transport_udp_service_encode(transport_udp_message);
@@ -254,7 +284,8 @@ static int handler_send_ack_message(transport_udp_message_t *transport_udp_messa
         return RT_ENOMEM;
     }
 
-    ack_transport_udp_message->transport_udp_header->transport_data_length = TRANSPORT_HEADER_FIX_LENGTH + TRANSPORT_DATA_FIX_LENGTH + 1;
+    // transport_data_length = 定长段(51) + serviceData 长度；ACK 无 serviceData（原实现误加了 4 字节头长度）
+    ack_transport_udp_message->transport_udp_header->transport_data_length = TRANSPORT_DATA_FIX_LENGTH;
     ack_transport_udp_message->transport_udp_header->transport_data_encoding = transport_udp_message->transport_udp_header->transport_data_encoding;
     ack_transport_udp_message->transport_udp_header->transport_version = transport_udp_message->transport_udp_header->transport_version;
     
@@ -268,6 +299,8 @@ static int handler_send_ack_message(transport_udp_message_t *transport_udp_messa
     ack_transport_udp_message->transport_udp_data->service_data_protocol_version = transport_udp_message->transport_udp_data->service_data_protocol_version;
     ack_transport_udp_message->transport_udp_data->service_data_encryption = transport_udp_message->transport_udp_data->service_data_encryption;
     ack_transport_udp_message->transport_udp_data->event_id = transport_udp_message->transport_udp_data->event_id;
+    // ACK 报文回带收到的 token，供平台校验 ACK 来源合法性
+    rt_memcpy(ack_transport_udp_message->transport_udp_data->token, transport_udp_message->transport_udp_data->token, GATEWAY_AUTH_TOKEN_LENGTH);
     
     ack_transport_udp_message->service_data->business_data = RT_NULL;
     ack_transport_udp_message->service_data->business_data_payload = RT_NULL;

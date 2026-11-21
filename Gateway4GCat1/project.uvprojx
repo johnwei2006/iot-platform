@@ -1089,6 +1089,11 @@
               <FilePath>.\service_udp\service_gateway_heartbeat.c</FilePath>
             </File>
             <File>
+              <FileName>service_gateway_auth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\service_udp\service_gateway_auth.c</FilePath>
+            </File>
+            <File>
               <FileName>service_gateway_time_sync_request.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\service_udp\service_gateway_time_sync_request.c</FilePath>

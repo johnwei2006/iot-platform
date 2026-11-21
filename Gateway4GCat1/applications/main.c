@@ -27,6 +27,7 @@
 #include "../transport_lora/lora_handler.h"
 #include "../transport_udp/business_data_cache.h"
 #include "../transport_udp/transport_udp_handler.h"
+#include "../service_udp/service_gateway_auth.h"
 
 void led_init(void);
 void connect_callback(lte_state_t lte_status);
@@ -76,16 +77,14 @@ void led_init(){
 void connect_callback(lte_state_t lte_status){
     rt_kprintf("[LED] connect_callback called, status: %d\n", lte_status);
     
-    if(lte_status == UDP_STATE_CONNECTED){ 
+    if(lte_status == UDP_STATE_CONNECTED){
         rt_kprintf("[LED] Setting LED to fast blink (300, 300)\n");
-        manager_led_reset_period("blue_lora",  300, 300); 
-        manager_led_reset_period("green_sys",  300, 300); 
-        service_t* service = query_service_by_type(SERVICE_TYPE_TIME_SYNC_REQUEST);
-        if(service != RT_NULL) {
-          rt_kprintf("Info: time sync request service executed\n");
-          service->service_execute(RT_NULL, RT_NULL);   
-        }     
-    } 
+        manager_led_reset_period("blue_lora",  300, 300);
+        manager_led_reset_period("green_sys",  300, 300);
+        // 连接建立：先重置认证状态并申请 token，认证成功后由认证响应服务触发时间同步
+        service_gateway_auth_invalidate();
+        service_gateway_auth_request_execute(RT_NULL, RT_NULL);
+    }
     else{ 
         rt_kprintf("[LED] Setting LED to slow blink (2000, 2000)\n");
         manager_led_reset_period("blue_lora",  2000, 2000); 

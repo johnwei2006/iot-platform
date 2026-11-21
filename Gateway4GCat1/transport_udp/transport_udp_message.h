@@ -40,7 +40,9 @@
 #define SERVICE_TYPE_GATEWAY_UPGRADE                        0x5C    //91 downlink: send & start upgrade task
 #define SERVICE_TYPE_GATEWAY_UPGRADE_STATUS                 0x5D    //92 uplink  : report upgrade status
 #define SERVICE_TYPE_GATEWAY_GNSS                           0x60    //96 uplink  : report GNSS status
-#define SERVICE_TYPE_GATEWAY_REBOOT                         0x65    //99 downlink: send reboot command   
+#define SERVICE_TYPE_GATEWAY_REBOOT                         0x65    //99 downlink: send reboot command
+#define SERVICE_TYPE_GATEWAY_AUTH_REQUEST                   0x69    //105 uplink  : gateway auth request (gateway_id + secret, token all zero), terminated in ProxyTcp
+#define SERVICE_TYPE_GATEWAY_AUTH_RESPONSE                  0x6A    //106 downlink: platform auth response (result + token)
 
 
 #define SERVICE_TYPE_NODE_JOIN_REQUEST                      0xC6    //198 downlink: node join requestresponse
@@ -48,6 +50,7 @@
 #define TRANSPORT_DATA_ENCODING_JSON     1
 #define TRANSPORT_DATA_ENCODING_BINARY   2
 #define TRANSPORT_VERSION_1              1
+#define TRANSPORT_VERSION_2              2   // 定长段扩展为 51 字节并携带 10 字节网关认证 token
 #define SERVICE_VERSION_1                1
 #define SERVICE_DATA_ENCODING_JSON       1
 #define SERVICE_DATA_ENCODING_BINARY     2
@@ -55,13 +58,14 @@
 #define SERVICE_DATA_ENCRYPTION_NONE     0
 #define SERVICE_DATA_ENCRYPTION_AES128   1
 //fix length wittout business data： transport_data_encoding(1) + transport_version(1) + transport_data_length(2)
-#define TRANSPORT_HEADER_FIX_LENGTH      4     
-//fix length wittout business data： gateway_id(11) + node_id(11) + message_create_time(6) + message_id(4) + service_type(1) + service_version(1) + service_data_encoding(1) + service_data_protocol_version(1) + service_data_encryption(1) + event_id(4)
-#define TRANSPORT_DATA_FIX_LENGTH        41     
+#define TRANSPORT_HEADER_FIX_LENGTH      4
+//fix length wittout business data： gateway_id(11) + node_id(11) + message_create_time(6) + message_id(4) + service_type(1) + service_version(1) + service_data_encoding(1) + service_data_protocol_version(1) + service_data_encryption(1) + event_id(4) + auth_token(10)
+#define TRANSPORT_DATA_FIX_LENGTH        51
 #define GATEWAY_ID_LENGTH                11
 #define NODE_ID_LENGTH                   11
 #define CREATE_TIME_LENGTH               6
 #define MESSAGE_ID_LENGTH                4
+#define GATEWAY_AUTH_TOKEN_LENGTH        10
 #define MAX_RESPONSE_MESSAGE_LENGTH      30
 
 #define DEVICE_CONTROL_ITEM_LENGTH       6  //channel(1) + action(1) + value(4)
@@ -94,6 +98,7 @@ typedef struct
     uint8_t     service_data_encoding;
     uint8_t     service_data_protocol_version;
     uint8_t     service_data_encryption;
+    uint8_t     token[GATEWAY_AUTH_TOKEN_LENGTH]; // 网关认证 token（传输版本 2），认证请求报文填全 0
 } transport_udp_data_t;
 
 typedef struct
