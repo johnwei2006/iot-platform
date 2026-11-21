@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -25,13 +27,37 @@ public class DeviceController {
 
     @GetMapping
     public ApiResponse<?> list() {
-        return ApiResponse.success(deviceService.list());
+        List<Device> devices = deviceService.list();
+        devices.forEach(this::maskSecret);
+        return ApiResponse.success(devices);
     }
 
     @GetMapping("/{id}")
     public ApiResponse<?> get(@PathVariable String id) {
         Optional<Device> d = deviceService.get(id);
-        return d.isPresent() ? ApiResponse.success(d.get()) : ApiResponse.fail(ResultCode.NOT_FOUND);
+        if (d.isPresent()) {
+            maskSecret(d.get());
+            return ApiResponse.success(d.get());
+        }
+        return ApiResponse.fail(ResultCode.NOT_FOUND);
+    }
+
+    /** 更新网关认证预共享密钥；body 可为空（自动生成随机密钥）或 {"authSecret":"xxx"} */
+    @PutMapping("/{id}/secret")
+    public ApiResponse<?> updateSecret(@PathVariable String id,
+                                       @RequestBody(required = false) Map<String, String> body) {
+        try {
+            String secret = body == null ? null : body.get("authSecret");
+            return ApiResponse.success(deviceService.updateSecret(id, secret));
+        } catch (RuntimeException e) {
+            return ApiResponse.fail(400, e.getMessage());
+        }
+    }
+
+    private void maskSecret(Device d) {
+        if (d.getAuthSecret() != null && !d.getAuthSecret().isEmpty()) {
+            d.setAuthSecret(DeviceService.SECRET_MASK);
+        }
     }
 
     @PostMapping

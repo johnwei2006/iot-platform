@@ -15,6 +15,8 @@ public class Device {
     private String name;
     /** 标识类型：VIN / TERMINALNO / DEVICEID（见报文协议 §6） */
     private String identifierType;
+    /** 网关认证预共享密钥（gateway_id + secret 认证用，见 docs/protocol-gateway-auth.md） */
+    private String authSecret;
     /** 状态：ONLINE / OFFLINE */
     private String status;
     private Date lastSeen;
@@ -59,6 +61,14 @@ public class Device {
 
     public void setIdentifierType(String identifierType) {
         this.identifierType = identifierType;
+    }
+
+    public String getAuthSecret() {
+        return authSecret;
+    }
+
+    public void setAuthSecret(String authSecret) {
+        this.authSecret = authSecret;
     }
 
     public String getStatus() {
