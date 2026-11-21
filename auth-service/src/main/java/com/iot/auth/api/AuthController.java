@@ -2,6 +2,7 @@ package com.iot.auth.api;
 
 import com.iot.auth.common.ApiResponse;
 import com.iot.auth.common.AppException;
+import com.iot.auth.sso.SsoSessionService;
 import com.iot.auth.token.RefreshCookieService;
 import com.iot.auth.token.TokenClaims;
 import com.iot.auth.token.TokenService;
@@ -26,13 +27,15 @@ public class AuthController {
     private final AuthService authService;
     private final TokenService tokenService;
     private final RefreshCookieService cookieService;
+    private final SsoSessionService ssoSessionService;
 
     @Autowired
     public AuthController(AuthService authService, TokenService tokenService,
-                          RefreshCookieService cookieService) {
+                          RefreshCookieService cookieService, SsoSessionService ssoSessionService) {
         this.authService = authService;
         this.tokenService = tokenService;
         this.cookieService = cookieService;
+        this.ssoSessionService = ssoSessionService;
     }
 
     @PostMapping("/login")
@@ -40,6 +43,10 @@ public class AuthController {
                                                      HttpServletResponse response) {
         AuthDtos.TokenResponse data = authService.login(request);
         cookieService.addRefreshCookie(response, data.getRefreshToken());
+        // 统一登录页场景：登录成功即建立 SSO 中央会话，后续跨客户端换票免密
+        if (data.getUser() != null) {
+            ssoSessionService.createSession(data.getUser().getId(), response);
+        }
         return ApiResponse.success(data);
     }
 

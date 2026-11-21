@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import {
   login as loginApi,
   logout as logoutApi,
+  ssoCentralLogout,
   exchangeSsoTicket as exchangeSsoTicketApi,
 } from '@/api/auth';
 import type { LoginPayload, TokenResponse, UserInfo } from '@/types';
@@ -42,6 +43,10 @@ export const useUserStore = defineStore('user', {
       const access = tokens.access;
       const refresh = tokens.refresh;
       await logoutApi(access, refresh);
+      // 配置了统一登录页时联动单点登出，销毁中央会话并撤销全部令牌
+      if (import.meta.env.VITE_APP_SSO_LOGIN_URL) {
+        await ssoCentralLogout();
+      }
       tokens.clear();
       this.userInfo = null;
     },

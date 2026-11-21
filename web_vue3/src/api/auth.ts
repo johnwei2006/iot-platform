@@ -53,6 +53,17 @@ export function logout(accessToken: string, refreshToken: string): Promise<void>
     .catch(() => undefined);
 }
 
+/**
+ * 单点登出：销毁 SSO 中央会话并递增 tokenVersion 撤销该用户全部令牌。
+ * 已配置统一登录页（VITE_APP_SSO_LOGIN_URL）时登出必须调用，避免中央会话残留。
+ */
+export function ssoCentralLogout(): Promise<void> {
+  return authHttp
+    .post('/api/sso/logout', {})
+    .then(() => undefined)
+    .catch(() => undefined);
+}
+
 /** SSO 回调：用一次性 ticket + clientSecret + redirectUri 换取令牌，ticket 用后即焚。 */
 export function exchangeSsoTicket(ticket: string, redirectUri: string): Promise<TokenResponse> {
   return authHttp

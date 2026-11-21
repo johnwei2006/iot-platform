@@ -37,6 +37,23 @@ public class AuthPropertiesTest {
         assertNull(properties.findServiceSecret("unknown"));
     }
 
+    @Test
+    public void registeredRedirectMatchesAnyClient() {
+        AuthProperties properties = new AuthProperties();
+        AuthProperties.Client web = new AuthProperties.Client();
+        web.setId("web");
+        web.setRedirectUris(Arrays.asList("http://localhost:5173/sso/callback"));
+        AuthProperties.Client mini = new AuthProperties.Client();
+        mini.setId("mini");
+        mini.setRedirectUris(Arrays.asList("mini://sso/callback"));
+        properties.setClients(Arrays.asList(web, mini));
+
+        assertTrue(properties.isRegisteredRedirect("http://localhost:5173/sso/callback"));
+        assertTrue(properties.isRegisteredRedirect("mini://sso/callback"));
+        assertFalse(properties.isRegisteredRedirect("https://evil.example.com"));
+        assertFalse(properties.isRegisteredRedirect(null));
+    }
+
     @Test(expected = IllegalStateException.class)
     public void jwtSecretIsMandatory() {
         new AuthProperties().validate();

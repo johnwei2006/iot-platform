@@ -31,6 +31,8 @@ public class AuthProperties {
     private Wechat wechat = new Wechat();
     /** Refresh Token HttpOnly Cookie */
     private Cookie cookie = new Cookie();
+    /** SSO 中央会话（统一登录页） */
+    private Sso sso = new Sso();
 
     @PostConstruct
     public void validate() {
@@ -129,6 +131,27 @@ public class AuthProperties {
         this.cookie = cookie == null ? new Cookie() : cookie;
     }
 
+    public Sso getSso() {
+        return sso;
+    }
+
+    public void setSso(Sso sso) {
+        this.sso = sso == null ? new Sso() : sso;
+    }
+
+    /** 是否为任一客户端注册过的 redirectUri（用于登出跳转校验）。 */
+    public boolean isRegisteredRedirect(String uri) {
+        if (uri == null) {
+            return false;
+        }
+        for (Client client : clients) {
+            if (client != null && client.allowsRedirect(uri)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Refresh Token Cookie 设置；enabled=false 时不写/不读 Cookie（纯 body 模式）。 */
     public static class Cookie {
         /** 是否启用 HttpOnly Cookie 承载 refresh token */
@@ -155,6 +178,37 @@ public class AuthProperties {
         public void setSecure(boolean secure) { this.secure = secure; }
         public String getSameSite() { return sameSite; }
         public void setSameSite(String sameSite) { this.sameSite = sameSite; }
+    }
+
+    /**
+     * SSO 中央会话：统一登录页登录成功后建立，浏览器后续免密换票。
+     * Cookie 作用域为 auth-service 域内（登录页与 /api/sso/* 同站）。
+     */
+    public static class Sso {
+        /** 是否启用中央会话 */
+        private boolean sessionEnabled = true;
+        /** 中央会话有效期（毫秒），默认 8 小时 */
+        private long sessionTtlMs = 8L * 60 * 60 * 1000;
+        private String sessionCookieName = "auth_sso";
+        /** 可选 Domain；跨域部署时留空 */
+        private String sessionCookieDomain = "";
+        /** 生产 HTTPS 环境必须开启 */
+        private boolean sessionCookieSecure = false;
+        /** 登录页与 API 同站跳转，Lax 足够 */
+        private String sessionCookieSameSite = "Lax";
+
+        public boolean isSessionEnabled() { return sessionEnabled; }
+        public void setSessionEnabled(boolean sessionEnabled) { this.sessionEnabled = sessionEnabled; }
+        public long getSessionTtlMs() { return sessionTtlMs; }
+        public void setSessionTtlMs(long sessionTtlMs) { this.sessionTtlMs = sessionTtlMs; }
+        public String getSessionCookieName() { return sessionCookieName; }
+        public void setSessionCookieName(String sessionCookieName) { this.sessionCookieName = sessionCookieName; }
+        public String getSessionCookieDomain() { return sessionCookieDomain; }
+        public void setSessionCookieDomain(String sessionCookieDomain) { this.sessionCookieDomain = sessionCookieDomain; }
+        public boolean isSessionCookieSecure() { return sessionCookieSecure; }
+        public void setSessionCookieSecure(boolean sessionCookieSecure) { this.sessionCookieSecure = sessionCookieSecure; }
+        public String getSessionCookieSameSite() { return sessionCookieSameSite; }
+        public void setSessionCookieSameSite(String sessionCookieSameSite) { this.sessionCookieSameSite = sessionCookieSameSite; }
     }
 
     public static class Client {

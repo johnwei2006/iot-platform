@@ -36,6 +36,14 @@ auth:
     domain: ${AUTH_COOKIE_DOMAIN:}
     secure: ${AUTH_COOKIE_SECURE:false}
     same-site: ${AUTH_COOKIE_SAMESITE:Strict}
+  # SSO 中央会话（统一登录页 /sso/login）。生产 HTTPS 环境将 AUTH_SSO_SESSION_COOKIE_SECURE 置 true。
+  sso:
+    session-enabled: ${AUTH_SSO_SESSION_ENABLED:true}
+    session-ttl-ms: ${AUTH_SSO_SESSION_TTL_MS:28800000}
+    session-cookie-name: ${AUTH_SSO_SESSION_COOKIE_NAME:auth_sso}
+    session-cookie-domain: ${AUTH_SSO_SESSION_COOKIE_DOMAIN:}
+    session-cookie-secure: ${AUTH_SSO_SESSION_COOKIE_SECURE:false}
+    session-cookie-same-site: ${AUTH_SSO_SESSION_COOKIE_SAMESITE:Lax}
   clients:
     - id: web
       secret: ${AUTH_CLIENT_WEB_SECRET:web-client-secret-change-me}

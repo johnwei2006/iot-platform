@@ -6,11 +6,13 @@ import com.iot.auth.common.ApiResponse;
 import com.iot.auth.common.AppException;
 import com.iot.auth.token.RefreshCookieService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -22,26 +24,64 @@ public class SsoController {
 
     private final SsoService ssoService;
     private final AuthService authService;
+    private final SsoSessionService sessionService;
     private final RefreshCookieService cookieService;
 
     @Autowired
     public SsoController(SsoService ssoService, AuthService authService,
-                         RefreshCookieService cookieService) {
+                         SsoSessionService sessionService, RefreshCookieService cookieService) {
         this.ssoService = ssoService;
         this.authService = authService;
+        this.sessionService = sessionService;
         this.cookieService = cookieService;
     }
 
-    /** 已登录会话下调用：为指定客户端签发 ticket（由统一登录页在身份确认后触发）。 */
+    /**
+     * 为指定客户端签发一次性 ticket。身份来源二选一：
+     * Authorization Bearer access token，或统一登录页建立的中央会话 Cookie。
+     */
     @PostMapping("/ticket")
-    public ApiResponse<TicketResponse> issueTicket(@Valid @RequestBody TicketRequest request) {
-        String userId = authService.verify(request.getAccessToken()).getSubject();
+    public ApiResponse<TicketResponse> issueTicket(@Valid @RequestBody TicketRequest request,
+                                                   HttpServletRequest httpRequest) {
+        String userId = resolveUserId(request.getAccessToken(), httpRequest);
         String ticket = ssoService.issueTicket(request.getClientId(),
                 request.getRedirectUri(), userId);
         TicketResponse response = new TicketResponse();
         response.setTicket(ticket);
         response.setRedirectUri(request.getRedirectUri());
         return ApiResponse.success(response);
+    }
+
+    /** 统一登录页探测中央会话：已登录返回 userId，未登录 authenticated=false。 */
+    @GetMapping("/session")
+    public ApiResponse<SessionResponse> session(HttpServletRequest request) {
+        SessionResponse response = new SessionResponse();
+        String userId = sessionService.resolveUserId(request);
+        response.setAuthenticated(userId != null);
+        response.setUserId(userId);
+        return ApiResponse.success(response);
+    }
+
+    /** 单点登出：销毁中央会话 + 递增 tokenVersion 撤销该用户全部令牌 + 清 refresh Cookie。 */
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        String userId = sessionService.destroySession(request, response);
+        if (userId != null) {
+            authService.revokeAllSessions(userId);
+        }
+        cookieService.clearRefreshCookie(response);
+        return ApiResponse.success(null);
+    }
+
+    private String resolveUserId(String accessToken, HttpServletRequest request) {
+        if (accessToken != null && !accessToken.trim().isEmpty()) {
+            return authService.verify(accessToken).getSubject();
+        }
+        String userId = sessionService.resolveUserId(request);
+        if (userId == null) {
+            throw AppException.unauthorized("no active sso session or access token");
+        }
+        return userId;
     }
 
     /** 客户端用一次性 ticket + clientSecret + redirectUri 换取令牌（轮换 refresh 走 Cookie）。 */
@@ -57,7 +97,8 @@ public class SsoController {
     }
 
     public static class TicketRequest {
-        @NotBlank private String accessToken;
+        /** 可选：带 access token 时优先使用；否则走中央会话 Cookie */
+        private String accessToken;
         @NotBlank private String clientId;
         @NotBlank private String redirectUri;
         public String getAccessToken() { return accessToken; }
@@ -66,6 +107,15 @@ public class SsoController {
         public void setClientId(String clientId) { this.clientId = clientId; }
         public String getRedirectUri() { return redirectUri; }
         public void setRedirectUri(String redirectUri) { this.redirectUri = redirectUri; }
+    }
+
+    public static class SessionResponse {
+        private boolean authenticated;
+        private String userId;
+        public boolean isAuthenticated() { return authenticated; }
+        public void setAuthenticated(boolean authenticated) { this.authenticated = authenticated; }
+        public String getUserId() { return userId; }
+        public void setUserId(String userId) { this.userId = userId; }
     }
 
     public static class ExchangeRequest {

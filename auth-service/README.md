@@ -59,11 +59,26 @@ com.iot.auth
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | /api/auth/login | 账密登录，签发 access + refresh（并写 Cookie） |
+| GET | /sso/login | 统一登录页（auth-service 内置静态页） |
+| GET | /sso/logout | 单点登出（销毁中央会话 + 撤销全部令牌），可带 postLogoutRedirectUri |
+| POST | /api/auth/login | 账密登录，签发 access + refresh（写 refresh Cookie + 中央会话 Cookie） |
 | POST | /api/auth/refresh | 刷新（轮换 refresh）；body 可为空，走 Cookie |
-| POST | /api/auth/logout | 登出：撤销 refresh、拉黑 access、清 Cookie |
+| POST | /api/auth/logout | 登出单个会话：撤销 refresh、拉黑 access、清 Cookie |
 | POST | /api/auth/revoke-all | 全局撤销某用户全部会话（递增 tokenVersion） |
 | POST | /api/auth/verify | 内部验签（签名/过期/黑名单/用户状态/tokenVersion） |
-| POST | /api/sso/ticket | 已登录会话下签发一次性 SSO ticket |
+| GET | /api/sso/session | 统一登录页探测中央会话 |
+| POST | /api/sso/ticket | 签发一次性 ticket（Bearer 或中央会话 Cookie 认证） |
 | POST | /api/sso/token | ticket + clientId + clientSecret + redirectUri 换令牌 |
+| POST | /api/sso/logout | 单点登出（fetch 版，供前端 JS 调用） |
 | POST | /api/auth/wechat/login | 微信小程序 code 换令牌 |
+
+## SSO 登录流程（自建，轻量）
+
+1. 客户端跳转 `GET /sso/login?clientId=web&redirectUri=<注册回跳>&redirect=<深层链接>`；
+2. 登录页探测中央会话（`auth_sso` Cookie，Redis 8h）：
+   - 已登录 → 直接签发 ticket；
+   - 未登录 → 展示账密表单，`POST /api/auth/login` 成功后建立中央会话；
+3. 登录页携 ticket 跳回 `redirectUri?ticket=xxx&redirect=...`；
+4. 客户端回调页 `POST /api/sso/token`（ticket + clientId + clientSecret + redirectUri）换 JWT；
+5. 单点登出：任一端调用 `GET /sso/logout` 或 `POST /api/sso/logout`，
+   销毁中央会话并递增 tokenVersion，所有客户端的已签发令牌立即失效。

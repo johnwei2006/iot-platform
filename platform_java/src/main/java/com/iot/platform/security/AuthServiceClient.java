@@ -70,10 +70,22 @@ public class AuthServiceClient {
 
     /** 透明转发兼容认证请求，保留 auth-service 的 HTTP 状态码与原始响应体。 */
     public ProxyResponse post(String path, String jsonBody) {
+        return post(path, jsonBody, null);
+    }
+
+    /**
+     * 透明转发兼容认证请求，可选透传原始 Authorization 头
+     * （revoke-all 等需要以调用方身份验签的端点）。
+     */
+    public ProxyResponse post(String path, String jsonBody, String authorization) {
+        HttpHeaders headers = jsonHeaders();
+        if (authorization != null && !authorization.trim().isEmpty()) {
+            headers.set(HttpHeaders.AUTHORIZATION, authorization);
+        }
         try {
             ResponseEntity<String> response = restTemplate.exchange(
                     baseUrl + withLeadingSlash(path), HttpMethod.POST,
-                    new HttpEntity<String>(jsonBody, jsonHeaders()), String.class);
+                    new HttpEntity<String>(jsonBody, headers), String.class);
             return new ProxyResponse(response.getStatusCodeValue(), response.getBody());
         } catch (HttpStatusCodeException e) {
             return new ProxyResponse(e.getRawStatusCode(), e.getResponseBodyAsString());

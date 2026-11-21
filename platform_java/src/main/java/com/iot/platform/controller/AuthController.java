@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,6 +36,12 @@ public class AuthController {
         return forward("/api/auth/login", body);
     }
 
+    /** 微信小程序登录：code2session 与令牌签发均由 auth-service 完成。 */
+    @PostMapping(value = "/wechat/login", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> wechatLogin(@RequestBody(required = false) String body) {
+        return forward("/api/auth/wechat/login", body);
+    }
+
     @PostMapping(value = "/refresh", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> refresh(@RequestBody(required = false) String body) {
         return forward("/api/auth/refresh", body);
@@ -43,6 +50,24 @@ public class AuthController {
     @PostMapping(value = "/logout", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> logout(@RequestBody(required = false) String body) {
         return forward("/api/auth/logout", body);
+    }
+
+    /** 全局撤销会话（递增 tokenVersion），需要携带 access token（透传 Authorization）。 */
+    @PostMapping(value = "/revoke-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> revokeAll(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestBody(required = false) String body) {
+        try {
+            AuthServiceClient.ProxyResponse response =
+                    authServiceClient.post("/api/auth/revoke-all", body == null ? "{}" : body, authorization);
+            return ResponseEntity.status(response.getStatus())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response.getBody() == null ? "" : response.getBody());
+        } catch (AuthServiceException e) {
+            return ResponseEntity.status(e.getStatus())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorBody(e.getStatus(), e.getMessage()));
+        }
     }
 
     private ResponseEntity<String> forward(String path, String body) {

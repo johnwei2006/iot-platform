@@ -5,11 +5,20 @@ export interface ApiResponse<T = unknown> {
   data: T;
 }
 
-/** 登录返回结果 */
-export interface LoginResult {
-  token: string;
-  username: string;
-  role: string;
+/**
+ * auth-service 签发的令牌组（登录/微信登录/刷新共用）。
+ * 注意：小程序端 refresh token 仍走响应体（浏览器端才由 HttpOnly Cookie 承载）。
+ */
+export interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresInMs: number;
+  user?: {
+    id: string;
+    username: string;
+    roles: string[];
+  };
 }
 
 export interface UserInfo {
