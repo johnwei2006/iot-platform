@@ -30,6 +30,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/auth-api/, ''),
       },
+      // 网关认证记录接口代理到 ProxyTcp（端口 8010）；rewrite 去掉 /proxy-api 前缀
+      '/proxy-api': {
+        target: 'http://localhost:8010',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy-api/, ''),
+      },
     },
   },
   build: {

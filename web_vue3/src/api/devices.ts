@@ -25,3 +25,8 @@ export function deleteDevice(id: string): Promise<ApiResponse<null>> {
 export function sendDownlink(id: string, data: DownlinkPayload): Promise<ApiResponse<null>> {
   return request<null>({ url: `/api/devices/${id}/downlink`, method: 'POST', data });
 }
+
+/** 更新网关认证预共享密钥；secret 为空时由后台自动生成随机密钥（返回掩码） */
+export function updateDeviceSecret(id: string, secret?: string): Promise<ApiResponse<Device>> {
+  return request<Device>({ url: `/api/devices/${id}/secret`, method: 'PUT', data: { authSecret: secret ?? '' } });
+}

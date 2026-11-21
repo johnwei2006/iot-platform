@@ -2,7 +2,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { listDevices, createDevice, updateDevice, deleteDevice, sendDownlink } from '@/api/devices';
+import { listDevices, createDevice, updateDevice, deleteDevice, sendDownlink, updateDeviceSecret } from '@/api/devices';
 import type { Device, DownlinkPayload } from '@/types';
 
 const router = useRouter();
@@ -17,6 +17,7 @@ const form = reactive<Partial<Device>>({
   nodeId: '',
   identifierType: 'DEVICEID',
   status: 'OFFLINE',
+  authSecret: '',
 });
 
 const downlinkVisible = ref(false);
@@ -48,6 +49,7 @@ function openCreate() {
     nodeId: '',
     identifierType: 'DEVICEID',
     status: 'OFFLINE',
+    authSecret: '',
   });
   dialogVisible.value = true;
 }
@@ -63,6 +65,10 @@ async function submit() {
     ElMessage.warning('请填写 deviceId');
     return;
   }
+  if (form.authSecret && (form.authSecret.length < 8 || form.authSecret.length > 64)) {
+    ElMessage.warning('预共享密钥长度需在 8~64 位之间');
+    return;
+  }
   if (editing.value?.id) {
     await updateDevice(editing.value.id, form);
     ElMessage.success('已更新');
@@ -71,6 +77,29 @@ async function submit() {
     ElMessage.success('已创建');
   }
   dialogVisible.value = false;
+  load();
+}
+
+/** 重置网关认证密钥：可输入新密钥或留空由后台自动生成 */
+async function resetSecret(row: Device) {
+  if (!row.id) return;
+  let newSecret = '';
+  try {
+    const { value } = await ElMessageBox.prompt(
+      `为设备 ${row.deviceId} 设置新的预共享密钥；留空则由后台自动生成（8~64 位）`,
+      '重置密钥',
+      { inputPlaceholder: '留空自动生成', inputPattern: /^.{0,64}$/, type: 'warning' },
+    );
+    newSecret = (value ?? '').trim();
+    if (newSecret && (newSecret.length < 8 || newSecret.length > 64)) {
+      ElMessage.warning('预共享密钥长度需在 8~64 位之间');
+      return;
+    }
+  } catch {
+    return;
+  }
+  await updateDeviceSecret(row.id, newSecret || undefined);
+  ElMessage.success('密钥已更新，网关下次认证需使用新密钥');
   load();
 }
 
@@ -112,11 +141,12 @@ onMounted(load);
         </template>
       </el-table-column>
       <el-table-column label="最后在线" prop="lastSeen" />
-      <el-table-column label="操作" width="240">
+      <el-table-column label="操作" width="300">
         <template #default="{ row }">
           <el-button size="small" @click="router.push(`/devices/${row.id}`)">详情</el-button>
           <el-button size="small" type="warning" @click="openDownlink(row)">下发</el-button>
           <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
+          <el-button size="small" type="success" @click="resetSecret(row)">重置密钥</el-button>
           <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
         </template>
       </el-table-column>
@@ -139,6 +169,14 @@ onMounted(load);
             <el-option label="VIN" value="VIN" />
             <el-option label="TERMINALNO" value="TERMINALNO" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="预共享密钥">
+          <el-input
+            v-model="form.authSecret"
+            type="password"
+            show-password
+            placeholder="网关认证用，8~64 位；留空则不设置"
+          />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="form.status" style="width: 100%">

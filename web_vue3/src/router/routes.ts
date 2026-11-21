@@ -40,6 +40,12 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '告警看板', requiresAuth: true, roles: ['admin', 'user'] },
       },
       {
+        path: 'gateway-records',
+        name: 'GatewayRecords',
+        component: () => import('@/views/gateway/records.vue'),
+        meta: { title: '网关认证记录', requiresAuth: true, roles: ['admin', 'user'] },
+      },
+      {
         path: 'data',
         name: 'Data',
         component: () => import('@/views/data/index.vue'),

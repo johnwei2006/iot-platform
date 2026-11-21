@@ -38,10 +38,42 @@ export interface Device {
   nodeId?: string;
   name?: string;
   identifierType?: string;
+  /** 网关认证预共享密钥（查询返回为掩码 ******，仅录入/更新时传明文） */
+  authSecret?: string;
   status?: string;
   lastSeen?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** 网关连接/重连记录（ProxyTcp 落库） */
+export interface GatewayReconnectRecord {
+  deviceId: string;
+  ip: string;
+  port: number;
+  connectTime: string;
+  /** FIRST: 首次联网; RECONNECT: 重连 */
+  type: string;
+}
+
+/** 网关 token 申请记录（ProxyTcp 落库） */
+export interface GatewayTokenRequestRecord {
+  deviceId: string;
+  ip: string;
+  port: number;
+  requestTime: string;
+  /** SUCCESS / UNKNOWN_DEVICE / INVALID_SECRET / ERROR */
+  result: string;
+  /** 认证成功时的 token（hex），失败为 null */
+  tokenHex: string | null;
+}
+
+/** ProxyTcp 记录分页响应（裸 JSON，无 ApiResponse 包装） */
+export interface GatewayRecordPage<T> {
+  total: number;
+  page: number;
+  size: number;
+  records: T[];
 }
 
 /** 上行数据记录 */

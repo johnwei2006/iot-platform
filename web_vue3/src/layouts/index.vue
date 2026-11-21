@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/modules/user';
-import { Fold, User, SwitchButton } from '@element-plus/icons-vue';
+import { Fold, User, SwitchButton, Key } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -39,6 +39,10 @@ const handleLogout = async () => {
         <el-menu-item index="/alarms">
           <el-icon><Warning /></el-icon>
           <span>告警看板</span>
+        </el-menu-item>
+        <el-menu-item index="/gateway-records">
+          <el-icon><Key /></el-icon>
+          <span>网关认证记录</span>
         </el-menu-item>
         <el-menu-item index="/data">
           <el-icon><DataLine /></el-icon>
