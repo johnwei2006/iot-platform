@@ -29,6 +29,8 @@ public class AuthProperties {
     private List<ServiceKey> serviceKeys = new ArrayList<ServiceKey>();
     /** 微信小程序凭证 */
     private Wechat wechat = new Wechat();
+    /** Refresh Token HttpOnly Cookie */
+    private Cookie cookie = new Cookie();
 
     @PostConstruct
     public void validate() {
@@ -117,6 +119,42 @@ public class AuthProperties {
 
     public void setWechat(Wechat wechat) {
         this.wechat = wechat == null ? new Wechat() : wechat;
+    }
+
+    public Cookie getCookie() {
+        return cookie;
+    }
+
+    public void setCookie(Cookie cookie) {
+        this.cookie = cookie == null ? new Cookie() : cookie;
+    }
+
+    /** Refresh Token Cookie 设置；enabled=false 时不写/不读 Cookie（纯 body 模式）。 */
+    public static class Cookie {
+        /** 是否启用 HttpOnly Cookie 承载 refresh token */
+        private boolean enabled = true;
+        private String name = "auth_refresh";
+        /** 生效路径：只需覆盖签发/刷新/登出端点 */
+        private String path = "/api/auth";
+        /** 可选 Domain；跨域部署时留空 */
+        private String domain = "";
+        /** 生产 HTTPS 环境必须开启 */
+        private boolean secure = false;
+        /** SameSite 属性：Strict / Lax / None */
+        private String sameSite = "Strict";
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getPath() { return path; }
+        public void setPath(String path) { this.path = path; }
+        public String getDomain() { return domain; }
+        public void setDomain(String domain) { this.domain = domain; }
+        public boolean isSecure() { return secure; }
+        public void setSecure(boolean secure) { this.secure = secure; }
+        public String getSameSite() { return sameSite; }
+        public void setSameSite(String sameSite) { this.sameSite = sameSite; }
     }
 
     public static class Client {

@@ -1,8 +1,8 @@
 package com.iot.auth.wechat;
 
 import com.iot.auth.api.AuthDtos;
+import com.iot.auth.api.AuthService;
 import com.iot.auth.common.ApiResponse;
-import com.iot.auth.token.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,12 +19,12 @@ import javax.validation.constraints.NotBlank;
 public class WechatController {
 
     private final WechatService wechatService;
-    private final TokenService tokenService;
+    private final AuthService authService;
 
     @Autowired
-    public WechatController(WechatService wechatService, TokenService tokenService) {
+    public WechatController(WechatService wechatService, AuthService authService) {
         this.wechatService = wechatService;
-        this.tokenService = tokenService;
+        this.authService = authService;
     }
 
     /** 小程序 wx.login 拿到的 code 换本平台令牌。 */
@@ -42,7 +42,7 @@ public class WechatController {
             @Valid @RequestBody BindPhoneRequest request) {
         String token = authorization == null || !authorization.startsWith("Bearer ")
                 ? null : authorization.substring("Bearer ".length()).trim();
-        String userId = tokenService.verifyAccessToken(token).getSubject();
+        String userId = authService.verify(token).getSubject();
         wechatService.bindPhone(userId, request.getCode());
         return ApiResponse.success(null);
     }

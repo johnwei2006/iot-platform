@@ -25,6 +25,8 @@ authHttp.interceptors.response.use(
 );
 
 const CLIENT_ID = 'web';
+/** SSO 兑票客户端密钥；与 auth-service 的 AUTH_CLIENT_WEB_SECRET 保持一致（公开客户端，仅作绑定校验）。 */
+const CLIENT_SECRET = import.meta.env.VITE_APP_AUTH_CLIENT_SECRET || '';
 
 /** 账号密码登录（BCrypt 校验在 auth-service 完成）。 */
 export function login(payload: LoginPayload): Promise<TokenResponse> {
@@ -33,14 +35,17 @@ export function login(payload: LoginPayload): Promise<TokenResponse> {
     .then((r) => r.data.data);
 }
 
-/** 用 refresh token 换取新的 access token；refresh token 本身保持不变。 */
+/**
+ * 用 refresh token 换取新 access token（服务端轮换 refresh）。
+ * 参数可为空串：浏览器端 refresh 由 HttpOnly Cookie 自动携带。
+ */
 export function refresh(refreshToken: string): Promise<TokenResponse> {
   return authHttp
-    .post<ApiResponse<TokenResponse>>('/api/auth/refresh', { refreshToken })
+    .post<ApiResponse<TokenResponse>>('/api/auth/refresh', { refreshToken: refreshToken || '' })
     .then((r) => r.data.data);
 }
 
-/** 登出：把两个令牌加入黑名单/撤销 refresh。失败不阻断本地清理。 */
+/** 登出：服务端撤销 refresh（Cookie 亦会清除）并拉黑 access。失败不阻断本地清理。 */
 export function logout(accessToken: string, refreshToken: string): Promise<void> {
   return authHttp
     .post('/api/auth/logout', { accessToken, refreshToken })
@@ -48,10 +53,15 @@ export function logout(accessToken: string, refreshToken: string): Promise<void>
     .catch(() => undefined);
 }
 
-/** SSO 回调：用一次性 ticket 换取令牌。ticket 用后即焚，失败需重新登录。 */
-export function exchangeSsoTicket(ticket: string): Promise<TokenResponse> {
+/** SSO 回调：用一次性 ticket + clientSecret + redirectUri 换取令牌，ticket 用后即焚。 */
+export function exchangeSsoTicket(ticket: string, redirectUri: string): Promise<TokenResponse> {
   return authHttp
-    .post<ApiResponse<TokenResponse>>('/api/sso/token', { ticket, clientId: CLIENT_ID })
+    .post<ApiResponse<TokenResponse>>('/api/sso/token', {
+      ticket,
+      clientId: CLIENT_ID,
+      clientSecret: CLIENT_SECRET,
+      redirectUri,
+    })
     .then((r) => r.data.data);
 }
 

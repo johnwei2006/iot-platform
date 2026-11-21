@@ -25,8 +25,8 @@ export const useUserStore = defineStore('user', {
     async login(payload: LoginPayload): Promise<void> {
       this.applyTokens(await loginApi(payload));
     },
-    async exchangeSsoTicket(ticket: string): Promise<void> {
-      this.applyTokens(await exchangeSsoTicketApi(ticket));
+    async exchangeSsoTicket(ticket: string, redirectUri: string): Promise<void> {
+      this.applyTokens(await exchangeSsoTicketApi(ticket, redirectUri));
     },
     applyTokens(data: TokenResponse): void {
       tokens.set(data.accessToken, data.refreshToken);

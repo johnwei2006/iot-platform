@@ -4,12 +4,14 @@ import com.iot.auth.api.AuthDtos;
 import com.iot.auth.api.AuthService;
 import com.iot.auth.common.ApiResponse;
 import com.iot.auth.common.AppException;
+import com.iot.auth.token.RefreshCookieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
@@ -20,11 +22,14 @@ public class SsoController {
 
     private final SsoService ssoService;
     private final AuthService authService;
+    private final RefreshCookieService cookieService;
 
     @Autowired
-    public SsoController(SsoService ssoService, AuthService authService) {
+    public SsoController(SsoService ssoService, AuthService authService,
+                         RefreshCookieService cookieService) {
         this.ssoService = ssoService;
         this.authService = authService;
+        this.cookieService = cookieService;
     }
 
     /** 已登录会话下调用：为指定客户端签发 ticket（由统一登录页在身份确认后触发）。 */
@@ -39,12 +44,16 @@ public class SsoController {
         return ApiResponse.success(response);
     }
 
-    /** 客户端用一次性 ticket 换取令牌。 */
+    /** 客户端用一次性 ticket + clientSecret + redirectUri 换取令牌（轮换 refresh 走 Cookie）。 */
     @PostMapping("/token")
-    public ApiResponse<AuthDtos.TokenResponse> exchange(@Valid @RequestBody ExchangeRequest request) {
-        String userId = ssoService.consumeTicket(request.getTicket(), request.getClientId());
-        return ApiResponse.success(authService.issueTokensById(userId, request.getClientId(),
-                request.getDeviceId()));
+    public ApiResponse<AuthDtos.TokenResponse> exchange(@Valid @RequestBody ExchangeRequest request,
+                                                        HttpServletResponse response) {
+        String userId = ssoService.consumeTicket(request.getTicket(), request.getClientId(),
+                request.getClientSecret(), request.getRedirectUri());
+        AuthDtos.TokenResponse data = authService.issueTokensById(userId, request.getClientId(),
+                request.getDeviceId());
+        cookieService.addRefreshCookie(response, data.getRefreshToken());
+        return ApiResponse.success(data);
     }
 
     public static class TicketRequest {
@@ -62,11 +71,19 @@ public class SsoController {
     public static class ExchangeRequest {
         @NotBlank private String ticket;
         @NotBlank private String clientId;
+        /** 客户端已配置密钥时必填（常量时间比对） */
+        private String clientSecret;
+        /** 必须与签票时绑定的 redirectUri 完全一致 */
+        @NotBlank private String redirectUri;
         private String deviceId;
         public String getTicket() { return ticket; }
         public void setTicket(String ticket) { this.ticket = ticket; }
         public String getClientId() { return clientId; }
         public void setClientId(String clientId) { this.clientId = clientId; }
+        public String getClientSecret() { return clientSecret; }
+        public void setClientSecret(String clientSecret) { this.clientSecret = clientSecret; }
+        public String getRedirectUri() { return redirectUri; }
+        public void setRedirectUri(String redirectUri) { this.redirectUri = redirectUri; }
         public String getDeviceId() { return deviceId; }
         public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
     }

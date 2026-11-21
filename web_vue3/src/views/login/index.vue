@@ -18,6 +18,9 @@ const handleSsoLogin = () => {
   const url = new URL(ssoLoginUrl, window.location.origin);
   url.searchParams.set('clientId', 'web');
   url.searchParams.set('redirectUri', redirectUri);
+  // 透传原始深层链接，登录完成后回调页可跳回
+  const redirect = (route.query.redirect as string) || '';
+  if (redirect) url.searchParams.set('redirect', redirect);
   window.location.assign(url.toString());
 };
 

@@ -106,16 +106,31 @@ public class TokenService {
         }
     }
 
-    /** 读取并解析 refresh token 的 Redis 记录；用户版本与角色由 AuthService 校验/加载。 */
-    public RefreshData readRefresh(String refreshToken) {
+    /**
+     * 消费（轮换）refresh token：读取记录后立即删除旧键并写入墓碑，返回解析结果。
+     *
+     * <p>已轮换的 token 再次提交时命中墓碑，判定为重用（token 泄露特征），
+     * 抛出 {@link RefreshReuseException}，由调用方撤销该用户全部会话。
+     */
+    public RefreshData rotateRefresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw AppException.unauthorized("missing refresh token");
+        }
         String value = redis.opsForValue().get(refreshKey(refreshToken));
         if (value == null) {
+            String reused = redis.opsForValue().get(usedRefreshKey(refreshToken));
+            if (reused != null) {
+                throw new RefreshReuseException(reused);
+            }
             throw AppException.unauthorized("invalid or expired refresh token");
         }
         String[] parts = value.split("\\|", -1);
         if (parts.length != 4) {
             throw AppException.unauthorized("malformed refresh token");
         }
+        redis.delete(refreshKey(refreshToken));
+        redis.opsForValue().set(usedRefreshKey(refreshToken), parts[0],
+                properties.getRefreshTtlMs(), TimeUnit.MILLISECONDS);
         return new RefreshData(parts[0], parts[1], parts[2], Long.parseLong(parts[3]));
     }
 
@@ -151,8 +166,25 @@ public class TokenService {
         return properties.getRedisPrefix() + "refresh:" + refreshToken;
     }
 
+    private String usedRefreshKey(String refreshToken) {
+        return properties.getRedisPrefix() + "refresh-used:" + refreshToken;
+    }
+
     private String blacklistKey(String jti) {
         return properties.getRedisPrefix() + "blacklist:" + jti;
+    }
+
+    /** refresh token 重用（已轮换的 token 再次提交）异常，携带用户 id 供全局撤销。 */
+    public static class RefreshReuseException extends RuntimeException {
+
+        private final String userId;
+
+        public RefreshReuseException(String userId) {
+            super("refresh token reuse detected");
+            this.userId = userId;
+        }
+
+        public String getUserId() { return userId; }
     }
 
     /** refresh token 在 Redis 中的解析结果。 */

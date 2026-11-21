@@ -27,6 +27,15 @@ auth:
   refresh-ttl-ms: ${AUTH_REFRESH_TTL_MS:604800000}
   ticket-ttl-ms: ${AUTH_TICKET_TTL_MS:300000}
   redis-prefix: ${AUTH_REDIS_PREFIX:auth:}
+  # Refresh Token HttpOnly Cookie。生产 HTTPS 环境将 AUTH_COOKIE_SECURE 置为 true；
+  # 跨域无法携带 Cookie 时可整体关闭（AUTH_COOKIE_ENABLED=false），退回 body 模式。
+  cookie:
+    enabled: ${AUTH_COOKIE_ENABLED:true}
+    name: ${AUTH_COOKIE_NAME:auth_refresh}
+    path: ${AUTH_COOKIE_PATH:/api/auth}
+    domain: ${AUTH_COOKIE_DOMAIN:}
+    secure: ${AUTH_COOKIE_SECURE:false}
+    same-site: ${AUTH_COOKIE_SAMESITE:Strict}
   clients:
     - id: web
       secret: ${AUTH_CLIENT_WEB_SECRET:web-client-secret-change-me}

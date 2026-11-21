@@ -46,8 +46,8 @@ public final class AuthDtos {
         public void setUser(UserInfo user) { this.user = user; }
     }
 
+    /** refresh 请求体可为空：浏览器端 refresh token 由 HttpOnly Cookie 携带。 */
     public static class RefreshRequest {
-        @NotBlank
         private String refreshToken;
 
         public String getRefreshToken() { return refreshToken; }

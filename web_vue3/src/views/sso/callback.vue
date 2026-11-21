@@ -22,7 +22,8 @@ onMounted(async () => {
     return;
   }
   try {
-    await userStore.exchangeSsoTicket(ticket);
+    const redirectUri = `${window.location.origin}${import.meta.env.BASE_URL}sso/callback`;
+    await userStore.exchangeSsoTicket(ticket, redirectUri);
     status.value = 'success';
     message.value = '单点登录成功，正在跳转...';
     ElMessage.success('单点登录成功');

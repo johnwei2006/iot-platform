@@ -54,6 +54,16 @@ public class AuthPropertiesTest {
         }
     }
 
+    @Test
+    public void cookieDefaultsAreSecure() {
+        AuthProperties.Cookie cookie = new AuthProperties().getCookie();
+        assertTrue(cookie.isEnabled());
+        assertTrue(cookie.isSecure() == false); // 开发环境默认非 HTTPS；生产必须 AUTH_COOKIE_SECURE=true
+        assertEquals("Strict", cookie.getSameSite());
+        assertEquals("/api/auth", cookie.getPath());
+        assertTrue(cookie.getDomain() == null || cookie.getDomain().isEmpty());
+    }
+
     private void assertNotNull(Object value) {
         org.junit.Assert.assertNotNull(value);
     }

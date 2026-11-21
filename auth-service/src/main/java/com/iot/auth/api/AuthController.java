@@ -1,6 +1,8 @@
 package com.iot.auth.api;
 
 import com.iot.auth.common.ApiResponse;
+import com.iot.auth.common.AppException;
+import com.iot.auth.token.RefreshCookieService;
 import com.iot.auth.token.TokenClaims;
 import com.iot.auth.token.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +13,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 
 /** 认证 REST API。登录/刷新/登出/校验是 SSO、微信、内部服务调用的公共基础。 */
 @RestController
@@ -20,29 +25,78 @@ public class AuthController {
 
     private final AuthService authService;
     private final TokenService tokenService;
+    private final RefreshCookieService cookieService;
 
     @Autowired
-    public AuthController(AuthService authService, TokenService tokenService) {
+    public AuthController(AuthService authService, TokenService tokenService,
+                          RefreshCookieService cookieService) {
         this.authService = authService;
         this.tokenService = tokenService;
+        this.cookieService = cookieService;
     }
 
     @PostMapping("/login")
-    public ApiResponse<AuthDtos.TokenResponse> login(@Valid @RequestBody AuthDtos.LoginRequest request) {
-        return ApiResponse.success(authService.login(request));
+    public ApiResponse<AuthDtos.TokenResponse> login(@Valid @RequestBody AuthDtos.LoginRequest request,
+                                                     HttpServletResponse response) {
+        AuthDtos.TokenResponse data = authService.login(request);
+        cookieService.addRefreshCookie(response, data.getRefreshToken());
+        return ApiResponse.success(data);
     }
 
+    /** 刷新：body 可为空，浏览器端从 HttpOnly Cookie 取 refresh token（轮换后重写 Cookie）。 */
     @PostMapping("/refresh")
-    public ApiResponse<AuthDtos.TokenResponse> refresh(@Valid @RequestBody AuthDtos.RefreshRequest request) {
-        return ApiResponse.success(authService.refresh(request));
+    public ApiResponse<AuthDtos.TokenResponse> refresh(
+            @RequestBody(required = false) AuthDtos.RefreshRequest request,
+            HttpServletRequest httpRequest, HttpServletResponse response) {
+        String cookieRefresh = cookieService.extractRefreshCookie(httpRequest);
+        AuthDtos.TokenResponse data = authService.refresh(request, cookieRefresh);
+        cookieService.addRefreshCookie(response, data.getRefreshToken());
+        return ApiResponse.success(data);
     }
 
+    /** 登出：撤销 body/Cookie 中的 refresh、拉黑 access，并清除 Cookie。 */
     @PostMapping("/logout")
-    public ApiResponse<Void> logout(@RequestBody(required = false) AuthDtos.LogoutRequest request) {
-        if (request != null) {
+    public ApiResponse<Void> logout(@RequestBody(required = false) AuthDtos.LogoutRequest request,
+                                    HttpServletRequest httpRequest, HttpServletResponse response) {
+        if (request == null) {
+            request = new AuthDtos.LogoutRequest();
+        }
+        if (request.getRefreshToken() == null || request.getRefreshToken().trim().isEmpty()) {
+            request.setRefreshToken(cookieService.extractRefreshCookie(httpRequest));
+        }
+        if (request.getRefreshToken() != null || request.getAccessToken() != null) {
             authService.logout(request);
         }
+        cookieService.clearRefreshCookie(response);
         return ApiResponse.success(null);
+    }
+
+    /**
+     * 撤销某用户全部会话（递增 tokenVersion）：改密/禁用/管理员踢人时调用。
+     * 默认撤销当前 token 所属用户；带 userId 时需要 ADMIN 角色。
+     */
+    @PostMapping("/revoke-all")
+    public ApiResponse<Void> revokeAll(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestBody(required = false) RevokeAllRequest request) {
+        TokenClaims claims = tokenService.verifyAccessToken(extractBearer(authorization));
+        String target = claims.getSubject();
+        if (request != null && request.getUserId() != null && !request.getUserId().trim().isEmpty()
+                && !request.getUserId().equals(target)) {
+            if (!claims.getRoles().contains("ADMIN")) {
+                throw AppException.forbidden("admin role required");
+            }
+            target = request.getUserId();
+        }
+        authService.revokeAllSessions(target);
+        return ApiResponse.success(null);
+    }
+
+    public static class RevokeAllRequest {
+        @NotBlank
+        private String userId;
+        public String getUserId() { return userId; }
+        public void setUserId(String userId) { this.userId = userId; }
     }
 
     /** 供内部服务或网关调用：校验 access token 并返回身份声明。 */

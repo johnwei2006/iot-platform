@@ -89,22 +89,50 @@ public class TokenServiceTest {
     }
 
     @Test
-    public void readRefreshParsesStoredValue() {
+    public void rotationConsumesTokenAndWritesTombstone() {
         when(valueOperations.get("auth:refresh:abc")).thenReturn("u2|mini|device-2|7");
 
-        TokenService.RefreshData data = tokenService.readRefresh("abc");
+        TokenService.RefreshData data = tokenService.rotateRefresh("abc");
 
         assertEquals("u2", data.getUserId());
         assertEquals("mini", data.getClientId());
         assertEquals("device-2", data.getDeviceId());
         assertEquals(7L, data.getVersion());
+        verify(redis).delete("auth:refresh:abc");
+        verify(valueOperations).set(eq("auth:refresh-used:abc"), eq("u2"),
+                anyLong(), eq(TimeUnit.MILLISECONDS));
     }
 
     @Test
     public void missingRefreshIsRejected() {
+        when(valueOperations.get("auth:refresh:missing")).thenReturn(null);
+        when(valueOperations.get("auth:refresh-used:missing")).thenReturn(null);
         try {
-            tokenService.readRefresh("missing");
+            tokenService.rotateRefresh("missing");
             fail("missing refresh should be rejected");
+        } catch (AppException e) {
+            assertEquals(401, e.getResultCode().getCode());
+        }
+    }
+
+    @Test
+    public void reusedRefreshIsDetectedViaTombstone() {
+        when(valueOperations.get("auth:refresh:r1")).thenReturn(null);
+        when(valueOperations.get("auth:refresh-used:r1")).thenReturn("u9");
+
+        try {
+            tokenService.rotateRefresh("r1");
+            fail("rotated refresh reuse should be detected");
+        } catch (TokenService.RefreshReuseException e) {
+            assertEquals("u9", e.getUserId());
+        }
+    }
+
+    @Test
+    public void missingRefreshArgumentIsRejected() {
+        try {
+            tokenService.rotateRefresh(" ");
+            fail("blank refresh should be rejected");
         } catch (AppException e) {
             assertEquals(401, e.getResultCode().getCode());
         }
