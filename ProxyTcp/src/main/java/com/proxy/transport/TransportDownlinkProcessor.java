@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.mongodb.internal.HexUtils;
 import com.proxy.Constants;
+import com.proxy.auth.GatewayAuthService;
 import com.proxy.Constants.Status;
 import com.proxy.codec.MessageCodeHandler;
 import com.proxy.handler.DownlinkProcessor;
@@ -42,6 +43,9 @@ public class TransportDownlinkProcessor extends DownlinkProcessor {
 	@Autowired
 	private MessageCodeHandler messageCodeHandler;
 
+	@Autowired
+	private GatewayAuthService gatewayAuthService;
+
 	public ServiceResponse process(DownlinkTransportMessage downlinkMessage) {
 		ServiceResponse serviceResponse = new ServiceResponse();
 		serviceResponse.setDeviceId(downlinkMessage.getDeviceId());
@@ -73,6 +77,11 @@ public class TransportDownlinkProcessor extends DownlinkProcessor {
 		Message message = new Message();
 		byte[] completeMessage = null;
 		try {
+			// 填充下行 token：认证响应已显式携带新签发 token；其余报文取当前有效 token，
+			// 未认证设备填全 0（由网关侧校验拒绝）
+			if (downlinkMessage.getToken() == null) {
+				downlinkMessage.setToken(gatewayAuthService.getTokenForDownlink(downlinkMessage.getDeviceId()));
+			}
 			completeMessage = this.createCompleteMessage(downlinkMessage, deviceStatus);
 	
 			// 本网关为 TCP（Netty 按连接下发），连接类型由连接层决定，无需设置 UDP

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import com.proxy.auth.GatewayAuthService;
 import com.proxy.model.Message;
 
 import io.netty.buffer.ByteBuf;
@@ -35,6 +36,9 @@ public class UplinkChannelHandler extends ChannelInboundHandlerAdapter {
     private final ChannelRegistry channelRegistry;
 
     @Autowired
+    private GatewayAuthService gatewayAuthService;
+
+    @Autowired
     public UplinkChannelHandler(ChannelRegistry channelRegistry) {
         this.channelRegistry = channelRegistry;
     }
@@ -50,6 +54,13 @@ public class UplinkChannelHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) {
         String key = addressKey(ctx);
         channelRegistry.unregisterAddress(key);
+        // 连接断开：清除该网关认证会话并作废 token（重连后必须重新认证）
+        InetSocketAddress remote = (InetSocketAddress) ctx.channel().remoteAddress();
+        try {
+            gatewayAuthService.onChannelClosed(remote.getAddress().getHostAddress(), remote.getPort());
+        } catch (Exception e) {
+            logger.warn("Failed to close gateway auth session for " + key + ": " + e.getMessage());
+        }
         logger.info("Netty channel inactive: " + key);
     }
 

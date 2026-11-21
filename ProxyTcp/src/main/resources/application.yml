@@ -24,6 +24,8 @@ spring:
 # ===== 业务/网络参数（原 proxy.properties） =====
 bindaddress: 0.0.0.0
 tcpport: 50001
+# 平台库（iot_platform）连接：网关认证读取已入库网关的预共享密钥
+platformMongoUri: mongodb://127.0.0.1:27017/iot_platform
 serviceproxy: http://127.0.0.1:8020/uplinkService
 sendfailureproxy: http://127.0.0.1:8020/sendfailureproxy
 maxResendTimes: 3
