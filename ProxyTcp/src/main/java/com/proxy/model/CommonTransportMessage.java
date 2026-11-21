@@ -4,8 +4,11 @@ import java.util.Date;
 
 
 public class CommonTransportMessage implements TransportMessage{
-	//deviceId(11) + nodeId(11) + messageCreation_time(6) + messageId(4) + serviceType(1) + serviceVersion(1) + serviceDataEncoding(1) + serviceDataProtocolVersion(1) + serviceDataEncryption(1) + eventId(4) 
-	public static short TRANSPORT_PART_FIX_LENGTH 		= 41;
+	//deviceId(11) + nodeId(11) + messageCreation_time(6) + messageId(4) + serviceType(1) + serviceVersion(1) + serviceDataEncoding(1) + serviceDataProtocolVersion(1) + serviceDataEncryption(1) + eventId(4) + token(10)
+	public static short TRANSPORT_PART_FIX_LENGTH 		= 51;
+
+	// 网关认证 token 长度（10 字节二进制随机数），位于传输层定长段末尾（偏移 41..50）
+	public static final int TOKEN_LENGTH 				= 10;
 
 	private MessageHeader 	header;
 	private String 			deviceId;
@@ -18,6 +21,7 @@ public class CommonTransportMessage implements TransportMessage{
 	private int 			serviceDataProtocolVersion;
 	private int 			serviceDataEncryption;
 	private int 			eventId;
+	private byte[] 			token;
 	private byte[] 			serviceData;
 	private int 			packageSize;
 	private int 			serviceDataSize;
@@ -81,6 +85,12 @@ public class CommonTransportMessage implements TransportMessage{
 	}
 	public void setEventId(int eventId) {
 		this.eventId = eventId;
+	}
+	public byte[] getToken() {
+		return token;
+	}
+	public void setToken(byte[] token) {
+		this.token = token;
 	}
 	public int getPackageSize() {
 		return packageSize;
