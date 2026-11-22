@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -72,7 +73,8 @@ public class AuthServiceTest {
         TokenService.RefreshData data = new TokenService.RefreshData("u1", "web", "d1", 2L);
         when(tokenService.rotateRefresh("old")).thenReturn(data);
         when(userRepository.findById("u1")).thenReturn(Optional.of(user("u1", 2L)));
-        when(tokenService.issueAccessFromRefresh(eq(data), anyList())).thenReturn("new-access");
+        when(tokenService.issueAccessFromRefresh(eq(data), anyList(), any(), any()))
+                .thenReturn("new-access");
         when(tokenService.issueRefreshToken("u1", "web", "d1", 2L)).thenReturn("new-refresh");
 
         AuthDtos.RefreshRequest request = new AuthDtos.RefreshRequest();
@@ -88,7 +90,8 @@ public class AuthServiceTest {
         TokenService.RefreshData data = new TokenService.RefreshData("u1", "web", "d1", 2L);
         when(tokenService.rotateRefresh("cookie-token")).thenReturn(data);
         when(userRepository.findById("u1")).thenReturn(Optional.of(user("u1", 2L)));
-        when(tokenService.issueAccessFromRefresh(eq(data), anyList())).thenReturn("new-access");
+        when(tokenService.issueAccessFromRefresh(eq(data), anyList(), any(), any()))
+                .thenReturn("new-access");
         when(tokenService.issueRefreshToken(anyString(), anyString(), anyString(), anyLong()))
                 .thenReturn("new-refresh");
 

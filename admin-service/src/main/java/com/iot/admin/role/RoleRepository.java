@@ -1,0 +1,15 @@
+package com.iot.admin.role;
+
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface RoleRepository extends MongoRepository<Role, String> {
+
+    Optional<Role> findByCode(String code);
+
+    List<Role> findByIdIn(List<String> ids);
+
+    List<Role> findByStatus(String status);
+}

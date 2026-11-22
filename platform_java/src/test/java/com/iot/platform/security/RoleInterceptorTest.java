@@ -65,7 +65,7 @@ public class RoleInterceptorTest {
     @Test
     public void unannotatedHandlerPasses() throws Exception {
         HandlerMethod listHandler = new HandlerMethod(new DeviceController(),
-                DeviceController.class.getMethod("get", String.class));
+                DeviceController.class.getMethod("list", javax.servlet.http.HttpServletRequest.class));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices");
         request.setAttribute("roles", Collections.emptyList());
 

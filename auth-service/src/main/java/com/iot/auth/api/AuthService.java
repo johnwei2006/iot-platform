@@ -87,7 +87,8 @@ public class AuthService {
 
         String jti = UUID.randomUUID().toString();
         TokenClaims claims = new TokenClaims(user.getId(), clientId,
-                new ArrayList<String>(user.getRoles()), jti, user.getTokenVersion(), deviceId);
+                new ArrayList<String>(user.getRoles()), jti, user.getTokenVersion(), deviceId,
+                user.getOrgCode(), user.getDataScopes());
         String access = tokenService.issueAccessToken(claims);
         String refresh = tokenService.issueRefreshToken(user.getId(), clientId,
                 deviceId, user.getTokenVersion());
@@ -164,7 +165,8 @@ public class AuthService {
         }
         AuthDtos.TokenResponse response = new AuthDtos.TokenResponse();
         response.setAccessToken(tokenService.issueAccessFromRefresh(
-                data, new ArrayList<String>(user.getRoles())));
+                data, new ArrayList<String>(user.getRoles()),
+                user.getOrgCode(), user.getDataScopes()));
         response.setRefreshToken(tokenService.issueRefreshToken(user.getId(),
                 data.getClientId(), data.getDeviceId(), user.getTokenVersion()));
         response.setExpiresInMs(properties.getAccessTtlMs());
@@ -209,6 +211,8 @@ public class AuthService {
         response.setRoles(claims.getRoles());
         response.setTokenVersion(claims.getTokenVersion());
         response.setJti(claims.getJti());
+        response.setOrg(claims.getOrgCode());
+        response.setDataScopes(claims.getDataScopes());
         return response;
     }
 
@@ -259,6 +263,7 @@ public class AuthService {
         info.setId(user.getId());
         info.setUsername(user.getUsername());
         info.setRoles(new ArrayList<String>(user.getRoles()));
+        info.setOrgCode(user.getOrgCode());
         return info;
     }
 

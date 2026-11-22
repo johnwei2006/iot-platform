@@ -19,6 +19,11 @@ public class Device {
     private String authSecret;
     /** 状态：ONLINE / OFFLINE */
     private String status;
+    /** 所属机构编码（4-2-2-2 层级前缀，数据权限过滤依据） */
+    @org.springframework.data.mongodb.core.index.Indexed(sparse = true)
+    private String orgCode;
+    /** 归属用户（SELF 数据权限依据，通常为创建者） */
+    private String ownerUserId;
     private Date lastSeen;
     private Date createdAt;
     private Date updatedAt;
@@ -77,6 +82,22 @@ public class Device {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getOrgCode() {
+        return orgCode;
+    }
+
+    public void setOrgCode(String orgCode) {
+        this.orgCode = orgCode;
+    }
+
+    public String getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    public void setOwnerUserId(String ownerUserId) {
+        this.ownerUserId = ownerUserId;
     }
 
     public Date getLastSeen() {

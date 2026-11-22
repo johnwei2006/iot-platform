@@ -80,6 +80,8 @@ public class JwtFilter extends OncePerRequestFilter {
             request.setAttribute("clientId", verification.getClientId());
             request.setAttribute("roles", verification.getRoles());
             request.setAttribute("tokenVersion", verification.getTokenVersion());
+            request.setAttribute("org", verification.getOrgCode());
+            request.setAttribute("dataScopes", verification.getDataScopes());
         } catch (AuthServiceException e) {
             writeError(response, e.getStatus(), e.getMessage());
             return;

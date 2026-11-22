@@ -1,6 +1,7 @@
 package com.iot.platform.controller;
 
 import com.iot.platform.security.JwtFilter;
+import com.iot.platform.security.datascope.DataScopeRegistry;
 import com.iot.platform.service.DeviceService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,10 +33,17 @@ public class DeviceControllerTest {
 
     @MockBean
     private DeviceService deviceService;
+    @MockBean
+    private DataScopeRegistry dataScopeRegistry;
 
     @Test
     public void listReturnsOk() throws Exception {
-        when(deviceService.list()).thenReturn(Collections.emptyList());
+        org.mockito.Mockito.when(dataScopeRegistry.criteriaFor(
+                org.mockito.ArgumentMatchers.eq("device"),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any())).thenReturn(null);
+        when(deviceService.listByCriteria(null)).thenReturn(Collections.emptyList());
         mvc.perform(get("/api/devices")).andExpect(status().isOk());
     }
 

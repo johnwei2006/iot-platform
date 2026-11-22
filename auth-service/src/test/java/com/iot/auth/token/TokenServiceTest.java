@@ -61,6 +61,22 @@ public class TokenServiceTest {
     }
 
     @Test
+    public void accessTokenCarriesOrgAndDataScopes() {
+        java.util.Map<String, String> ds = new java.util.LinkedHashMap<String, String>();
+        ds.put("device", "ORG_AND_CHILDREN");
+        ds.put("alarm", "SELF");
+        TokenClaims claims = new TokenClaims("u1", "web", Arrays.asList("ADMIN"),
+                "jti-org", 1L, "", "100102", ds);
+
+        TokenClaims parsed = tokenService.verifyAccessToken(tokenService.issueAccessToken(claims));
+
+        assertEquals("100102", parsed.getOrgCode());
+        assertEquals("ORG_AND_CHILDREN", parsed.getDataScopes().get("device"));
+        assertEquals("SELF", parsed.getDataScopes().get("alarm"));
+        assertEquals(2, parsed.getDataScopes().size());
+    }
+
+    @Test
     public void invalidTokenIsRejected() {
         try {
             tokenService.verifyAccessToken("not-a-jwt");
@@ -143,13 +159,15 @@ public class TokenServiceTest {
     public void issuedAccessFromRefreshCarriesUserRolesAndVersion() {
         TokenService.RefreshData data = new TokenService.RefreshData("u3", "app", "d3", 9L);
 
-        String token = tokenService.issueAccessFromRefresh(data, Arrays.asList("OPERATOR"));
+        String token = tokenService.issueAccessFromRefresh(data, Arrays.asList("OPERATOR"),
+                "100101", java.util.Collections.<String, String>emptyMap());
         TokenClaims parsed = tokenService.verifyAccessToken(token);
 
         assertEquals("u3", parsed.getSubject());
         assertEquals("app", parsed.getClientId());
         assertEquals(Arrays.asList("OPERATOR"), parsed.getRoles());
         assertEquals(9L, parsed.getTokenVersion());
+        assertEquals("100101", parsed.getOrgCode());
     }
 
     @Test

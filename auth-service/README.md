@@ -73,12 +73,30 @@ com.iot.auth
 | POST | /api/auth/refresh | 刷新（轮换 refresh）；body 可为空，走 Cookie |
 | POST | /api/auth/logout | 登出单个会话：撤销 refresh、拉黑 access、清 Cookie |
 | POST | /api/auth/revoke-all | 全局撤销某用户全部会话（递增 tokenVersion） |
-| POST | /api/auth/verify | 内部验签（签名/过期/黑名单/用户状态/tokenVersion） |
+| POST | /api/auth/verify | 内部验签（签名/过期/黑名单/用户状态/tokenVersion）+ org/ds 声明 |
 | GET | /api/sso/session | 统一登录页探测中央会话 |
 | POST | /api/sso/ticket | 签发一次性 ticket（Bearer 或中央会话 Cookie 认证） |
 | POST | /api/sso/token | ticket + clientId + clientSecret + redirectUri 换令牌 |
 | POST | /api/sso/logout | 单点登出（fetch 版，供前端 JS 调用） |
 | POST | /api/auth/wechat/login | 微信小程序 code 换令牌 |
+
+## 内部服务 API（/internal/**，HMAC 鉴权）
+
+供 admin-service 等内部服务调用；`X-Service-Id / X-Timestamp / X-Signature` 三头
+HMAC-SHA256 签名（serviceId + \n + timestamp(±5min) + \n + method + \n + path + \n + sha256hex(body)），
+密钥经 `auth.service-keys` 注册（admin_service → `AUTH_SERVICE_ADMIN_SECRET`）。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /internal/users | 用户列表 |
+| POST | /internal/users | 创建用户（凭证，BCrypt） |
+| PUT | /internal/users/{id} | 改名/角色/启停（禁用强制下线） |
+| POST | /internal/users/{id}/password | 重置密码（tokenVersion 递增） |
+| POST | /internal/users/{id}/identity | 同步机构/数据权限（orgId/orgCode/dataScopes） |
+
+**JWT org/ds 声明**：User 由 admin-service 维护 `orgId/orgCode/dataScopes`（4-2-2-2 机构编码 + 
+实体→数据权限映射），登录/刷新签发 JWT 时写入 `org`/`ds` claims；`/api/auth/verify` 同步返回，
+业务服务（platform_java DataScopeRegistry）据此本地过滤数据。
 
 ## SSO 登录流程（自建，轻量）
 

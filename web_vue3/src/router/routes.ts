@@ -11,6 +11,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
+    name: 'Layout',
     component: Layout,
     redirect: '/home',
     meta: { requiresAuth: true },

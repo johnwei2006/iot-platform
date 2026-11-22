@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * auth-service 远程鉴权客户端。
@@ -114,7 +115,7 @@ public class AuthServiceClient {
         }
         List<String> roles = data.getRoles() == null ? Collections.<String>emptyList() : data.getRoles();
         return new TokenVerification(data.getSubject(), data.getClientId(), roles,
-                data.getTokenVersion(), data.getJti());
+                data.getTokenVersion(), data.getJti(), data.getOrg(), data.getDataScopes());
     }
 
     private AuthServiceException mapHttpError(HttpStatusCodeException e) {
@@ -148,18 +149,32 @@ public class AuthServiceClient {
         private final long tokenVersion;
         /** access token 的 jti（本地撤销检查用；远程 verify 也会返回） */
         private final String jti;
+        /** 用户机构编码（数据权限用） */
+        private final String orgCode;
+        /** 数据权限映射：实体编码 -> 范围 */
+        private final Map<String, String> dataScopes;
 
         public TokenVerification(String subject, String clientId, List<String> roles, long tokenVersion) {
-            this(subject, clientId, roles, tokenVersion, null);
+            this(subject, clientId, roles, tokenVersion, null, null, null);
         }
 
         public TokenVerification(String subject, String clientId, List<String> roles,
                                  long tokenVersion, String jti) {
+            this(subject, clientId, roles, tokenVersion, jti, null, null);
+        }
+
+        public TokenVerification(String subject, String clientId, List<String> roles,
+                                 long tokenVersion, String jti, String orgCode,
+                                 Map<String, String> dataScopes) {
             this.subject = subject;
             this.clientId = clientId;
             this.roles = roles;
             this.tokenVersion = tokenVersion;
             this.jti = jti;
+            this.orgCode = orgCode;
+            this.dataScopes = dataScopes == null
+                    ? Collections.<String, String>emptyMap()
+                    : Collections.unmodifiableMap(dataScopes);
         }
 
         public String getSubject() { return subject; }
@@ -167,6 +182,8 @@ public class AuthServiceClient {
         public List<String> getRoles() { return roles; }
         public long getTokenVersion() { return tokenVersion; }
         public String getJti() { return jti; }
+        public String getOrgCode() { return orgCode; }
+        public Map<String, String> getDataScopes() { return dataScopes; }
     }
 
     /** 代理转发的 HTTP 状态与响应体。 */
@@ -207,6 +224,8 @@ public class AuthServiceClient {
         private List<String> roles;
         private long tokenVersion;
         private String jti;
+        private String org;
+        private Map<String, String> dataScopes;
 
         public String getSubject() { return subject; }
         public void setSubject(String subject) { this.subject = subject; }
@@ -218,5 +237,9 @@ public class AuthServiceClient {
         public void setTokenVersion(long tokenVersion) { this.tokenVersion = tokenVersion; }
         public String getJti() { return jti; }
         public void setJti(String jti) { this.jti = jti; }
+        public String getOrg() { return org; }
+        public void setOrg(String org) { this.org = org; }
+        public Map<String, String> getDataScopes() { return dataScopes; }
+        public void setDataScopes(Map<String, String> dataScopes) { this.dataScopes = dataScopes; }
     }
 }

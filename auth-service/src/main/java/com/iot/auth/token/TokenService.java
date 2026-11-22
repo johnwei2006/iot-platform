@@ -43,6 +43,8 @@ public class TokenService {
     private static final String CLAIM_VER = "ver";
     private static final String CLAIM_DEVICE = "device";
     private static final String CLAIM_TYPE = "type";
+    private static final String CLAIM_ORG = "org";
+    private static final String CLAIM_DS = "ds";
     private static final String TYPE_ACCESS = "access";
 
     private final AuthProperties properties;
@@ -89,6 +91,8 @@ public class TokenService {
                 .claim(CLAIM_VER, claims.getTokenVersion())
                 .claim(CLAIM_DEVICE, claims.getDeviceId() == null ? "" : claims.getDeviceId())
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
+                .claim(CLAIM_ORG, claims.getOrgCode() == null ? "" : claims.getOrgCode())
+                .claim(CLAIM_DS, claims.getDataScopes())
                 .setIssuer(properties.getJwtIssuer())
                 .setAudience(properties.getJwtAudience())
                 .setIssuedAt(now)
@@ -159,9 +163,19 @@ public class TokenService {
         }
         long ver = claims.get(CLAIM_VER, Number.class) == null
                 ? 0L : claims.get(CLAIM_VER, Number.class).longValue();
+        Map<String, String> ds = new LinkedHashMap<String, String>();
+        Object rawDs = claims.get(CLAIM_DS);
+        if (rawDs instanceof Map) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) rawDs).entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    ds.put(entry.getKey().toString(), entry.getValue().toString());
+                }
+            }
+        }
         return new TokenClaims(claims.getSubject(),
                 claims.get(CLAIM_CLIENT, String.class), roles, jti, ver,
-                claims.get(CLAIM_DEVICE, String.class));
+                claims.get(CLAIM_DEVICE, String.class),
+                claims.get(CLAIM_ORG, String.class), ds);
     }
 
     /** 解析并验签 access token（含 iss/aud 强校验），不查黑名单。 */
@@ -205,10 +219,12 @@ public class TokenService {
         return new RefreshData(parts[0], parts[1], parts[2], Long.parseLong(parts[3]));
     }
 
-    /** 基于 refresh 记录签发新的 access token。 */
-    public String issueAccessFromRefresh(RefreshData data, List<String> roles) {
+    /** 基于 refresh 记录签发新的 access token（org/ds 以用户当前值为准）。 */
+    public String issueAccessFromRefresh(RefreshData data, List<String> roles,
+                                         String orgCode, Map<String, String> dataScopes) {
         return issueAccessToken(new TokenClaims(data.getUserId(), data.getClientId(), roles,
-                UUID.randomUUID().toString(), data.getVersion(), data.getDeviceId()));
+                UUID.randomUUID().toString(), data.getVersion(), data.getDeviceId(),
+                orgCode, dataScopes));
     }
 
     /** 登出：删除 refresh、把 access jti 加入黑名单直到过期。 */

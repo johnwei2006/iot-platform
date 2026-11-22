@@ -33,9 +33,11 @@ public class DeviceServiceTest {
         d.setDeviceId("D1");
         when(deviceRepository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Device saved = deviceService.create(d);
+        Device saved = deviceService.create(d, "admin-1", "0001");
 
         assertEquals("OFFLINE", saved.getStatus());
+        assertEquals("admin-1", saved.getOwnerUserId());
+        assertEquals("0001", saved.getOrgCode());
         assertNotNull(saved.getCreatedAt());
         assertNotNull(saved.getUpdatedAt());
     }

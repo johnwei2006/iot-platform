@@ -3,6 +3,9 @@ package com.iot.platform.service;
 import com.iot.platform.model.Device;
 import com.iot.platform.repository.DeviceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -21,10 +24,20 @@ public class DeviceService {
     @Autowired
     private DeviceRepository deviceRepository;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     private final SecureRandom secureRandom = new SecureRandom();
 
+    /** 全量列表（内部/网关路径使用）。 */
     public List<Device> list() {
         return deviceRepository.findAll();
+    }
+
+    /** 按数据权限条件过滤列表；criteria 为 null 表示不过滤（ALL）。 */
+    public List<Device> listByCriteria(Criteria criteria) {
+        Query query = criteria == null ? new Query() : new Query(criteria);
+        return mongoTemplate.find(query, Device.class);
     }
 
     public Optional<Device> get(String id) {
@@ -35,13 +48,18 @@ public class DeviceService {
         return deviceRepository.findByDeviceId(deviceId);
     }
 
-    public Device create(Device d) {
+    /** 创建设备并绑定归属（ownerUserId=创建者；orgCode 未指定时回落创建者机构）。 */
+    public Device create(Device d, String subject, String creatorOrgCode) {
         Date now = new Date();
         d.setCreatedAt(now);
         d.setUpdatedAt(now);
         if (d.getStatus() == null) {
             d.setStatus("OFFLINE");
         }
+        if (d.getOrgCode() == null || d.getOrgCode().trim().isEmpty()) {
+            d.setOrgCode(creatorOrgCode);
+        }
+        d.setOwnerUserId(subject);
         if (d.getAuthSecret() != null) {
             validateSecret(d.getAuthSecret());
         }

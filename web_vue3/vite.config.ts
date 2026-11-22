@@ -30,6 +30,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/auth-api/, ''),
       },
+      // 系统管理接口代理到独立 admin-service；rewrite 去掉 /admin-api 前缀
+      '/admin-api': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/admin-api/, ''),
+      },
       // 网关认证记录接口代理到 ProxyTcp（端口 8010）；rewrite 去掉 /proxy-api 前缀
       '/proxy-api': {
         target: 'http://localhost:8010',

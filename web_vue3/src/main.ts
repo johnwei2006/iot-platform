@@ -4,6 +4,7 @@ import App from './App.vue';
 import router from './router';
 import pinia from './stores';
 import { setupElementPlus } from './plugins/element';
+import { setupDirectives } from './directives/permission';
 import './styles/index.css';
 
 const app = createApp(App);
@@ -11,6 +12,7 @@ const app = createApp(App);
 app.use(pinia);
 app.use(router);
 setupElementPlus(app);
+setupDirectives(app);
 
 // 全局注册 Element Plus 图标组件（模板中可直接使用 <HomeFilled /> 等）
 for (const [name, component] of Object.entries(ElementPlusIconsVue)) {

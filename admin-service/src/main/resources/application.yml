@@ -1,0 +1,48 @@
+server:
+  port: ${ADMIN_PORT:8084}
+
+spring:
+  application:
+    name: admin-service
+  data:
+    mongodb:
+      uri: ${ADMIN_MONGO_URI:mongodb://localhost:27017/admin_service}
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DATABASE:0}
+    timeout: ${REDIS_TIMEOUT:2000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# 系统管理服务配置：与 auth-service 共享 JWT/JWKS/Redis 撤销体系；
+# 内部 HMAC 密钥必须与 auth-service 的 AUTH_SERVICE_ADMIN_SECRET 一致。
+admin:
+  auth:
+    base-url: ${AUTH_SERVICE_BASE_URL:http://localhost:8083}
+    # JWKS 地址；留空使用 base-url + /.well-known/jwks.json
+    jwks-url: ${ADMIN_AUTH_JWKS_URL:}
+    issuer: ${AUTH_JWT_ISSUER:iot-auth}
+    audience: ${AUTH_JWT_AUDIENCE:iot-platform}
+    # HMAC 内部服务身份（对应 auth-service service-keys 中的 admin_service）
+    service-id: admin_service
+    service-secret: ${AUTH_SERVICE_ADMIN_SECRET:}
+    revocation:
+      enabled: ${ADMIN_REVOCATION_CHECK:true}
+      redis-prefix: ${AUTH_REDIS_PREFIX:auth:}
+      cache-ttl-ms: ${ADMIN_REVOCATION_CACHE_TTL_MS:15000}
+      fail-open: ${ADMIN_REVOCATION_FAIL_OPEN:true}
+  # 可配置的数据权限业务实体注册表：新增实体即新增一行（编码与业务服务约定）
+  entities:
+    - code: device
+      name: 设备
+  bootstrap:
+    admin-username: ${ADMIN_BOOTSTRAP_USERNAME:admin}
+    admin-password: ${ADMIN_BOOTSTRAP_PASSWORD:Admin@123456}
+    root-org-code: ${ADMIN_ROOT_ORG_CODE:0001}
+    root-org-name: ${ADMIN_ROOT_ORG_NAME:总部}

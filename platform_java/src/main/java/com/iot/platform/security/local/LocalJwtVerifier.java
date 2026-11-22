@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 本地 JWT 验签：用 JWKS/静态公钥在本地完成签名、过期、iss/aud 校验，
@@ -28,6 +29,8 @@ public class LocalJwtVerifier {
     private static final String CLAIM_CLIENT = "client";
     private static final String CLAIM_ROLES = "roles";
     private static final String CLAIM_VER = "ver";
+    private static final String CLAIM_ORG = "org";
+    private static final String CLAIM_DS = "ds";
     private static final String CLAIM_TYPE = "type";
     private static final String TYPE_ACCESS = "access";
 
@@ -85,9 +88,18 @@ public class LocalJwtVerifier {
         }
         long ver = claims.get(CLAIM_VER, Number.class) == null
                 ? 0L : claims.get(CLAIM_VER, Number.class).longValue();
+        java.util.Map<String, String> ds = new java.util.LinkedHashMap<String, String>();
+        Object rawDs = claims.get(CLAIM_DS);
+        if (rawDs instanceof Map) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) rawDs).entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    ds.put(entry.getKey().toString(), entry.getValue().toString());
+                }
+            }
+        }
         return new AuthServiceClient.TokenVerification(claims.getSubject(),
                 claims.get(CLAIM_CLIENT, String.class), Collections.unmodifiableList(roles), ver,
-                claims.getId());
+                claims.getId(), claims.get(CLAIM_ORG, String.class), ds);
     }
 
     /** 从未验签的 token 头部提取 kid（仅用于选公钥，安全性由后续验签保证）。 */

@@ -31,6 +31,86 @@ export interface LoginPayload {
   password: string;
 }
 
+/** ============ 系统管理（admin-service）类型 ============ */
+
+/** 菜单树节点：DIR 目录 / MENU 菜单 / BUTTON 按钮（perm 权限点） */
+export interface MenuNode {
+  id: string;
+  parentId: string | null;
+  name: string;
+  type: 'DIR' | 'MENU' | 'BUTTON';
+  path?: string;
+  component?: string;
+  perm?: string;
+  icon?: string;
+  sort?: string;
+  status?: string;
+  children?: MenuNode[];
+}
+
+/** 机构节点（4-2-2-2 编码层级树） */
+export interface OrgNode {
+  id: string;
+  code: string;
+  name: string;
+  parentCode: string | null;
+  leader?: string;
+  phone?: string;
+  sort?: string;
+  status?: string;
+  level?: number;
+  children?: OrgNode[];
+}
+
+/** 机构原始记录 */
+export interface OrgRecord {
+  id: string;
+  code: string;
+  name: string;
+  parentCode: string | null;
+  leader?: string;
+  phone?: string;
+  sort?: string;
+  status?: string;
+}
+
+/** 角色视图 */
+export interface RoleView {
+  id: string;
+  code: string;
+  name: string;
+  menuIds?: string[];
+  dataScopes?: Record<string, string>;
+  builtIn?: boolean;
+  status?: string;
+}
+
+/** auth 用户摘要 */
+export interface AdminUser {
+  id: string;
+  username: string;
+  roles: string[];
+  status?: string;
+  tokenVersion?: number;
+  orgId?: string;
+  orgCode?: string;
+  dataScopes?: Record<string, string>;
+}
+
+/** 数据权限可配置实体 */
+export interface ScopeEntity {
+  code: string;
+  name: string;
+}
+
+/** /api/admin/me 响应 */
+export interface MeResponse {
+  user: { id: string; username: string; roles: string[]; orgCode?: string; superAdmin: boolean };
+  menus: MenuNode[];
+  perms: string[];
+  dataScopes: Record<string, string>;
+}
+
 /** 设备 */
 export interface Device {
   id?: string;

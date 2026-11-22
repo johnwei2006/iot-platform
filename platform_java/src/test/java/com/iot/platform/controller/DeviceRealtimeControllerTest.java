@@ -3,6 +3,7 @@ package com.iot.platform.controller;
 import com.iot.platform.model.DeviceRealtimeStatus;
 import com.iot.platform.realtime.RedisDeviceStatusStore;
 import com.iot.platform.security.JwtFilter;
+import com.iot.platform.security.datascope.DataScopeRegistry;
 import com.iot.platform.service.DeviceService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +40,8 @@ public class DeviceRealtimeControllerTest {
     private RedisDeviceStatusStore store;
     @MockBean
     private DeviceService deviceService;
+    @MockBean
+    private DataScopeRegistry dataScopeRegistry;
 
     @Test
     public void listPathWinsOverDevicePathVariable() throws Exception {

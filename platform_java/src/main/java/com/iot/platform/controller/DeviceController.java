@@ -4,6 +4,7 @@ import com.iot.platform.common.ApiResponse;
 import com.iot.platform.common.ResultCode;
 import com.iot.platform.model.Device;
 import com.iot.platform.security.RequireRoles;
+import com.iot.platform.security.datascope.DataScopeRegistry;
 import com.iot.platform.service.DeviceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,17 +28,27 @@ public class DeviceController {
     @Autowired
     private DeviceService deviceService;
 
+    @Autowired
+    private DataScopeRegistry dataScopeRegistry;
+
+    /** 设备列表：按 JWT 数据权限（ds.device）过滤。 */
     @GetMapping
-    public ApiResponse<?> list() {
-        List<Device> devices = deviceService.list();
+    public ApiResponse<?> list(HttpServletRequest request) {
+        ScopeContext ctx = scopeContext(request);
+        List<Device> devices = deviceService.listByCriteria(
+                dataScopeRegistry.criteriaFor("device", ctx.subject, ctx.orgCode, ctx.dataScopes));
         devices.forEach(this::maskSecret);
         return ApiResponse.success(devices);
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<?> get(@PathVariable String id) {
+    public ApiResponse<?> get(@PathVariable String id, HttpServletRequest request) {
         Optional<Device> d = deviceService.get(id);
         if (d.isPresent()) {
+            ScopeContext ctx = scopeContext(request);
+            if (!dataScopeRegistry.canRead("device", d.get(), ctx.subject, ctx.orgCode, ctx.dataScopes)) {
+                return ApiResponse.fail(ResultCode.NOT_FOUND);
+            }
             maskSecret(d.get());
             return ApiResponse.success(d.get());
         }
@@ -62,11 +74,28 @@ public class DeviceController {
         }
     }
 
-    /** 新建设备，仅 ADMIN。 */
+    /** 从 JwtFilter 写入的 request 属性提取数据权限上下文。 */
+    @SuppressWarnings("unchecked")
+    private ScopeContext scopeContext(HttpServletRequest request) {
+        ScopeContext ctx = new ScopeContext();
+        ctx.subject = (String) request.getAttribute("subject");
+        ctx.orgCode = (String) request.getAttribute("org");
+        ctx.dataScopes = (Map<String, String>) request.getAttribute("dataScopes");
+        return ctx;
+    }
+
+    private static class ScopeContext {
+        private String subject;
+        private String orgCode;
+        private Map<String, String> dataScopes;
+    }
+
+    /** 新建设备，仅 ADMIN；归属绑定创建者与机构。 */
     @RequireRoles({"ADMIN"})
     @PostMapping
-    public ApiResponse<?> create(@RequestBody Device d) {
-        return ApiResponse.success(deviceService.create(d));
+    public ApiResponse<?> create(@RequestBody Device d, HttpServletRequest request) {
+        ScopeContext ctx = scopeContext(request);
+        return ApiResponse.success(deviceService.create(d, ctx.subject, ctx.orgCode));
     }
 
     /** 更新设备，仅 ADMIN。 */

@@ -75,6 +75,8 @@ auth:
       secret: ${AUTH_SERVICE_DTM_SECRET:dtm-service-secret-change-me}
     - id: proxytcp
       secret: ${AUTH_SERVICE_PROXY_SECRET:proxy-service-secret-change-me}
+    - id: admin_service
+      secret: ${AUTH_SERVICE_ADMIN_SECRET:}
   wechat:
     app-id: ${WECHAT_APPID:}
     app-secret: ${WECHAT_APPSECRET:}
