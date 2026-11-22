@@ -73,7 +73,7 @@ const cards = [
   font-weight: 700;
 }
 .stat-label {
-  color: #909399;
-  font-size: 13px;
+  color: var(--kb-text-muted);
+  font-size: var(--kb-fs-caption);
 }
 </style>

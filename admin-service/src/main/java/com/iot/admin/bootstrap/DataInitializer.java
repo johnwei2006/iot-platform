@@ -4,6 +4,10 @@ import com.iot.admin.config.AdminProperties;
 import com.iot.admin.internal.AuthInternalClient;
 import com.iot.admin.menu.Menu;
 import com.iot.admin.menu.MenuRepository;
+import com.iot.admin.product.Product;
+import com.iot.admin.product.ProductMenu;
+import com.iot.admin.product.ProductMenuRepository;
+import com.iot.admin.product.ProductRepository;
 import com.iot.admin.org.Org;
 import com.iot.admin.org.OrgRepository;
 import com.iot.admin.role.Role;
@@ -29,22 +33,28 @@ public class DataInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
     private static final String ROLE_SUPER_ADMIN = "SUPER_ADMIN";
+    private static final String ROLE_ORG_ADMIN = "ORG_ADMIN";
 
     private final AdminProperties properties;
     private final OrgRepository orgRepository;
     private final MenuRepository menuRepository;
     private final RoleRepository roleRepository;
     private final AuthInternalClient authClient;
+    private final ProductRepository productRepository;
+    private final ProductMenuRepository productMenuRepository;
 
     @Autowired
     public DataInitializer(AdminProperties properties, OrgRepository orgRepository,
                            MenuRepository menuRepository, RoleRepository roleRepository,
-                           AuthInternalClient authClient) {
+                           AuthInternalClient authClient, ProductRepository productRepository,
+                           ProductMenuRepository productMenuRepository) {
         this.properties = properties;
         this.orgRepository = orgRepository;
         this.menuRepository = menuRepository;
         this.roleRepository = roleRepository;
         this.authClient = authClient;
+        this.productRepository = productRepository;
+        this.productMenuRepository = productMenuRepository;
     }
 
     @Override
@@ -52,8 +62,11 @@ public class DataInitializer implements ApplicationRunner {
         try {
             initRootOrg();
             initMenus();
+            ensureSystemProductMenu();
             initIotMenus();
+            initProductCatalog();
             initSuperAdminRole();
+            initOrgAdminRole();
             initAdminUser();
         } catch (Exception e) {
             log.warn("Bootstrap incomplete (will retry on next startup): {}", e.getMessage());
@@ -65,7 +78,7 @@ public class DataInitializer implements ApplicationRunner {
         if (menuRepository.findByPath("/iot").isPresent()) {
             return;
         }
-        Menu iotDir = menu("科百云田", Menu.TYPE_DIR, null, "/iot", null, null, "10");
+        Menu iotDir = menu("物联网", Menu.TYPE_DIR, null, "/iot", null, null, "10");
         // 看数据
         Menu dataMenu = menu("看数据", Menu.TYPE_MENU, iotDir.getId(), "/iot/data",
                 "iot/data/overview", "iot:data:page", "10");
@@ -99,6 +112,76 @@ public class DataInitializer implements ApplicationRunner {
         Menu conflictMenu = menu("冲突校验工具", Menu.TYPE_MENU, iotDir.getId(), "/iot/conflict-check",
                 "iot/admin/conflict-check", "iot:conflict:check", "70");
         log.info("Bootstrap iot menus created");
+    }
+
+    /** 兼容旧数据：顶级 DIR 仍作为产品菜单树根节点保留。 */
+    private void initProductDirs() {
+        menuRepository.findByPath("/iot").ifPresent(existing -> {
+            if ("科百云田".equals(existing.getName())) {
+                existing.setName("物联网");
+                menuRepository.save(existing);
+            }
+        });
+        ensureProductDir("大屏", "/screen", "5");
+        ensureProductDir("农事管理", "/farm", "20");
+    }
+
+    private void ensureProductDir(String name, String path, String sort) {
+        if (!menuRepository.findByPath(path).isPresent()) {
+            menu(name, Menu.TYPE_DIR, null, path, null, null, sort);
+            log.info("Bootstrap product dir created: {}", name);
+        }
+    }
+
+    /** 系统管理产品下的产品管理页与按钮（旧库升级时补建，幂等）。 */
+    private void ensureSystemProductMenu() {
+        Menu systemDir = menuRepository.findByPath("/system").orElse(null);
+        if (systemDir == null || menuRepository.findByPath("/system/product").isPresent()) {
+            return;
+        }
+        Menu productMenu = menu("产品管理", Menu.TYPE_MENU, systemDir.getId(), "/system/product",
+                "system/product/index", "system:product:page", "50");
+        buttonOnce(productMenu.getId(), "产品新增", "system:product:create");
+        buttonOnce(productMenu.getId(), "产品编辑", "system:product:edit");
+        buttonOnce(productMenu.getId(), "产品删除", "system:product:delete");
+        buttonOnce(productMenu.getId(), "产品菜单配置", "system:product:bind-menu");
+        log.info("Bootstrap system product menu created");
+    }
+
+    private void buttonOnce(String parentId, String name, String perm) {
+        if (!menuRepository.findByPerm(perm).isPresent()) {
+            button(parentId, name, perm);
+        }
+    }
+
+    /**
+     * 产品目录来自 006 changeset 的预置数据；这里幂等维护"产品 → 菜单树"范围。
+     * 系统管理/物联网绑定对应 DIR 整棵子树；大屏/农事管理暂无菜单，保留产品空态。
+     */
+    private void initProductCatalog() {
+        initProductDirs();
+        java.util.Map<String, String> rootPathByCode = new java.util.HashMap<String, String>();
+        rootPathByCode.put("SYS", "/system");
+        rootPathByCode.put("IOT", "/iot");
+        for (Product product : productRepository.findAll()) {
+            java.util.Optional<Menu> root = menuRepository.findByPath(rootPathByCode.getOrDefault(product.getCode(), ""));
+            if (!root.isPresent()) {
+                continue;
+            }
+            bindMenuSubtree(product, root.get());
+        }
+    }
+
+    private void bindMenuSubtree(Product product, Menu menu) {
+        if (!productMenuRepository.findByProductIdAndMenuId(product.getId(), menu.getId()).isPresent()) {
+            ProductMenu relation = new ProductMenu();
+            relation.setProductId(product.getId());
+            relation.setMenuId(menu.getId());
+            productMenuRepository.save(relation);
+        }
+        for (Menu child : menuRepository.findByParentId(menu.getId())) {
+            bindMenuSubtree(product, child);
+        }
     }
 
     private void initRootOrg() {
@@ -168,20 +251,40 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     private void initSuperAdminRole() {
-        if (!roleRepository.findByCode(ROLE_SUPER_ADMIN).isPresent()) {
-            Role role = new Role();
-            role.setCode(ROLE_SUPER_ADMIN);
-            role.setName("超级管理员");
-            role.setBuiltIn(true);
-            ArrayList<String> allMenuIds = new ArrayList<String>();
-            for (Menu m : menuRepository.findAll()) {
-                allMenuIds.add(m.getId());
-            }
-            role.setMenuIds(allMenuIds);
-            role.setDataScopes(allBusinessScopes());
-            roleRepository.save(role);
-            log.info("Bootstrap {} role created", ROLE_SUPER_ADMIN);
+        Role role = roleRepository.findByCode(ROLE_SUPER_ADMIN).orElseGet(Role::new);
+        role.setCode(ROLE_SUPER_ADMIN);
+        role.setName("平台超级管理员");
+        role.setBuiltIn(true);
+        ArrayList<String> allMenuIds = new ArrayList<String>();
+        for (Menu m : menuRepository.findAll()) {
+            allMenuIds.add(m.getId());
         }
+        role.setMenuIds(allMenuIds);
+        role.setDataScopes(allBusinessScopes());
+        roleRepository.save(role);
+    }
+
+    /**
+     * 一级机构管理员：角色基线包含全部菜单，最终可见范围由机构产品上限裁剪；
+     * 机构管理员可另建细分角色（不可修改内置角色）。
+     */
+    private void initOrgAdminRole() {
+        Role role = roleRepository.findByCode(ROLE_ORG_ADMIN).orElseGet(Role::new);
+        role.setCode(ROLE_ORG_ADMIN);
+        role.setName("机构管理员");
+        role.setBuiltIn(true);
+        ArrayList<String> allMenuIds = new ArrayList<String>();
+        for (Menu m : menuRepository.findAll()) {
+            allMenuIds.add(m.getId());
+        }
+        role.setMenuIds(allMenuIds);
+        Map<String, String> scopes = new HashMap<String, String>();
+        for (String entity : new String[] {
+                "device", "control_rule", "control_log", "task", "message", "metric_threshold", "alarm"}) {
+            scopes.put(entity, com.iot.admin.role.RoleService.SCOPE_ORG_AND_CHILDREN);
+        }
+        role.setDataScopes(scopes);
+        roleRepository.save(role);
     }
 
     /** 内置超管对全部业务实体开放数据权限（与 platform_java DataScopeRule 实体编码一致）。 */
@@ -198,11 +301,18 @@ public class DataInitializer implements ApplicationRunner {
         String username = properties.getBootstrap().getAdminUsername();
         try {
             AuthInternalClient.UserSummary existing = null;
+            AuthInternalClient.UserSummary legacy = null;
             for (AuthInternalClient.UserSummary user : authClient.listUsers()) {
                 if (username.equals(user.getUsername())) {
                     existing = user;
-                    break;
+                } else if (properties.getBootstrap().getLegacyAdminUsername().equals(user.getUsername())) {
+                    legacy = user;
                 }
+            }
+            // 旧 admin 账号幂等改名为 sysadmin：保留原口令与 token_version
+            if (existing == null && legacy != null) {
+                existing = authClient.updateUser(legacy.getId(), username, null, null);
+                log.info("Bootstrap legacy admin renamed to {}", username);
             }
             if (existing == null) {
                 existing = authClient.createUser(username, properties.getBootstrap().getAdminPassword(),

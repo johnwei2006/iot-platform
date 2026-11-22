@@ -60,3 +60,13 @@ databaseChangeLog:
             ALTER TABLE `iot_control_log`
               ADD COLUMN `node_id` VARCHAR(128) DEFAULT NULL COMMENT '受控执行节点' AFTER `device_id`,
               ADD COLUMN `channel` INT DEFAULT NULL COMMENT '受控通道（0x1A 回报匹配）' AFTER `node_id`;
+  - changeSet:
+      id: 20261122-06-product-org-authorization
+      author: iot-platform
+      comment: 产品、产品-菜单、机构-产品授权表与预置产品
+      changes:
+        - sqlFile:
+            path: sql/006-create-product-org-tables.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true

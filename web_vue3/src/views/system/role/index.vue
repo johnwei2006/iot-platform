@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import { createRole, deleteRole, fetchMenuTree, fetchRoles, fetchScopeEntities, updateRole } from '@/api/admin';
+import { useUserStore } from '@/stores/modules/user';
 import type { MenuNode, RoleView, ScopeEntity } from '@/types';
+
+const userStore = useUserStore();
 
 const SCOPE_OPTIONS = [
   { value: 'ALL', label: '全部数据' },
@@ -16,6 +19,24 @@ const roles = ref<RoleView[]>([]);
 const menuTree = ref<MenuNode[]>([]);
 const entities = ref<ScopeEntity[]>([]);
 const loading = ref(false);
+
+/** 机构管理员只能在 /me 返回的菜单（产品上限内）继续勾选角色菜单。 */
+const allowedMenuIds = computed(() => {
+  const ids = new Set<string>();
+  const walk = (nodes: MenuNode[]) => nodes.forEach((n) => {
+    ids.add(n.id);
+    if (n.children) walk(n.children);
+  });
+  walk(userStore.menus);
+  return ids;
+});
+const visibleMenuTree = computed(() => {
+  if (userStore.superAdmin) return menuTree.value;
+  const filter = (nodes: MenuNode[]): MenuNode[] => nodes
+    .filter((n) => allowedMenuIds.value.has(n.id))
+    .map((n) => ({ ...n, children: n.children ? filter(n.children) : undefined }));
+  return filter(menuTree.value);
+});
 
 const drawer = reactive({ visible: false, mode: 'create' as 'create' | 'edit', id: '', builtIn: false });
 const form = reactive({
@@ -115,6 +136,10 @@ onMounted(refresh);
 
 <template>
   <div v-loading="loading" class="role-page">
+    <el-card v-if="!userStore.superAdmin" shadow="never" class="cap-card">
+      <strong>产品上限</strong>：{{ userStore.products.map((p) => p.name).join('、') || '暂无分配产品' }}
+      <span>机构管理员只能在本机构已分配产品的菜单范围内勾选功能，超出范围由服务端拒绝。</span>
+    </el-card>
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
@@ -188,7 +213,7 @@ onMounted(refresh);
         <el-form-item label="菜单授权">
           <el-tree
             ref="menuTreeRef"
-            :data="menuTree"
+            :data="visibleMenuTree"
             node-key="id"
             show-checkbox
             default-expand-all
@@ -199,7 +224,7 @@ onMounted(refresh);
           />
         </el-form-item>
         <el-form-item v-for="entity in entities" :key="entity.code" :label="`${entity.name}数据`">
-          <el-select v-model="form.dataScopes[entity.code]" style="width: 100%" :disabled="drawer.builtIn">
+          <el-select v-model="form.dataScopes[entity.code]" style="width: 100%" :disabled="drawer.builtIn || !userStore.superAdmin">
             <el-option v-for="opt in SCOPE_OPTIONS" :key="opt.value" :value="opt.value" :label="opt.label" />
           </el-select>
         </el-form-item>
@@ -214,6 +239,9 @@ onMounted(refresh);
 </template>
 
 <style scoped>
+.role-page { display: flex; flex-direction: column; gap: 16px; }
+.cap-card { border-color: var(--kb-line); border-radius: var(--kb-radius-card); color: var(--kb-text); }
+.cap-card span { color: var(--kb-text-muted); font-size: var(--kb-fs-caption); margin-left: 12px; }
 .card-header {
   display: flex;
   justify-content: space-between;

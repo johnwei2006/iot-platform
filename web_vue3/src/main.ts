@@ -3,6 +3,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import App from './App.vue';
 import router from './router';
 import pinia from './stores';
+import { useThemeStore } from './stores/modules/theme';
 import { setupElementPlus } from './plugins/element';
 import { setupDirectives } from './directives/permission';
 import './styles/index.css';
@@ -12,6 +13,7 @@ import './styles/theme.css';
 const app = createApp(App);
 
 app.use(pinia);
+useThemeStore().init();
 app.use(router);
 setupElementPlus(app);
 setupDirectives(app);

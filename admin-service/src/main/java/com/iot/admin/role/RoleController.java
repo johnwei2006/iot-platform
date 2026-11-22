@@ -2,8 +2,10 @@ package com.iot.admin.role;
 
 import com.iot.admin.common.ApiResponse;
 import com.iot.admin.config.AdminProperties;
+import com.iot.admin.product.ProductService;
 import com.iot.admin.security.RequireRoles;
 import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,23 +16,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.constraints.NotBlank;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-/** 角色管理（仅 SUPER_ADMIN）：菜单授权 + 按实体四级数据权限。 */
+/** 角色管理：平台超管全局授权；机构管理员只能在本机构产品范围内勾选菜单。 */
 @RestController
 @RequestMapping("/api/admin/roles")
-@RequireRoles({"SUPER_ADMIN"})
+@RequireRoles({"SUPER_ADMIN", "ORG_ADMIN"})
 public class RoleController {
 
     private final RoleService roleService;
     private final AdminProperties properties;
+    private final ProductService productService;
 
     @Autowired
-    public RoleController(RoleService roleService, AdminProperties properties) {
+    public RoleController(RoleService roleService, AdminProperties properties, ProductService productService) {
         this.roleService = roleService;
         this.properties = properties;
+        this.productService = productService;
     }
 
     @GetMapping
@@ -42,18 +48,43 @@ public class RoleController {
     }
 
     @PostMapping
-    public ApiResponse<Role> create(@RequestBody SaveRoleRequest request) {
+    public ApiResponse<Role> create(@RequestBody SaveRoleRequest request, HttpServletRequest http) {
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
             throw com.iot.admin.common.AppException.badRequest("role code is required");
         }
+        enforceProductCap(request, http);
         return ApiResponse.success(roleService.create(request.getCode(), request.getName(),
                 request.getMenuIds(), request.getDataScopes()));
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Role> update(@PathVariable String id, @RequestBody SaveRoleRequest request) {
+    public ApiResponse<Role> update(@PathVariable String id, @RequestBody SaveRoleRequest request,
+                                    HttpServletRequest http) {
+        enforceProductCap(request, http);
         return ApiResponse.success(roleService.update(id, request.getName(),
                 request.getMenuIds(), request.getDataScopes(), request.getStatus()));
+    }
+
+    /** 机构管理员不能勾选机构产品范围外的菜单，也不能配置全域数据权限。 */
+    private void enforceProductCap(SaveRoleRequest request, HttpServletRequest http) {
+        if (Boolean.TRUE.equals(http.getAttribute("superAdmin"))) {
+            return;
+        }
+        String orgCode = (String) http.getAttribute("org");
+        Set<String> cap = productService.allowedMenuIdsForOrg(orgCode);
+        if (request.getMenuIds() != null) {
+            List<String> illegal = request.getMenuIds().stream()
+                    .filter(id -> !cap.contains(id)).collect(Collectors.toList());
+            if (!illegal.isEmpty()) {
+                throw com.iot.admin.common.AppException.forbidden("菜单超出机构产品范围: " + illegal);
+            }
+        }
+        // 机构管理员不具备配置全域数据权限的能力，统一收敛到本机构及子机构
+        Map<String, String> scopes = new HashMap<String, String>();
+        for (AdminProperties.Entity entity : properties.getEntities()) {
+            scopes.put(entity.getCode(), RoleService.SCOPE_ORG_AND_CHILDREN);
+        }
+        request.setDataScopes(scopes);
     }
 
     @DeleteMapping("/{id}")

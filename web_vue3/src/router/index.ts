@@ -42,14 +42,18 @@ router.beforeEach(async (to) => {
     }
   }
   // RBAC：meta.roles 声明允许访问的角色（与后端角色名大小写不敏感比对）
+  // SUPER_ADMIN 为内置超管，恒通过（与 admin-service AdminRoleInterceptor 语义一致）
   const required = to.meta.roles as string[] | undefined;
   if (required && required.length > 0) {
     const userStore = useUserStore();
     const userRoles = (userStore.roles || []).map((r) => String(r).toLowerCase());
-    const allowed = required.some((r) => userRoles.includes(String(r).toLowerCase()));
-    if (!allowed) {
-      ElMessage.error('当前账号无权访问该页面');
-      return { name: 'Home' };
+    // ORG_ADMIN 为机构管理员，业务页面访问权由服务端菜单/产品上限控制
+    if (!userStore.superAdmin && !userRoles.includes('super_admin') && !userRoles.includes('org_admin')) {
+      const allowed = required.some((r) => userRoles.includes(String(r).toLowerCase()));
+      if (!allowed) {
+        ElMessage.error('当前账号无权访问该页面');
+        return { name: 'Home' };
+      }
     }
   }
   return true;

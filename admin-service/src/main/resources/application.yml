@@ -59,7 +59,8 @@ admin:
     - code: device
       name: 设备
   bootstrap:
-    admin-username: ${ADMIN_BOOTSTRAP_USERNAME:admin}
+    admin-username: ${ADMIN_BOOTSTRAP_USERNAME:sysadmin}
+    legacy-admin-username: ${ADMIN_LEGACY_USERNAME:admin}
     admin-password: ${ADMIN_BOOTSTRAP_PASSWORD:Admin@123456}
     root-org-code: ${ADMIN_ROOT_ORG_CODE:0001}
     root-org-name: ${ADMIN_ROOT_ORG_NAME:总部}

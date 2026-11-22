@@ -59,6 +59,21 @@
   --kb-fs-body: 15px;
   --kb-fs-caption: 13px;
   --kb-tracking-heading: -0.4px;
+
+  /* 顶栏（深色基调 + 园艺绿强调） */
+  --kb-topbar-bg: #101e18;
+  --kb-topbar-text: rgba(255, 255, 255, 0.72);
+  --kb-topbar-active: var(--kb-brand-bright);
+  --kb-sidebar-width: 208px;
+}
+
+/* 大字号适老模式 */
+:root[data-fs="large"] {
+  --kb-fs-heading: 32px;
+  --kb-fs-subheading: 20px;
+  --kb-fs-body: 18px;
+  --kb-fs-caption: 15px;
+  font-size: 17px;
 }
 
 /* Element Plus 深度定制 */
@@ -105,6 +120,8 @@ body {
 .el-card {
   border-radius: var(--kb-radius-card);
   border: 1px solid var(--kb-line);
+  background: var(--kb-bg-card);
+  color: var(--kb-text);
   box-shadow: var(--kb-shadow-card);
   overflow: hidden;
 }
@@ -184,6 +201,16 @@ body {
   box-shadow: var(--kb-shadow-card);
 }
 
+/* 弹出层：与卡片同语汇的圆角、细边框和层级 */
+.el-popover,
+.el-dropdown-menu {
+  border: 1px solid var(--kb-line);
+  border-radius: var(--kb-radius-card);
+  box-shadow: var(--kb-shadow-raised);
+  background: var(--kb-bg-card);
+  color: var(--kb-text);
+}
+
 /* 实时数据瓦片三态 */
 .kb-tile {
   border-radius: var(--kb-radius-tile);
@@ -220,18 +247,44 @@ body {
   opacity: 0;
 }
 
-/* 深色模式变量预留（跟随系统） */
+/* 深色模式：手动切换（data-theme）或跟随系统（未显式指定时） */
+:root[data-theme="dark"] {
+  --kb-bg-page: #0f1613;
+  --kb-bg-card: #17241e;
+  --kb-bg-sunken: #1d2c25;
+  --kb-text: #e8efe9;
+  --kb-text-muted: #9fb3a7;
+  --kb-line: #2a3c32;
+  --kb-brand-wash: rgba(53, 164, 118, 0.18);
+  --kb-topbar-bg: #0a120e;
+  --el-menu-text-color: var(--kb-text);
+  --el-menu-hover-bg-color: var(--kb-bg-sunken);
+  --el-bg-color-page: var(--kb-bg-page);
+  --el-bg-color: var(--kb-bg-card);
+  --el-text-color-primary: var(--kb-text);
+  --el-text-color-regular: var(--kb-text-muted);
+  --el-border-color: var(--kb-line);
+  --el-border-color-light: var(--kb-line);
+  --el-table-header-bg-color: var(--kb-bg-sunken);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --kb-bg-page: #0f1613;
     --kb-bg-card: #17241e;
     --kb-bg-sunken: #1d2c25;
     --kb-text: #e8efe9;
     --kb-text-muted: #9fb3a7;
     --kb-line: #2a3c32;
+    --kb-brand-wash: rgba(53, 164, 118, 0.18);
+    --kb-topbar-bg: #0a120e;
+    --el-menu-text-color: var(--kb-text);
+    --el-menu-hover-bg-color: var(--kb-bg-sunken);
     --el-bg-color-page: var(--kb-bg-page);
+    --el-bg-color: var(--kb-bg-card);
     --el-text-color-primary: var(--kb-text);
     --el-text-color-regular: var(--kb-text-muted);
     --el-border-color: var(--kb-line);
+    --el-border-color-light: var(--kb-line);
   }
 }

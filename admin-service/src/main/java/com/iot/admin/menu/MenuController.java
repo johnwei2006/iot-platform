@@ -16,10 +16,10 @@ import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Map;
 
-/** 菜单/按钮管理（仅 SUPER_ADMIN）。 */
+/** 菜单/按钮管理：机构管理员可读（用于角色/产品范围配置），维护仅限平台超管。 */
 @RestController
 @RequestMapping("/api/admin/menus")
-@RequireRoles({"SUPER_ADMIN"})
+@RequireRoles({"SUPER_ADMIN", "ORG_ADMIN"})
 public class MenuController {
 
     private final MenuService menuService;
@@ -40,6 +40,7 @@ public class MenuController {
     }
 
     @PostMapping
+    @RequireRoles({"SUPER_ADMIN"})
     public ApiResponse<Menu> create(@RequestBody CreateMenuRequest request) {
         return ApiResponse.success(menuService.create(request.getParentId(), request.getName(),
                 request.getType(), request.getPath(), request.getComponent(),
@@ -47,6 +48,7 @@ public class MenuController {
     }
 
     @PutMapping("/{id}")
+    @RequireRoles({"SUPER_ADMIN"})
     public ApiResponse<Menu> update(@PathVariable String id, @RequestBody UpdateMenuRequest request) {
         return ApiResponse.success(menuService.update(id, request.getName(), request.getPath(),
                 request.getComponent(), request.getPerm(), request.getIcon(),
@@ -54,6 +56,7 @@ public class MenuController {
     }
 
     @DeleteMapping("/{id}")
+    @RequireRoles({"SUPER_ADMIN"})
     public ApiResponse<Void> delete(@PathVariable String id) {
         menuService.delete(id);
         return ApiResponse.success(null);

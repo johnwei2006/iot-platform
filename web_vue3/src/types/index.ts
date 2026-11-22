@@ -18,6 +18,8 @@ export interface TokenResponse {
     roles: string[];
     /** 机构编码（登录响应可选返回） */
     orgCode?: string;
+    /** 机构名称（登录响应可选返回） */
+    orgName?: string;
   };
 }
 
@@ -28,6 +30,8 @@ export interface UserInfo {
   role?: string;
   /** 机构编码（数据权限展示用） */
   orgCode?: string;
+  /** 机构名称（顶栏"用户 | 机构"展示） */
+  orgName?: string;
 }
 
 export interface LoginPayload {
@@ -107,11 +111,23 @@ export interface ScopeEntity {
   name: string;
 }
 
+/** 产品主数据（sys_product） */
+export interface ProductRecord {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  sort?: string;
+  status?: string;
+  builtIn?: boolean;
+}
+
 /** /api/admin/me 响应 */
 export interface MeResponse {
-  user: { id: string; username: string; roles: string[]; orgCode?: string; superAdmin: boolean };
+  user: { id: string; username: string; roles: string[]; orgCode?: string; orgName?: string; superAdmin: boolean };
   menus: MenuNode[];
   perms: string[];
+  products: ProductRecord[];
   dataScopes: Record<string, string>;
 }
 

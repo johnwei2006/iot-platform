@@ -103,13 +103,17 @@ public class AdminProperties {
     }
 
     public static class Bootstrap {
-        private String adminUsername = "admin";
+        /** 平台唯一超级管理员；旧 admin 账号在启动时幂等改名收敛。 */
+        private String adminUsername = "sysadmin";
+        private String legacyAdminUsername = "admin";
         private String adminPassword = "Admin@123456";
         private String rootOrgCode = "0001";
         private String rootOrgName = "总部";
 
         public String getAdminUsername() { return adminUsername; }
         public void setAdminUsername(String adminUsername) { this.adminUsername = adminUsername; }
+        public String getLegacyAdminUsername() { return legacyAdminUsername; }
+        public void setLegacyAdminUsername(String legacyAdminUsername) { this.legacyAdminUsername = legacyAdminUsername; }
         public String getAdminPassword() { return adminPassword; }
         public void setAdminPassword(String adminPassword) { this.adminPassword = adminPassword; }
         public String getRootOrgCode() { return rootOrgCode; }

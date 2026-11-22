@@ -2,8 +2,9 @@
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import { createOrg, deleteOrg, fetchOrgList, fetchOrgTree, updateOrg } from '@/api/admin';
+import { createOrg, createOrgWithAdmin, deleteOrg, fetchOrgList, fetchOrgTree, updateOrg } from '@/api/admin';
 import type { OrgNode, OrgRecord } from '@/types';
+import ProductAssignDialog from './ProductAssignDialog.vue';
 
 const tree = ref<OrgNode[]>([]);
 const records = ref<OrgRecord[]>([]);
@@ -15,7 +16,11 @@ const dialog = reactive({
   id: '',
   parentCode: '',
 });
-const form = reactive({ code: '', name: '', leader: '', phone: '', sort: '0', status: 'ENABLED' });
+const form = reactive({
+  code: '', name: '', leader: '', phone: '', sort: '0', status: 'ENABLED',
+  adminUsername: '', adminPassword: '',
+});
+const assign = reactive({ visible: false, orgId: '', orgName: '' });
 
 async function refresh() {
   loading.value = true;
@@ -39,6 +44,8 @@ function openCreate(parent?: OrgRecord) {
   form.phone = '';
   form.sort = '0';
   form.status = 'ENABLED';
+  form.adminUsername = '';
+  form.adminPassword = '';
   dialog.parentCode = parent?.code ?? '';
   dialog.visible = true;
 }
@@ -67,7 +74,19 @@ async function submit() {
         ElMessage.warning('编码须为 4/6/8/10 位数字，且以父机构编码开头（如 0001、000102）');
         return;
       }
-      await createOrg({ code, name: form.name, leader: form.leader, phone: form.phone, sort: form.sort });
+      if (!dialog.parentCode) {
+        if (!form.adminUsername.trim() || form.adminPassword.length < 8) {
+          ElMessage.warning('一级机构须录入管理员账号，初始密码至少 8 位');
+          return;
+        }
+        await createOrgWithAdmin({
+          code, name: form.name, leader: form.leader, phone: form.phone, sort: form.sort,
+          adminUsername: form.adminUsername.trim(), adminPassword: form.adminPassword,
+        });
+        ElMessage.success('机构与管理员账号已创建，请继续分配产品');
+      } else {
+        await createOrg({ code, name: form.name, leader: form.leader, phone: form.phone, sort: form.sort });
+      }
     } else {
       await updateOrg(dialog.id, {
         name: form.name,
@@ -83,6 +102,12 @@ async function submit() {
   } catch (error) {
     ElMessage.error((error as Error).message || '保存失败');
   }
+}
+
+function openAssign(record: OrgRecord) {
+  assign.orgId = record.id;
+  assign.orgName = record.name;
+  assign.visible = true;
 }
 
 async function handleDelete(record: OrgRecord) {
@@ -137,6 +162,7 @@ onMounted(refresh);
               <el-tag v-if="data.status === 'DISABLED'" size="small" type="danger">停用</el-tag>
             </span>
             <span class="tree-actions">
+              <el-button link type="primary" size="small" @click="openAssign(data)">分配产品</el-button>
               <el-button
                 link
                 type="primary"
@@ -197,6 +223,15 @@ onMounted(refresh);
         <el-form-item label="排序">
           <el-input v-model="form.sort" placeholder="数字越小越靠前" />
         </el-form-item>
+        <template v-if="dialog.mode === 'create' && !dialog.parentCode">
+          <div class="section-title">一级机构管理员</div>
+          <el-form-item label="管理员账号">
+            <el-input v-model="form.adminUsername" placeholder="将作为该机构管理员登录账号" />
+          </el-form-item>
+          <el-form-item label="初始密码">
+            <el-input v-model="form.adminPassword" type="password" show-password placeholder="至少 8 位，交由管理员首次登录后修改" />
+          </el-form-item>
+        </template>
         <el-form-item v-if="dialog.mode === 'edit'" label="状态">
           <el-radio-group v-model="form.status">
             <el-radio value="ENABLED">启用</el-radio>
@@ -209,6 +244,13 @@ onMounted(refresh);
         <el-button type="primary" @click="submit">保存</el-button>
       </template>
     </el-dialog>
+
+    <ProductAssignDialog
+      v-model="assign.visible"
+      :org-id="assign.orgId"
+      :org-name="assign.orgName"
+      @saved="refresh"
+    />
   </div>
 </template>
 
@@ -236,6 +278,12 @@ onMounted(refresh);
 .tree-actions {
   display: flex;
   gap: 4px;
+}
+.section-title {
+  font-size: var(--kb-fs-subheading);
+  font-weight: 600;
+  color: var(--kb-text);
+  margin: 12px 0 4px 90px;
 }
 .form-tip {
   font-size: 12px;

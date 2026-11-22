@@ -6,6 +6,7 @@ import type {
   MenuNode,
   OrgNode,
   OrgRecord,
+  ProductRecord,
   RoleView,
   ScopeEntity,
 } from '@/types';
@@ -67,8 +68,58 @@ export function updateOrg(
   return unwrap<OrgRecord>(adminHttp.put(`/api/admin/orgs/${id}`, payload));
 }
 
+export function createOrgWithAdmin(payload: {
+  code: string;
+  name: string;
+  leader?: string;
+  phone?: string;
+  sort?: string;
+  adminUsername: string;
+  adminPassword: string;
+}): Promise<OrgRecord> {
+  return unwrap<OrgRecord>(adminHttp.post('/api/admin/orgs/create-with-admin', payload));
+}
+
 export function deleteOrg(id: string): Promise<void> {
   return unwrap<void>(adminHttp.delete(`/api/admin/orgs/${id}`));
+}
+
+/** ============ 产品与授权关系 ============ */
+export function fetchProducts(): Promise<ProductRecord[]> {
+  return unwrap<ProductRecord[]>(adminHttp.get('/api/admin/products'));
+}
+
+export function createProduct(payload: {
+  code: string; name: string; description?: string; sort?: string;
+}): Promise<ProductRecord> {
+  return unwrap<ProductRecord>(adminHttp.post('/api/admin/products', payload));
+}
+
+export function updateProduct(
+  id: string,
+  payload: { name?: string; description?: string; sort?: string; status?: string },
+): Promise<ProductRecord> {
+  return unwrap<ProductRecord>(adminHttp.put(`/api/admin/products/${id}`, payload));
+}
+
+export function deleteProduct(id: string): Promise<void> {
+  return unwrap<void>(adminHttp.delete(`/api/admin/products/${id}`));
+}
+
+export function fetchProductMenus(id: string): Promise<MenuNode[]> {
+  return unwrap<MenuNode[]>(adminHttp.get(`/api/admin/products/${id}/menus`));
+}
+
+export function bindProductMenus(id: string, menuIds: string[]): Promise<string[]> {
+  return unwrap<string[]>(adminHttp.put(`/api/admin/products/${id}/menus`, { menuIds }));
+}
+
+export function fetchOrgProducts(orgId: string): Promise<ProductRecord[]> {
+  return unwrap<ProductRecord[]>(adminHttp.get(`/api/admin/orgs/${orgId}/products`));
+}
+
+export function assignOrgProducts(orgId: string, productIds: string[]): Promise<string[]> {
+  return unwrap<string[]>(adminHttp.put(`/api/admin/orgs/${orgId}/products`, { productIds }));
 }
 
 /** ============ 用户管理（凭证在 auth-service，admin 代理） ============ */

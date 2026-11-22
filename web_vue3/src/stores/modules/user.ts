@@ -6,7 +6,7 @@ import {
   exchangeSsoTicket as exchangeSsoTicketApi,
 } from '@/api/auth';
 import { fetchMe } from '@/api/admin';
-import type { LoginPayload, MeResponse, MenuNode, TokenResponse, UserInfo } from '@/types';
+import type { LoginPayload, MeResponse, MenuNode, ProductRecord, TokenResponse, UserInfo } from '@/types';
 import { tokens } from '@/utils/token';
 import { storage } from '@/utils/storage';
 
@@ -16,6 +16,8 @@ interface UserState {
   menus: MenuNode[];
   /** 按钮权限点 */
   perms: string[];
+  /** 服务端授权产品（上限由机构分配决定） */
+  products: ProductRecord[];
   /** 数据权限映射（实体 -> 范围） */
   dataScopes: Record<string, string>;
   /** /me 是否已加载（含动态路由是否已注册） */
@@ -32,6 +34,7 @@ export const useUserStore = defineStore('user', {
     userInfo: loadUserInfo(),
     menus: [],
     perms: [],
+    products: [],
     dataScopes: {},
     meLoaded: false,
   }),
@@ -57,6 +60,7 @@ export const useUserStore = defineStore('user', {
           username: data.user.username,
           roles: data.user.roles ?? [],
           orgCode: data.user.orgCode,
+          orgName: data.user.orgName,
         };
         storage.set('userInfo', this.userInfo);
       }
@@ -75,13 +79,19 @@ export const useUserStore = defineStore('user', {
         const me: MeResponse = await fetchMe();
         this.menus = me.menus || [];
         this.perms = me.perms || [];
+        this.products = me.products || [];
         this.dataScopes = me.dataScopes || {};
         if (me.user) {
+          // /me 的 username 在某些版本等于用户 id，保留登录响应中的可读用户名
+          const readableName = me.user.username !== me.user.id
+            ? me.user.username
+            : this.userInfo?.username || me.user.username;
           this.userInfo = {
-            name: me.user.username,
-            username: me.user.username,
+            name: readableName,
+            username: readableName,
             roles: me.user.roles ?? [],
             orgCode: me.user.orgCode,
+            orgName: me.user.orgName,
             superAdmin: !!me.user.superAdmin,
           };
           storage.set('userInfo', this.userInfo);
@@ -96,6 +106,7 @@ export const useUserStore = defineStore('user', {
     resetMe(): void {
       this.menus = [];
       this.perms = [];
+      this.products = [];
       this.dataScopes = {};
       this.meLoaded = false;
     },
