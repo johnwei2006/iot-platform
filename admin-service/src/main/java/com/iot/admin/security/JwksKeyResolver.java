@@ -42,6 +42,7 @@ public class JwksKeyResolver {
     private volatile long lastFetchAt = 0L;
     private volatile boolean fetchFailed = false;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public JwksKeyResolver(RestTemplateBuilder builder,
                            @org.springframework.beans.factory.annotation.Value("${admin.auth.base-url:http://localhost:8083}") String baseUrl,
                            @org.springframework.beans.factory.annotation.Value("${admin.auth.jwks-url:}") String jwksUrl,

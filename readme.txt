@@ -29,6 +29,18 @@ IoT 平台（iot-platform）
 6. 测试万能 token：ProxyTcp 配置 gateway.auth.master-token（默认 MASTER0001，
    置空关闭），携带它的报文无需认证即可通过；仅限测试环境，生产务必置空。
 
+系统管理数据持久化（MySQL，2026-11 新增）
+------------------------------------------
+- 机构/角色/菜单按钮在 admin-service，用户在 auth-service，现统一持久化到
+  MySQL localhost:3306 / iot-platform（本地默认 root/jwmhw5154，可用
+  MYSQL_HOST/PORT/DB/USER/PASSWORD 覆盖）。
+- 表结构：sql/sys-management-mysql.sql，表为 sys_org / sys_role / sys_menu / sys_user；
+  按钮仍存 sys_menu 中 type=BUTTON 的节点；菜单/角色/用户的集合字段用 JSON 列。
+- 历史数据：scripts/mongo-to-mysql 一次性迁移工具，从 admin_service 的
+  orgs/roles/menus 与 auth_service 的 users 导入，保留原始 id 与 BCrypt 哈希，
+  可重复执行（详见该目录 README.md）。
+- auth-service 的审计日志/SSO/refresh token 仍在 MongoDB；其他业务模块不改。
+
 构建环境（2026-11 迁移后）
 --------------------------
 全部 Java 后端模块（auth-service / admin-service / platform_java / dtm / ProxyTcp）

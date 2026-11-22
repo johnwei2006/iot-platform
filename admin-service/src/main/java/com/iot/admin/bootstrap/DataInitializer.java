@@ -147,41 +147,46 @@ public class DataInitializer implements ApplicationRunner {
     private void initAdminUser() {
         String username = properties.getBootstrap().getAdminUsername();
         try {
-            boolean exists = false;
+            AuthInternalClient.UserSummary existing = null;
             for (AuthInternalClient.UserSummary user : authClient.listUsers()) {
                 if (username.equals(user.getUsername())) {
-                    exists = true;
-                    // 确保初始管理员具备 SUPER_ADMIN 与根机构归属（幂等收敛）
-                    if (!user.getRoles().contains(ROLE_SUPER_ADMIN)
-                            || user.getOrgId() == null) {
-                        String rootOrgId = null;
-                        for (Org org : orgRepository.findAll()) {
-                            if (properties.getBootstrap().getRootOrgCode().equals(org.getCode())) {
-                                rootOrgId = org.getId();
-                            }
-                        }
-                        ArrayList<String> roles = new ArrayList<String>(user.getRoles());
-                        if (!roles.contains(ROLE_SUPER_ADMIN)) {
-                            roles.add(ROLE_SUPER_ADMIN);
-                        }
-                        authClient.updateUser(user.getId(), null, roles, null);
-                        Map<String, String> merged = new LinkedHashMap<String, String>();
-                        merged.put("device", com.iot.admin.role.RoleService.SCOPE_ALL);
-                        authClient.syncIdentity(user.getId(), rootOrgId,
-                                properties.getBootstrap().getRootOrgCode(), merged);
-                        log.info("Bootstrap admin user synced: {}", username);
-                    }
+                    existing = user;
                     break;
                 }
             }
-            if (!exists) {
-                authClient.createUser(username, properties.getBootstrap().getAdminPassword(),
+            if (existing == null) {
+                existing = authClient.createUser(username, properties.getBootstrap().getAdminPassword(),
                         new ArrayList<String>());
                 log.info("Bootstrap admin user created: {} (please change password at first login)",
                         username);
             }
+            // 首次创建与后续启动都收敛角色/机构/数据权限，避免首启管理员无权限
+            grantAdminIdentity(existing);
         } catch (Exception e) {
             log.warn("Bootstrap admin user not ready (auth-service unreachable?): {}", e.getMessage());
         }
+    }
+
+    /** 幂等确保初始管理员具备 SUPER_ADMIN 角色、根机构归属与全域数据权限。 */
+    private void grantAdminIdentity(AuthInternalClient.UserSummary user) {
+        if (user.getRoles().contains(ROLE_SUPER_ADMIN) && user.getOrgId() != null) {
+            return;
+        }
+        String rootOrgId = null;
+        for (Org org : orgRepository.findAll()) {
+            if (properties.getBootstrap().getRootOrgCode().equals(org.getCode())) {
+                rootOrgId = org.getId();
+            }
+        }
+        ArrayList<String> roles = new ArrayList<String>(user.getRoles());
+        if (!roles.contains(ROLE_SUPER_ADMIN)) {
+            roles.add(ROLE_SUPER_ADMIN);
+        }
+        authClient.updateUser(user.getId(), null, roles, null);
+        Map<String, String> merged = new LinkedHashMap<String, String>();
+        merged.put("device", com.iot.admin.role.RoleService.SCOPE_ALL);
+        authClient.syncIdentity(user.getId(), rootOrgId,
+                properties.getBootstrap().getRootOrgCode(), merged);
+        log.info("Bootstrap admin user synced: {}", user.getUsername());
     }
 }
