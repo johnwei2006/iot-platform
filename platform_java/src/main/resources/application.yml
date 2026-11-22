@@ -4,15 +4,17 @@ server:
 spring:
   application:
     name: platform-java
-  # platform_java 以 MongoDB 为主库；TDengine 的 DataSource/JdbcTemplate 由 TdEngineConfig 手工创建，
-  # 关闭 JDBC 自动配置，避免 classpath 上出现 spring-jdbc 后触发内嵌数据源探测。
+  # 业务主库为 MySQL（MyBatis-Plus）；TDengine 的 JdbcTemplate 由 TdEngineConfig 手工创建，
+  # 仅排除 JdbcTemplate 自动配置，保留 DataSourceAutoConfiguration 给 MySQL 使用。
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:iot-platform}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:jwmhw5154}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   data:
-    mongodb:
-      uri: ${MONGO_URI:mongodb://localhost:27017/iot_platform}
     # 设备实时状态缓存。Lettuce 为懒连接，未部署 Redis 时应用仍可启动。
     # （Spring Boot 3 起 Redis 连接属性由 spring.redis 迁移到 spring.data.redis）
     redis:
@@ -36,6 +38,14 @@ spring:
           multiplier: 2.0
           max-interval: 10000
         default-requeue-rejected: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      # 主键由应用层显式赋值（UUID 或迁移保留的历史 id）
+      id-type: none
 
 app:
   # 鉴权（阶段 3）：优先本地验签——从 auth-service JWKS 拉取 RS256 公钥，

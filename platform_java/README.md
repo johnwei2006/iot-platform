@@ -6,8 +6,8 @@
 
 ## 功能
 
-- **设备管理**：注册、查询、状态维护（MongoDB）。
-- **上行接入**：通过 `platform.uplink` 消费设备数据，持久化 `data_records`，刷新设备在线状态。
+- **设备管理**：注册、查询、状态维护（MySQL `iot_device`）。
+- **上行接入**：通过 `platform.uplink` 消费设备数据，持久化 `iot_data_record`，刷新设备在线状态。
 - **业务转换**：上行按 `serviceType` 分派给业务转换器（扩展点 `UplinkBusinessConverter`），本期实现传感器配置元数据与实时读数。
 - **时序归档**：`0X18 GATEWAY_SENSOR_DATA_REPORT` 的多通道读数写入 TDengine 超级表 `sensordata`，按 `sensordata_{sensorcode}` 分表。
 - **实时状态**：上行旁路把「在线状态 + 最新业务数据」写入 Redis（String JSON + TTL），提供只读 REST 查询。
@@ -18,8 +18,9 @@
 ## 技术栈
 
 - Spring Boot 3.3.5（与 `ProxyTcp`/`dtm` 对齐，Java 17；2026-11 由 Boot 2.1.6 / Java 8 迁移）
-- Spring AMQP（RabbitMQ）、Spring Data MongoDB、Spring Data Redis（Lettuce，配置键 `spring.data.redis.*`）、Actuator
-- TDengine（原生 JDBC `taos-jdbcdriver` 3.2.11 + `JdbcTemplate`，仅用于传感器时序数据）
+- Spring AMQP（RabbitMQ）、MySQL 8 + MyBatis-Plus 3.5.7（设备/数据记录/告警）、Spring Data Redis（Lettuce，配置键 `spring.data.redis.*`）、Actuator
+- TDengine（原生 JDBC `taos-jdbcdriver` 3.2.11 + 手工 `JdbcTemplate`，仅用于传感器时序数据；与 MySQL 数据源隔离）
+- 表结构见 `sql/platform-mysql.sql`；历史 MongoDB 数据用 `scripts/mongo-to-mysql` 迁移
 - jjwt 0.12.6（本地验签）、JUnit 5
 
 ## 主要接口

@@ -35,6 +35,7 @@ public class AuthServiceClient {
     private final String baseUrl;
     private final String verifyUrl;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public AuthServiceClient(RestTemplateBuilder builder,
                              @Value("${app.auth-service.base-url:http://localhost:8083}") String baseUrl,
                              @Value("${app.auth-service.verify-path:/api/auth/verify}") String verifyPath,

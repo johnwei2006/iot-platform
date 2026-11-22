@@ -1,10 +1,16 @@
 package com.iot.auth.identity;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
+import java.util.List;
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<User, String> {
+/** 用户数据访问接口（由 MyBatis-Plus 适配器实现，方法签名保持不变）。 */
+public interface UserRepository {
+
+    List<User> findAll();
+
+    Optional<User> findById(String id);
+
+    User save(User user);
 
     Optional<User> findByUsername(String username);
 

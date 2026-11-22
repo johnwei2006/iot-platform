@@ -10,13 +10,6 @@ spring:
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:jwmhw5154}
     driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-    open-in-view: false
   data:
     mongodb:
       uri: ${AUTH_MONGO_URI:mongodb://localhost:27017/auth_service}
@@ -26,6 +19,14 @@ spring:
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: ${REDIS_TIMEOUT:2000}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      # 主键由应用层显式赋值（UUID 或迁移保留的历史 id）
+      id-type: none
 
 management:
   endpoints:

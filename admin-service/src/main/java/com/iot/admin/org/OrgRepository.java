@@ -1,17 +1,22 @@
 package com.iot.admin.org;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
 
-public interface OrgRepository extends JpaRepository<Org, String> {
+/** 机构数据访问接口（由 MyBatis-Plus 适配器实现，方法签名保持不变）。 */
+public interface OrgRepository {
+
+    Optional<Org> findById(String id);
+
+    List<Org> findAll();
+
+    Org save(Org org);
+
+    void delete(Org org);
 
     Optional<Org> findByCode(String code);
 
     List<Org> findByParentCode(String parentCode);
 
-    List<Org> findByCodeStartingWith(String prefix);
-
-    List<Org> findByStatus(String status);
+    List<Org> findByCodeStartingWith(String code);
 }

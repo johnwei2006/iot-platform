@@ -3,8 +3,6 @@ package com.iot.platform.security.datascope;
 import com.iot.platform.model.Device;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,10 +39,10 @@ public class DataScopeTest {
 
     @Test
     public void orgAndChildrenUsesPrefixMatch() {
-        Criteria criteria = registry.criteriaFor("device", "u1", "0001", ds(DataScopeRegistry.SCOPE_ORG_AND_CHILDREN));
-        String query = new Query(criteria).getQueryObject().toJson();
-        assertTrue(query.contains("orgCode"));
-        assertTrue(query.contains("0001"));
+        DataScopeQuery query = registry.criteriaFor("device", "u1", "0001",
+                ds(DataScopeRegistry.SCOPE_ORG_AND_CHILDREN));
+        assertEquals(DataScopeQuery.Type.ORG_AND_CHILDREN, query.getType());
+        assertEquals("0001", query.getValue());
 
         // 前缀语义：本机构 0001 与子孙 000101/00010103 均可见
         assertTrue(deviceRule.matches(device("0001", "u1"), "u1", "0001", ds(DataScopeRegistry.SCOPE_ORG_AND_CHILDREN)));
@@ -66,14 +64,16 @@ public class DataScopeTest {
         assertTrue(deviceRule.matches(device("0001", "u1"), "u1", null, ds(DataScopeRegistry.SCOPE_SELF)));
         assertFalse(deviceRule.matches(device("0001", "u2"), "u1", null, ds(DataScopeRegistry.SCOPE_SELF)));
         // 无机构但 SELF 范围仍按归属判定（不依赖机构）
-        Criteria criteria = registry.criteriaFor("device", "u1", null, ds(DataScopeRegistry.SCOPE_SELF));
-        assertTrue(new Query(criteria).getQueryObject().toJson().contains("ownerUserId"));
+        DataScopeQuery query = registry.criteriaFor("device", "u1", null, ds(DataScopeRegistry.SCOPE_SELF));
+        assertEquals(DataScopeQuery.Type.SELF, query.getType());
+        assertEquals("u1", query.getValue());
     }
 
     @Test
     public void missingScopeOrOrgIsDenied() {
-        Criteria denied = registry.criteriaFor("device", "u1", null, ds(DataScopeRegistry.SCOPE_ORG_AND_CHILDREN));
-        assertEquals(DataScopeRegistry.DENY_ALL.getCriteriaObject(), denied.getCriteriaObject());
+        DataScopeQuery denied = registry.criteriaFor("device", "u1", null,
+                ds(DataScopeRegistry.SCOPE_ORG_AND_CHILDREN));
+        assertEquals(DataScopeQuery.Type.DENY_ALL, denied.getType());
         assertFalse(deviceRule.matches(device("0001", "u1"), "u1", null, ds(DataScopeRegistry.SCOPE_ORG_AND_CHILDREN)));
         // 完全无 ds 声明 → 拒绝
         assertFalse(deviceRule.matches(device("0001", "u1"), "u1", "0001", null));

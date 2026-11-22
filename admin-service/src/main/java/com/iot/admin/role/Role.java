@@ -1,69 +1,47 @@
 package com.iot.admin.role;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.iot.admin.common.JsonTypeHandlers;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
- * 角色：菜单授权（menuIds）+ 按业务实体的数据权限（dataScopes）。
- * dataScopes: 实体编码 -> ALL|ORG_AND_CHILDREN|ORG_ONLY|SELF。
- *
- * <p>持久化到 MySQL sys_role；集合字段以 JSON 列整体读写（不做 SQL 关联查询）。
+ * 角色：菜单授权（menuIds）+ 按业务实体的数据权限（dataScopes），两者以 MySQL JSON 列存储。
  */
-@Entity
-@Table(name = "sys_role")
+@TableName(value = "sys_role", autoResultMap = true)
 public class Role {
 
-    @Id
-    @Column(name = "id", length = 36)
+    @TableId(value = "id", type = IdType.NONE)
     private String id;
 
-    /** 角色编码（大写，如 SUPER_ADMIN / ORG_ADMIN / OPERATOR） */
-    @Column(name = "code", length = 64, nullable = false, unique = true)
+    /** 角色编码（大写，如 SUPER_ADMIN） */
     private String code;
 
     private String name;
 
     /** 授权菜单（含 DIR/MENU/BUTTON 节点 id） */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "menu_ids", columnDefinition = "JSON")
+    @TableField(value = "menu_ids", typeHandler = JsonTypeHandlers.ListStringTypeHandler.class)
     private List<String> menuIds = new ArrayList<String>();
 
-    /** 按业务实体的数据权限 */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "data_scopes", columnDefinition = "JSON")
+    /** 按业务实体的数据权限：实体编码 -> ALL|ORG_AND_CHILDREN|ORG_ONLY|SELF */
+    @TableField(value = "data_scopes", typeHandler = JsonTypeHandlers.MapStringTypeHandler.class)
     private Map<String, String> dataScopes = new HashMap<String, String>();
 
-    /** 内置角色（SUPER_ADMIN）：不可删除，数据权限不可修改 */
-    @Column(name = "built_in", nullable = false)
+    /** 内置角色不可删除 */
+    @TableField("built_in")
     private boolean builtIn = false;
 
-    @Column(name = "status", length = 16)
     private String status = "ENABLED";
 
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "created_at")
+    @TableField("created_at")
     private Date createdAt = new Date();
-
-    @PrePersist
-    void ensureId() {
-        if (id == null || id.isEmpty()) {
-            id = UUID.randomUUID().toString();
-        }
-    }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

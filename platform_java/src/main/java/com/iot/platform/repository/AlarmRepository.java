@@ -1,13 +1,20 @@
 package com.iot.platform.repository;
 
 import com.iot.platform.model.Alarm;
-import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
+import java.util.Optional;
 
-public interface AlarmRepository extends MongoRepository<Alarm, String> {
+/** 告警数据访问接口（MyBatis-Plus 适配器实现）。 */
+public interface AlarmRepository {
 
     List<Alarm> findByStatus(String status);
 
     List<Alarm> findByDeviceIdOrderByCreatedAtDesc(String deviceId);
+
+    List<Alarm> findAll();
+
+    Optional<Alarm> findById(String id);
+
+    Alarm save(Alarm alarm);
 }

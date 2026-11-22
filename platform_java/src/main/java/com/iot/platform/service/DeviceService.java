@@ -1,11 +1,11 @@
 package com.iot.platform.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.iot.platform.model.Device;
 import com.iot.platform.repository.DeviceRepository;
+import com.iot.platform.security.datascope.DataScopeQuery;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -24,9 +24,6 @@ public class DeviceService {
     @Autowired
     private DeviceRepository deviceRepository;
 
-    @Autowired
-    private MongoTemplate mongoTemplate;
-
     private final SecureRandom secureRandom = new SecureRandom();
 
     /** 全量列表（内部/网关路径使用）。 */
@@ -34,10 +31,24 @@ public class DeviceService {
         return deviceRepository.findAll();
     }
 
-    /** 按数据权限条件过滤列表；criteria 为 null 表示不过滤（ALL）。 */
-    public List<Device> listByCriteria(Criteria criteria) {
-        Query query = criteria == null ? new Query() : new Query(criteria);
-        return mongoTemplate.find(query, Device.class);
+    /** 按数据权限条件过滤列表；scope 为 null 表示不过滤（ALL）。 */
+    public List<Device> listByCriteria(DataScopeQuery scope) {
+        if (scope == null || scope.getType() == DataScopeQuery.Type.ALL) {
+            return deviceRepository.findAll();
+        }
+        if (scope.getType() == DataScopeQuery.Type.DENY_ALL) {
+            return List.of();
+        }
+        LambdaQueryWrapper<Device> wrapper = Wrappers.<Device>lambdaQuery();
+        switch (scope.getType()) {
+            case ORG_AND_CHILDREN -> wrapper.likeRight(Device::getOrgCode, scope.getValue());
+            case ORG_ONLY -> wrapper.eq(Device::getOrgCode, scope.getValue());
+            case SELF -> wrapper.eq(Device::getOwnerUserId, scope.getValue());
+            default -> {
+                return List.of();
+            }
+        }
+        return deviceRepository.findAll(wrapper);
     }
 
     public Optional<Device> get(String id) {

@@ -65,6 +65,35 @@ public final class MongoToMysqlMigration {
                     + "`status`=VALUES(`status`),`created_at`=VALUES(`created_at`),"
                     + "`last_login_at`=VALUES(`last_login_at`)";
 
+    private static final String DEVICE_UPSERT =
+            "INSERT INTO `iot_device` (`id`,`device_id`,`node_id`,`name`,`identifier_type`,`auth_secret`,"
+                    + "`status`,`org_code`,`owner_user_id`,`last_seen`,`created_at`,`updated_at`) "
+                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE "
+                    + "`device_id`=VALUES(`device_id`),`node_id`=VALUES(`node_id`),`name`=VALUES(`name`),"
+                    + "`identifier_type`=VALUES(`identifier_type`),`auth_secret`=VALUES(`auth_secret`),"
+                    + "`status`=VALUES(`status`),`org_code`=VALUES(`org_code`),"
+                    + "`owner_user_id`=VALUES(`owner_user_id`),`last_seen`=VALUES(`last_seen`),"
+                    + "`created_at`=VALUES(`created_at`),`updated_at`=VALUES(`updated_at`)";
+
+    private static final String RECORD_UPSERT =
+            "INSERT INTO `iot_data_record` (`id`,`device_id`,`service_type`,`service_version`,`service_data`,"
+                    + "`event_id`,`created_at`,`service_data_decoded`,`protocol_name`,`transaction_type`,"
+                    + "`decode_status`,`decode_error`) "
+                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE "
+                    + "`device_id`=VALUES(`device_id`),`service_type`=VALUES(`service_type`),"
+                    + "`service_version`=VALUES(`service_version`),`service_data`=VALUES(`service_data`),"
+                    + "`event_id`=VALUES(`event_id`),`created_at`=VALUES(`created_at`),"
+                    + "`service_data_decoded`=VALUES(`service_data_decoded`),"
+                    + "`protocol_name`=VALUES(`protocol_name`),`transaction_type`=VALUES(`transaction_type`),"
+                    + "`decode_status`=VALUES(`decode_status`),`decode_error`=VALUES(`decode_error`)";
+
+    private static final String ALARM_UPSERT =
+            "INSERT INTO `iot_alarm` (`id`,`device_id`,`rule`,`level`,`message`,`status`,`created_at`,`resolved_at`) "
+                    + "VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE "
+                    + "`device_id`=VALUES(`device_id`),`rule`=VALUES(`rule`),`level`=VALUES(`level`),"
+                    + "`message`=VALUES(`message`),`status`=VALUES(`status`),"
+                    + "`created_at`=VALUES(`created_at`),`resolved_at`=VALUES(`resolved_at`)";
+
     private MongoToMysqlMigration() {
     }
 
@@ -86,6 +115,7 @@ public final class MongoToMysqlMigration {
             mysql.setAutoCommit(false);
             MongoDatabase admin = mongo.getDatabase(options.adminDb);
             MongoDatabase auth = mongo.getDatabase(options.authDb);
+            MongoDatabase platform = mongo.getDatabase(options.platformDb);
 
             int orgs = migrate(mysql, admin.getCollection("orgs"), ORG_UPSERT, options.batchSize,
                     (ps, doc) -> {
@@ -145,9 +175,55 @@ public final class MongoToMysqlMigration {
                         ps.setTimestamp(i++, timestamp(doc, "createdAt"));
                         ps.setTimestamp(i, timestamp(doc, "lastLoginAt"));
                     });
+            int devices = migrate(mysql, platform.getCollection("devices"), DEVICE_UPSERT, options.batchSize,
+                    (ps, doc) -> {
+                        int i = 1;
+                        ps.setString(i++, idOf(doc));
+                        ps.setString(i++, text(doc, "deviceId", ""));
+                        ps.setString(i++, text(doc, "nodeId", null));
+                        ps.setString(i++, text(doc, "name", null));
+                        ps.setString(i++, text(doc, "identifierType", null));
+                        ps.setString(i++, text(doc, "authSecret", null));
+                        ps.setString(i++, text(doc, "status", null));
+                        ps.setString(i++, text(doc, "orgCode", null));
+                        ps.setString(i++, text(doc, "ownerUserId", null));
+                        ps.setTimestamp(i++, timestamp(doc, "lastSeen"));
+                        ps.setTimestamp(i++, timestamp(doc, "createdAt"));
+                        ps.setTimestamp(i, timestamp(doc, "updatedAt"));
+                    });
+            int records = migrate(mysql, platform.getCollection("data_records"), RECORD_UPSERT, options.batchSize,
+                    (ps, doc) -> {
+                        int i = 1;
+                        ps.setString(i++, idOf(doc));
+                        ps.setString(i++, text(doc, "deviceId", ""));
+                        ps.setInt(i++, (int) number(doc, "serviceType", 0L));
+                        ps.setInt(i++, (int) number(doc, "serviceVersion", 0L));
+                        ps.setString(i++, text(doc, "serviceData", null));
+                        ps.setLong(i++, number(doc, "eventId", 0L));
+                        ps.setTimestamp(i++, timestamp(doc, "createdAt"));
+                        ps.setString(i++, jsonMap(doc.get("serviceDataDecoded")));
+                        ps.setString(i++, text(doc, "protocolName", null));
+                        ps.setString(i++, text(doc, "transactionType", null));
+                        ps.setString(i++, text(doc, "decodeStatus", null));
+                        ps.setString(i, text(doc, "decodeError", null));
+                    });
+            int alarms = migrate(mysql, platform.getCollection("alarms"), ALARM_UPSERT, options.batchSize,
+                    (ps, doc) -> {
+                        int i = 1;
+                        ps.setString(i++, idOf(doc));
+                        ps.setString(i++, text(doc, "deviceId", null));
+                        ps.setString(i++, text(doc, "rule", null));
+                        ps.setString(i++, text(doc, "level", null));
+                        ps.setString(i++, text(doc, "message", null));
+                        ps.setString(i++, text(doc, "status", null));
+                        ps.setTimestamp(i++, timestamp(doc, "createdAt"));
+                        ps.setTimestamp(i, timestamp(doc, "resolvedAt"));
+                    });
 
             System.out.println("Migration done: sys_org=" + orgs + " sys_role=" + roles
                     + " sys_menu=" + menus + " sys_user=" + users
+                    + " iot_device=" + devices + " iot_data_record=" + records
+                    + " iot_alarm=" + alarms
                     + " elapsed=" + (System.currentTimeMillis() - started) + "ms");
         }
     }
@@ -235,6 +311,7 @@ public final class MongoToMysqlMigration {
         private String mongoUri = env("MONGO_URI", "mongodb://localhost:27017");
         private String adminDb = env("ADMIN_MONGO_DB", "admin_service");
         private String authDb = env("AUTH_MONGO_DB", "auth_service");
+        private String platformDb = env("PLATFORM_MONGO_DB", "iot_platform");
         private String mysqlUrl = env("MYSQL_URL",
                 "jdbc:mysql://localhost:3306/iot-platform?useUnicode=true&characterEncoding=utf8"
                         + "&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false");
@@ -264,6 +341,7 @@ public final class MongoToMysqlMigration {
                     case "--mongo-uri" -> o.mongoUri = value;
                     case "--admin-db" -> o.adminDb = value;
                     case "--auth-db" -> o.authDb = value;
+                    case "--platform-db" -> o.platformDb = value;
                     case "--mysql-url" -> o.mysqlUrl = value;
                     case "--mysql-user" -> o.mysqlUser = value;
                     case "--mysql-password" -> o.mysqlPassword = value;
@@ -279,6 +357,7 @@ public final class MongoToMysqlMigration {
             System.out.println("  --mongo-uri URI       MongoDB URI (env MONGO_URI)");
             System.out.println("  --admin-db NAME       源库：机构/角色/菜单 (env ADMIN_MONGO_DB, default admin_service)");
             System.out.println("  --auth-db NAME        源库：用户 (env AUTH_MONGO_DB, default auth_service)");
+            System.out.println("  --platform-db NAME    源库：设备/数据记录/告警 (env PLATFORM_MONGO_DB, default iot_platform)");
             System.out.println("  --mysql-url URL       MySQL JDBC URL (env MYSQL_URL)");
             System.out.println("  --mysql-user USER     MySQL user (env MYSQL_USER, default root)");
             System.out.println("  --mysql-password PWD  MySQL password (env MYSQL_PASSWORD)");

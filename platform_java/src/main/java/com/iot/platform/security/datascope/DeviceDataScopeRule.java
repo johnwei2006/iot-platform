@@ -1,16 +1,11 @@
 package com.iot.platform.security.datascope;
 
 import com.iot.platform.model.Device;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.regex.Pattern;
 
-/**
- * 设备数据权限规则：机构编码前缀匹配实现"本机构及以下"，
- * 无需查询机构树；未标注机构的存量设备仅对 ALL 范围可见。
- */
+/** 设备数据权限规则：机构编码前缀匹配实现"本机构及以下"，无需查询机构树。 */
 @Component
 public class DeviceDataScopeRule implements DataScopeRule {
 
@@ -20,33 +15,33 @@ public class DeviceDataScopeRule implements DataScopeRule {
     }
 
     @Override
-    public Criteria criteria(String subject, String orgCode, Map<String, String> dataScopes) {
+    public DataScopeQuery criteria(String subject, String orgCode, Map<String, String> dataScopes) {
         String scope = dataScopes == null ? null : dataScopes.get("device");
         if (scope == null) {
-            return DataScopeRegistry.DENY_ALL;
+            return DataScopeQuery.denyAll();
         }
         if (DataScopeRegistry.SCOPE_ALL.equals(scope)) {
             return null;
         }
         if (DataScopeRegistry.SCOPE_ORG_AND_CHILDREN.equals(scope)) {
             if (orgCode == null || orgCode.isEmpty()) {
-                return DataScopeRegistry.DENY_ALL;
+                return DataScopeQuery.denyAll();
             }
-            return Criteria.where("orgCode").regex("^" + Pattern.quote(orgCode));
+            return DataScopeQuery.orgPrefix(orgCode);
         }
         if (DataScopeRegistry.SCOPE_ORG_ONLY.equals(scope)) {
             if (orgCode == null || orgCode.isEmpty()) {
-                return DataScopeRegistry.DENY_ALL;
+                return DataScopeQuery.denyAll();
             }
-            return Criteria.where("orgCode").is(orgCode);
+            return DataScopeQuery.org(orgCode);
         }
         if (DataScopeRegistry.SCOPE_SELF.equals(scope)) {
             if (subject == null || subject.isEmpty()) {
-                return DataScopeRegistry.DENY_ALL;
+                return DataScopeQuery.denyAll();
             }
-            return Criteria.where("ownerUserId").is(subject);
+            return DataScopeQuery.self(subject);
         }
-        return DataScopeRegistry.DENY_ALL;
+        return DataScopeQuery.denyAll();
     }
 
     @Override

@@ -5,7 +5,7 @@ IoT 平台（iot-platform）
 - Gateway4GCat1/          网关固件（RT-Thread + STM32F4 + 4G Cat1）
 - ProxyTcp/               TCP 接入网关（Netty，端口 50001；REST 端口 8010）
 - dtm/                    协议解码/编码服务（端口 8082）
-- platform_java/          业务平台服务（端口 8081，MongoDB + TDengine）
+- platform_java/          业务平台服务（端口 8081，MySQL/MyBatis-Plus + TDengine）
 - auth-service/           Web 用户认证服务（JWT，端口 8083）
 - web_vue3/               管理端前端（Vue3 + TS + Element Plus）
 - mini_uniapp/            小程序端
@@ -39,7 +39,11 @@ IoT 平台（iot-platform）
 - 历史数据：scripts/mongo-to-mysql 一次性迁移工具，从 admin_service 的
   orgs/roles/menus 与 auth_service 的 users 导入，保留原始 id 与 BCrypt 哈希，
   可重复执行（详见该目录 README.md）。
-- auth-service 的审计日志/SSO/refresh token 仍在 MongoDB；其他业务模块不改。
+- platform_java 的设备/数据记录/告警也已迁到 MySQL：sql/platform-mysql.sql 定义
+  iot_device / iot_data_record / iot_alarm；传感器读数仍写 TDengine，实时状态仍用 Redis。
+- admin-service / auth-service / platform_java 统一用 MyBatis-Plus（3.5.7）访问 MySQL；
+  迁移工具同时导入上述七个集合/表，重复执行不新增记录。
+- auth-service 的审计日志/SSO/refresh token 仍在 MongoDB；ProxyTcp（JPA + H2）不在本次迁移范围。
 
 构建环境（2026-11 迁移后）
 --------------------------

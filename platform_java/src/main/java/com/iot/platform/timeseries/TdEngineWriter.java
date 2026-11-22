@@ -6,6 +6,7 @@ import com.iot.platform.model.SensorReading;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -56,7 +57,8 @@ public class TdEngineWriter implements SensorReadingWriter {
     private volatile boolean schemaReady;
 
     @Autowired
-    public TdEngineWriter(JdbcTemplate jdbcTemplate, TdEngineProperties properties) {
+    public TdEngineWriter(@Qualifier("tdEngineJdbcTemplate") JdbcTemplate jdbcTemplate,
+                          TdEngineProperties properties) {
         this.jdbcTemplate = jdbcTemplate;
         this.properties = properties;
     }
