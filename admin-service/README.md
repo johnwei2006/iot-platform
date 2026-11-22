@@ -3,7 +3,7 @@
 独立系统管理服务（端口 8084）：多级机构、菜单/按钮、角色、用户管理与按业务实体的数据权限。
 
 > 构建要求：JDK 17+、Maven 3.6.3+。技术栈：Java 17 / Spring Boot 3.3.5 / MyBatis-Plus 3.5.7 + MySQL 8 / jjwt 0.12.6 / JUnit 5（2026-11 由 Java 8 / Boot 2.1.6 迁移，JPA 已切换为 MyBatis-Plus）。
-> 机构/角色/菜单按钮持久化在 MySQL `iot-platform` 库的 `sys_org`/`sys_role`/`sys_menu`（表结构见 `sql/sys-management-mysql.sql`）；用户仍由 auth-service 通过 HMAC 内部 API 管理，存 `sys_user`。
+> 机构/角色/菜单按钮持久化在 MySQL `iot-platform` 库的 `sys_org`/`sys_role`/`sys_menu`；用户仍由 auth-service 通过 HMAC 内部 API 管理，存 `sys_user`。表结构由共享 Liquibase changelog（`db/changelog`）在启动时自动维护，`sql/sys-management-mysql.sql` 仅作参考。
 
 ## 架构定位
 

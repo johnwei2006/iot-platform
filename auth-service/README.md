@@ -5,7 +5,7 @@
 ## 技术栈
 
 - Java 17 / Spring Boot 3.3.5（2026-11 由 Java 8 / Boot 2.1.6 迁移，全部 Java 模块统一）
-- MySQL 8 + MyBatis-Plus 3.5.7（用户表 `sys_user`：凭证、角色、机构与数据权限；见 `sql/sys-management-mysql.sql`）
+- MySQL 8 + MyBatis-Plus 3.5.7（用户表 `sys_user`：凭证、角色、机构与数据权限；表结构由 `db/changelog` 的 Liquibase 自动维护）
 - MongoDB（SSO 客户端、审计）、Redis（refresh token、黑名单、SSO ticket）
 - jjwt 0.12.6（RS256/HS256，`Jwts.SIG` 新 API）、spring-security-crypto（BCrypt）
 - JUnit 5（`org.junit.jupiter`）

@@ -14,6 +14,11 @@ spring:
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:jwmhw5154}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  # 业务表结构由共享 Liquibase changelog 管理；TDengine 与 Redis 不受其管理
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    drop-first: false
   data:
     # 设备实时状态缓存。Lettuce 为懒连接，未部署 Redis 时应用仍可启动。
     # （Spring Boot 3 起 Redis 连接属性由 spring.redis 迁移到 spring.data.redis）

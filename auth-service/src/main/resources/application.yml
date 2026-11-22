@@ -10,6 +10,11 @@ spring:
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:jwmhw5154}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  # sys_user 表结构由共享 Liquibase changelog 管理；审计/SSO 仍在 MongoDB
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    drop-first: false
   data:
     mongodb:
       uri: ${AUTH_MONGO_URI:mongodb://localhost:27017/auth_service}

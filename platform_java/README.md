@@ -20,7 +20,7 @@
 - Spring Boot 3.3.5（与 `ProxyTcp`/`dtm` 对齐，Java 17；2026-11 由 Boot 2.1.6 / Java 8 迁移）
 - Spring AMQP（RabbitMQ）、MySQL 8 + MyBatis-Plus 3.5.7（设备/数据记录/告警）、Spring Data Redis（Lettuce，配置键 `spring.data.redis.*`）、Actuator
 - TDengine（原生 JDBC `taos-jdbcdriver` 3.2.11 + 手工 `JdbcTemplate`，仅用于传感器时序数据；与 MySQL 数据源隔离）
-- 表结构见 `sql/platform-mysql.sql`；历史 MongoDB 数据用 `scripts/mongo-to-mysql` 迁移
+- 表结构由 `db/changelog` 的 Liquibase 在启动时自动维护（`sql/platform-mysql.sql` 仅作参考）；历史 MongoDB 数据用 `scripts/mongo-to-mysql` 迁移
 - jjwt 0.12.6（本地验签）、JUnit 5
 
 ## 主要接口

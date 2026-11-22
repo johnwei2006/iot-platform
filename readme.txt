@@ -43,6 +43,9 @@ IoT 平台（iot-platform）
   iot_device / iot_data_record / iot_alarm；传感器读数仍写 TDengine，实时状态仍用 Redis。
 - admin-service / auth-service / platform_java 统一用 MyBatis-Plus（3.5.7）访问 MySQL；
   迁移工具同时导入上述七个集合/表，重复执行不新增记录。
+- 表结构版本管理：db/changelog 下的 Liquibase changelog 由三个 MySQL 服务启动时
+  自动执行（同一份 changelog，共享 DATABASECHANGELOG，不重复执行）；sql/*.sql
+  仅作人工参考，后续结构变更一律追加 changeset（详见 db/changelog/README.md）。
 - auth-service 的审计日志/SSO/refresh token 仍在 MongoDB；ProxyTcp（JPA + H2）不在本次迁移范围。
 
 构建环境（2026-11 迁移后）

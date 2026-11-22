@@ -10,6 +10,11 @@ spring:
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:jwmhw5154}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  # 表结构由 Liquibase 管理（三服务共享同一 changelog，已有数据不受影响）
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    drop-first: false
   data:
     redis:
       host: ${REDIS_HOST:localhost}

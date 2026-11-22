@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20261122-01-create-sys-management-tables
+      author: iot-platform
+      comment: 系统管理表基线（幂等建表，不影响已有数据）
+      changes:
+        - sqlFile:
+            path: sql/001-create-sys-management-tables.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261122-02-create-platform-tables
+      author: iot-platform
+      comment: platform_java 业务表基线（传感器时序数据仍在 TDengine）
+      changes:
+        - sqlFile:
+            path: sql/002-create-platform-tables.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
