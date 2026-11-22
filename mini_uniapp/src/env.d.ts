@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import 'vue';
 
 // uni-app 内置组件类型未在 @dcloudio/types 中声明，这里做轻量类型声明：
@@ -8,6 +9,7 @@ import 'vue';
 // 运行时由 uni-app 框架解析，类型声明不影响实际渲染。
 declare module '@vue/runtime-core' {
   interface IntrinsicElementAttributes {
+    switch: any;
     button: any;
     input: any;
     form: any;

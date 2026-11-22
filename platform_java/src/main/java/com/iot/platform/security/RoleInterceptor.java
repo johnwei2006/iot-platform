@@ -16,12 +16,14 @@ import java.util.List;
 /**
  * RBAC 拦截器：处理方法或其类上标注了 {@link RequireRoles} 时，
  * 校验 JwtFilter 写入的角色（request 属性 "roles"），不满足返回 403。
+ * SUPER_ADMIN 为内置超管角色，恒通过（与 admin-service AdminRoleInterceptor 语义对齐）。
  * 非 Spring bean，由 WebMvcConfig 实例化（避免 @WebMvcTest 切片缺 bean）。
  */
 public class RoleInterceptor implements HandlerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(RoleInterceptor.class);
     private static final String ROLES_ATTRIBUTE = "roles";
+    private static final String SUPER_ADMIN = "SUPER_ADMIN";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -42,6 +44,11 @@ public class RoleInterceptor implements HandlerInterceptor {
         Object raw = request.getAttribute(ROLES_ATTRIBUTE);
         List<?> roles = raw instanceof List ? (List<?>) raw : null;
         if (roles != null) {
+            for (Object role : roles) {
+                if (SUPER_ADMIN.equalsIgnoreCase(String.valueOf(role))) {
+                    return true;
+                }
+            }
             for (String need : required.value()) {
                 for (Object role : roles) {
                     if (need.equalsIgnoreCase(String.valueOf(role))) {

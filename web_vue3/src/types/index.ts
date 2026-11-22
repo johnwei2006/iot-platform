@@ -16,6 +16,8 @@ export interface TokenResponse {
     id: string;
     username: string;
     roles: string[];
+    /** 机构编码（登录响应可选返回） */
+    orgCode?: string;
   };
 }
 
@@ -24,6 +26,8 @@ export interface UserInfo {
   roles: string[];
   username?: string;
   role?: string;
+  /** 机构编码（数据权限展示用） */
+  orgCode?: string;
 }
 
 export interface LoginPayload {

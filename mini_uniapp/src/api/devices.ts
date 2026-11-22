@@ -12,3 +12,8 @@ export function getDevice(id: string): Promise<ApiResponse<Device>> {
 export function latestData(deviceId: string): Promise<ApiResponse<unknown>> {
   return request<unknown>({ url: '/api/data/latest', method: 'GET', data: { deviceId } });
 }
+
+/** 历史数据：from/to 为毫秒时间戳（与 web 端 /api/data 同构） */
+export function queryData(deviceId: string, from?: number, to?: number): Promise<ApiResponse<unknown[]>> {
+  return request<unknown[]>({ url: '/api/data', method: 'GET', data: { deviceId, from, to } });
+}

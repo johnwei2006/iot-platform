@@ -195,7 +195,7 @@ onMounted(refresh);
             :default-checked-keys="form.menuIds"
             :props="{ label: 'name', children: 'children' }"
             :disabled="drawer.builtIn"
-            @check="(data: any, check: any) => (form.menuIds = check.checkedKeys as string[])"
+            @check="(_data: any, check: any) => (form.menuIds = check.checkedKeys as string[])"
           />
         </el-form-item>
         <el-form-item v-for="entity in entities" :key="entity.code" :label="`${entity.name}数据`">

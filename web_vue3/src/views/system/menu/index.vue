@@ -2,7 +2,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import { createMenu, deleteMenu, fetchMenuList, fetchMenuTree, updateMenu } from '@/api/admin';
+import { createMenu, deleteMenu, fetchMenuTree, updateMenu } from '@/api/admin';
 import type { MenuNode } from '@/types';
 
 const TYPE_LABELS: Record<string, string> = { DIR: '目录', MENU: '菜单', BUTTON: '按钮' };

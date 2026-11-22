@@ -1,44 +1,33 @@
 {
   "pages": [
-    {
-      "path": "pages/index/index",
-      "style": { "navigationBarTitleText": "首页" }
-    },
-    {
-      "path": "pages/devices/devices",
-      "style": { "navigationBarTitleText": "设备" }
-    },
-    {
-      "path": "pages/device-detail/device-detail",
-      "style": { "navigationBarTitleText": "设备详情" }
-    },
-    {
-      "path": "pages/alarms/alarms",
-      "style": { "navigationBarTitleText": "告警" }
-    },
-    {
-      "path": "pages/mine/mine",
-      "style": { "navigationBarTitleText": "我的" }
-    },
-    {
-      "path": "pages/login/login",
-      "style": { "navigationBarTitleText": "登录" }
-    }
+    { "path": "pages/index/index", "style": { "navigationBarTitleText": "看数据" } },
+    { "path": "pages/devices/devices", "style": { "navigationBarTitleText": "控设备" } },
+    { "path": "pages/messages/messages", "style": { "navigationBarTitleText": "消息" } },
+    { "path": "pages/mine/mine", "style": { "navigationBarTitleText": "我的" } },
+    { "path": "pages/device-detail/device-detail", "style": { "navigationBarTitleText": "传感器详情" } },
+    { "path": "pages/threshold/threshold", "style": { "navigationBarTitleText": "阈值设置" } },
+    { "path": "pages/alarms/alarms", "style": { "navigationBarTitleText": "告警" } },
+    { "path": "pages/control-rules/control-rules", "style": { "navigationBarTitleText": "自动控制" } },
+    { "path": "pages/rule-form/rule-form", "style": { "navigationBarTitleText": "规则表单" } },
+    { "path": "pages/control-logs/control-logs", "style": { "navigationBarTitleText": "控制记录" } },
+    { "path": "pages/task-detail/task-detail", "style": { "navigationBarTitleText": "任务详情" } },
+    { "path": "pages/login/login", "style": { "navigationBarTitleText": "登录" } }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "uni-app",
-    "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
+    "navigationBarTitleText": "科百云田",
+    "navigationBarBackgroundColor": "#F5F7F4",
+    "backgroundColor": "#F5F7F4"
   },
   "tabBar": {
-    "color": "#7A7E83",
-    "selectedColor": "#007aff",
+    "color": "#52665D",
+    "selectedColor": "#17573F",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
-      { "pagePath": "pages/index/index", "text": "首页" },
-      { "pagePath": "pages/devices/devices", "text": "设备" },
+      { "pagePath": "pages/index/index", "text": "看数据" },
+      { "pagePath": "pages/devices/devices", "text": "控设备" },
+      { "pagePath": "pages/messages/messages", "text": "消息" },
       { "pagePath": "pages/mine/mine", "text": "我的" }
     ]
   }

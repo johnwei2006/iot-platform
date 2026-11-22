@@ -6,6 +6,8 @@ import pinia from './stores';
 import { setupElementPlus } from './plugins/element';
 import { setupDirectives } from './directives/permission';
 import './styles/index.css';
+// 苹果风设计系统 token（须在 Element Plus 样式之后引入以覆盖 --el-* 变量）
+import './styles/theme.css';
 
 const app = createApp(App);
 

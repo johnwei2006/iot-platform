@@ -1,0 +1,237 @@
+/**
+ * 科百云田 - 苹果风设计系统（web 端）
+ * 与 mini_uniapp/src/uni.scss 共享同一 token 命名。
+ * 引入顺序：element-plus css 之后再引入本文件（见 main.ts），覆盖 --el-* 实现深度定制。
+ */
+
+:root {
+  /* 品牌色（园艺绿，按 iOS 语义层级展开） */
+  --kb-brand: #17573f;
+  --kb-brand-tint: #1f7a56;
+  --kb-brand-bright: #35a476;
+  --kb-brand-soft: #bae3ca;
+  --kb-brand-wash: #e9f4ec;
+
+  /* 背景 */
+  --kb-bg-page: #f5f7f4;
+  --kb-bg-card: #ffffff;
+  --kb-bg-sunken: #eff5ef;
+
+  /* 文本 */
+  --kb-text: #142c24;
+  --kb-text-muted: #52665d;
+  --kb-text-inverse: #ffffff;
+
+  /* 语义色 */
+  --kb-danger: #c24034;
+  --kb-danger-bg: #fbece9;
+  --kb-warning: #a96a1f;
+  --kb-warning-bg: #fff1df;
+  --kb-success: #2c7a4b;
+  --kb-success-bg: #e9f4ec;
+  --kb-offline: #8a9a91;
+  --kb-link: #0a84ff;
+
+  /* 分隔与描边 */
+  --kb-line: #d8e2d9;
+  --kb-line-strong: #b9c9bd;
+
+  /* 圆角 */
+  --kb-radius-card: 16px;
+  --kb-radius-tile: 14px;
+  --kb-radius-btn: 12px;
+  --kb-radius-input: 10px;
+  --kb-radius-sheet: 20px;
+  --kb-radius-pill: 999px;
+
+  /* 阴影（低阴影，克制） */
+  --kb-shadow-card: 0 8px 24px rgba(20, 44, 36, 0.08);
+  --kb-shadow-raised: 0 12px 32px rgba(20, 44, 36, 0.12);
+
+  /* 动效 */
+  --kb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --kb-duration: 240ms;
+
+  /* 字体 */
+  --kb-font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  --kb-fs-heading: 28px;
+  --kb-fs-subheading: 17px;
+  --kb-fs-body: 15px;
+  --kb-fs-caption: 13px;
+  --kb-tracking-heading: -0.4px;
+}
+
+/* Element Plus 深度定制 */
+:root {
+  --el-color-primary: var(--kb-brand);
+  --el-color-primary-light-3: #3d7a63;
+  --el-color-primary-light-5: #6b9c88;
+  --el-color-primary-light-7: #a3c3b4;
+  --el-color-primary-light-8: #bae3ca;
+  --el-color-primary-light-9: #e9f4ec;
+  --el-color-primary-dark-2: #123f2e;
+  --el-color-success: var(--kb-success);
+  --el-color-warning: var(--kb-warning);
+  --el-color-danger: var(--kb-danger);
+  --el-color-error: var(--kb-danger);
+  --el-color-info: var(--kb-offline);
+  --el-bg-color-page: var(--kb-bg-page);
+  --el-text-color-primary: var(--kb-text);
+  --el-text-color-regular: var(--kb-text-muted);
+  --el-border-color: var(--kb-line);
+  --el-border-color-light: var(--kb-line);
+  --el-border-radius-base: var(--kb-radius-input);
+  --el-border-radius-small: 8px;
+  --el-font-family: var(--kb-font);
+}
+
+/* 全局苹果风覆盖 */
+body {
+  font-family: var(--kb-font);
+  color: var(--kb-text);
+  background-color: var(--kb-bg-page);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 页头毛玻璃 */
+.kb-glass-header {
+  background: rgba(245, 247, 244, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--kb-line);
+}
+
+/* 卡片：大圆角 + 低阴影 */
+.el-card {
+  border-radius: var(--kb-radius-card);
+  border: 1px solid var(--kb-line);
+  box-shadow: var(--kb-shadow-card);
+  overflow: hidden;
+}
+.el-card__header {
+  border-bottom: 1px solid var(--kb-line);
+  padding: 14px 20px;
+}
+
+/* 主按钮：品牌绿 + 苹果按压反馈 */
+.el-button {
+  border-radius: var(--kb-radius-btn);
+  font-weight: 600;
+  transition: transform var(--kb-duration) var(--kb-ease), opacity var(--kb-duration) var(--kb-ease);
+}
+.el-button--primary {
+  --el-button-bg-color: var(--kb-brand);
+  --el-button-border-color: var(--kb-brand);
+  --el-button-hover-bg-color: var(--kb-brand-tint);
+  --el-button-hover-border-color: var(--kb-brand-tint);
+  --el-button-active-bg-color: #123f2e;
+  --el-button-active-border-color: #123f2e;
+}
+.el-button:not(.is-disabled):active {
+  transform: scale(0.96);
+  opacity: 0.92;
+}
+
+/* 输入控件 */
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  border-radius: var(--kb-radius-input);
+}
+
+/* 对话框 / 抽屉：大圆角弹层 */
+.el-dialog {
+  border-radius: var(--kb-radius-sheet);
+  box-shadow: var(--kb-shadow-raised);
+}
+.el-drawer {
+  border-radius: var(--kb-radius-sheet) 0 0 var(--kb-radius-sheet);
+}
+
+/* 表格：细边框 + 弱化表头 */
+.el-table {
+  --el-table-border-color: var(--kb-line);
+  --el-table-header-bg-color: var(--kb-bg-sunken);
+  --el-table-header-text-color: var(--kb-text-muted);
+  border-radius: var(--kb-radius-card);
+  overflow: hidden;
+}
+
+/* 分段控件（iOS 风替代多按钮组） */
+.kb-segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--kb-bg-sunken);
+  border-radius: var(--kb-radius-pill);
+}
+.kb-segmented__item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kb-text-muted);
+  font: inherit;
+  font-size: var(--kb-fs-body);
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: var(--kb-radius-pill);
+  cursor: pointer;
+  transition: background var(--kb-duration) var(--kb-ease), color var(--kb-duration) var(--kb-ease);
+}
+.kb-segmented__item[aria-pressed="true"] {
+  background: var(--kb-bg-card);
+  color: var(--kb-brand);
+  box-shadow: var(--kb-shadow-card);
+}
+
+/* 实时数据瓦片三态 */
+.kb-tile {
+  border-radius: var(--kb-radius-tile);
+  border: 1px solid var(--kb-line);
+  background: var(--kb-bg-card);
+  box-shadow: var(--kb-shadow-card);
+  transition: transform var(--kb-duration) var(--kb-ease), border-color var(--kb-duration) var(--kb-ease);
+}
+.kb-tile--hot {
+  border-color: #efd0cf;
+  background: var(--kb-danger-bg);
+  color: var(--kb-danger);
+}
+.kb-tile--warn {
+  border-color: #eed8b8;
+  background: var(--kb-warning-bg);
+  color: var(--kb-warning);
+}
+.kb-tile--offline {
+  background: var(--kb-bg-sunken);
+  color: var(--kb-offline);
+}
+
+/* 页面转场（配合 <transition name="kb-page">） */
+.kb-page-enter-active,
+.kb-page-leave-active {
+  transition: opacity var(--kb-duration) var(--kb-ease), transform var(--kb-duration) var(--kb-ease);
+}
+.kb-page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.kb-page-leave-to {
+  opacity: 0;
+}
+
+/* 深色模式变量预留（跟随系统） */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --kb-bg-page: #0f1613;
+    --kb-bg-card: #17241e;
+    --kb-bg-sunken: #1d2c25;
+    --kb-text: #e8efe9;
+    --kb-text-muted: #9fb3a7;
+    --kb-line: #2a3c32;
+    --el-bg-color-page: var(--kb-bg-page);
+    --el-text-color-primary: var(--kb-text);
+    --el-text-color-regular: var(--kb-text-muted);
+    --el-border-color: var(--kb-line);
+  }
+}

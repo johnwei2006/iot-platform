@@ -19,3 +19,44 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261122-03-create-control-message-threshold-tables
+      author: iot-platform
+      comment: 控制规则/控制记录/测点阈值/任务/消息/通知偏好（设备控制与消息任务域）
+      changes:
+        - sqlFile:
+            path: sql/003-create-control-message-threshold-tables.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261122-04-control-rule-metric-device-and-log-channel
+      author: iot-platform
+      comment: 条件规则补充取数传感器设备；控制记录补充 nodeId/channel 供 0x1A 回报匹配
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: MARK_RAN
+        - not:
+            columnExists:
+              tableName: iot_control_rule
+              columnName: metric_device_id
+      changes:
+        - sql: >
+            ALTER TABLE `iot_control_rule`
+              ADD COLUMN `metric_device_id` VARCHAR(128) DEFAULT NULL COMMENT '条件规则：取数传感器设备编号（station deviceId）' AFTER `metric`;
+  - changeSet:
+      id: 20261122-05-control-log-node-channel
+      author: iot-platform
+      comment: 控制记录补充 node_id/channel 以匹配 0x1A 设备控制反馈
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: MARK_RAN
+        - not:
+            columnExists:
+              tableName: iot_control_log
+              columnName: node_id
+      changes:
+        - sql: >
+            ALTER TABLE `iot_control_log`
+              ADD COLUMN `node_id` VARCHAR(128) DEFAULT NULL COMMENT '受控执行节点' AFTER `device_id`,
+              ADD COLUMN `channel` INT DEFAULT NULL COMMENT '受控通道（0x1A 回报匹配）' AFTER `node_id`;

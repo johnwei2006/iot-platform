@@ -1,10 +1,108 @@
-/* uni.scss —— 全局样式变量，uni-app 会自动引入到每个 scss 中 */
+/* uni.scss —— 科百云田苹果风设计 token（uni-app 自动注入每个 scss）
+ * 与 web_vue3/src/styles/theme.css 共享同一命名与色值，双端视觉一致。
+ */
 
-$uni-color-primary: #007aff;
-$uni-color-success: #4cd964;
-$uni-color-warning: #f0ad4e;
-$uni-color-error: #dd524d;
+/* ---------- 品牌色（园艺绿，iOS 语义层级） ---------- */
+$kb-brand: #17573f;
+$kb-brand-tint: #1f7a56;
+$kb-brand-bright: #35a476;
+$kb-brand-soft: #bae3ca;
+$kb-brand-wash: #e9f4ec;
 
-$uni-text-color: #333333;
-$uni-text-color-grey: #999999;
-$uni-bg-color: #f8f8f8;
+/* ---------- 背景 ---------- */
+$kb-bg-page: #f5f7f4;
+$kb-bg-card: #ffffff;
+$kb-bg-sunken: #eff5ef;
+
+/* ---------- 文本 ---------- */
+$kb-text: #142c24;
+$kb-text-muted: #52665d;
+$kb-text-inverse: #ffffff;
+
+/* ---------- 语义色 ---------- */
+$kb-danger: #c24034;
+$kb-danger-bg: #fbece9;
+$kb-warning: #a96a1f;
+$kb-warning-bg: #fff1df;
+$kb-success: #2c7a4b;
+$kb-success-bg: #e9f4ec;
+$kb-offline: #8a9a91;
+$kb-link: #0a84ff;
+
+/* ---------- 分隔与描边 ---------- */
+$kb-line: #d8e2d9;
+$kb-line-strong: #b9c9bd;
+
+/* ---------- 圆角 ---------- */
+$kb-radius-card: 16px;
+$kb-radius-tile: 14px;
+$kb-radius-btn: 12px;
+$kb-radius-input: 10px;
+$kb-radius-sheet: 20px;
+$kb-radius-pill: 999px;
+
+/* ---------- 阴影 ---------- */
+$kb-shadow-card: 0 8px 24px rgba(20, 44, 36, 0.08);
+$kb-shadow-raised: 0 12px 32px rgba(20, 44, 36, 0.12);
+
+/* ---------- 动效 ---------- */
+$kb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+$kb-duration: 240ms;
+
+/* ---------- 字号（标准档） ---------- */
+$kb-fs-heading: 28px;
+$kb-fs-subheading: 17px;
+$kb-fs-body: 15px;
+$kb-fs-caption: 13px;
+$kb-fs-metric: 27px;
+
+/* ---------- 适老大字号档（全局 class .kb-large 下生效） ---------- */
+$kb-fs-large-body: 18px;
+$kb-fs-large-caption: 15px;
+$kb-fs-large-metric: 31px;
+
+/* ---------- uni 内置变量（映射到品牌 token） ---------- */
+$uni-color-primary: $kb-brand;
+$uni-color-success: $kb-success;
+$uni-color-warning: $kb-warning;
+$uni-color-error: $kb-danger;
+$uni-text-color: $kb-text;
+$uni-text-color-grey: $kb-text-muted;
+$uni-bg-color: $kb-bg-page;
+
+/* ---------- 全局工具类 ---------- */
+page {
+  background-color: $kb-bg-page;
+  color: $kb-text;
+  font-size: var(--fs, #{$kb-fs-body});
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.kb-card {
+  background-color: $kb-bg-card;
+  border: 1px solid $kb-line;
+  border-radius: $kb-radius-card;
+  box-shadow: $kb-shadow-card;
+}
+
+/* 大字号适老模式：页面根节点挂 .kb-large */
+.kb-large {
+  --fs: #{$kb-fs-large-body};
+  font-size: $kb-fs-large-body;
+}
+
+/* 卡片按压反馈 */
+.kb-press {
+  transition: opacity $kb-duration $kb-ease;
+}
+.kb-press:active {
+  opacity: 0.96;
+}
+
+/* 深色模式变量预留 */
+@media (prefers-color-scheme: dark) {
+  page {
+    background-color: #0f1613;
+    color: #e8efe9;
+  }
+}
