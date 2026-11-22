@@ -1,11 +1,11 @@
 package com.proxy.netty;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -44,10 +44,10 @@ public class UplinkFrameDecoderTest {
         ch.writeInbound(Unpooled.wrappedBuffer(frame));
 
         ByteBuf out = ch.readInbound();
-        assertNotNull("整帧应解码出一帧", out);
+        assertNotNull(out, "整帧应解码出一帧");
         assertEquals(frame.length, out.readableBytes());
         assertArrayEquals(frame, toBytes(out));
-        assertNull("不应产生多余帧", ch.readInbound());
+        assertNull(ch.readInbound(), "不应产生多余帧");
         ch.finish();
     }
 
@@ -59,12 +59,12 @@ public class UplinkFrameDecoderTest {
 
         // 先写入帧头 + 部分载荷
         ch.writeInbound(Unpooled.wrappedBuffer(frame, 0, 5));
-        assertNull("半包不应解码", ch.readInbound());
+        assertNull(ch.readInbound(), "半包不应解码");
 
         // 补齐剩余字节
         ch.writeInbound(Unpooled.wrappedBuffer(frame, 5, frame.length - 5));
         ByteBuf out = ch.readInbound();
-        assertNotNull("补齐后应解码出一帧", out);
+        assertNotNull(out, "补齐后应解码出一帧");
         assertArrayEquals(frame, toBytes(out));
         ch.finish();
     }
@@ -105,7 +105,7 @@ public class UplinkFrameDecoderTest {
         ch.writeInbound(Unpooled.wrappedBuffer(stream));
 
         ByteBuf out = ch.readInbound();
-        assertNotNull("丢弃垃圾字节后应解码出合法帧", out);
+        assertNotNull(out, "丢弃垃圾字节后应解码出合法帧");
         assertArrayEquals(frame, toBytes(out));
         ch.finish();
     }
@@ -121,7 +121,7 @@ public class UplinkFrameDecoderTest {
 
         // 只发帧头 + 10 字节载荷，声明长度 100
         ch.writeInbound(Unpooled.wrappedBuffer(frame, 0, 4 + 10));
-        assertNull("载荷不足时应等待，不产生帧", ch.readInbound());
+        assertNull(ch.readInbound(), "载荷不足时应等待，不产生帧");
 
         // 补齐剩余 90 字节
         ch.writeInbound(Unpooled.wrappedBuffer(frame, 4 + 10, frame.length - (4 + 10)));

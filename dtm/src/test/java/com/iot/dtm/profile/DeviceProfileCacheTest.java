@@ -2,11 +2,11 @@ package com.iot.dtm.profile;
 
 import com.iot.dtm.config.WorkerProperties;
 import com.iot.dtm.model.DeviceProfile;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** DeviceProfile 合并：缺省字段复用缓存、默认值回退、容量上限。 */
 public class DeviceProfileCacheTest {
@@ -26,7 +26,7 @@ public class DeviceProfileCacheTest {
         assertEquals(Integer.valueOf(2), merged.getServiceDataEncoding());
         assertEquals(Integer.valueOf(1), merged.getServiceDataProtocolVersion());
         assertEquals(Integer.valueOf(0), merged.getServiceEncryption());
-        assertEquals("d1", merged.getDeviceId());
+        assertEquals(merged.getDeviceId(), "d1");
     }
 
     @Test
@@ -49,7 +49,7 @@ public class DeviceProfileCacheTest {
         assertEquals(2, cache.size());
 
         cache.merge("c", new DeviceProfile());
-        assertTrue("cache should stay bounded", cache.size() <= 2);
+        assertTrue(cache.size() <= 2, "cache should stay bounded");
         assertEquals(1, cache.size());
     }
 

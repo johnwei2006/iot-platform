@@ -8,11 +8,12 @@
 
 ## 1. 技术栈
 
-- Java 8 + Spring Boot（`@SpringBootApplication`，`@ComponentScan("com.proxy")`）
+- Java 17 + Spring Boot 3.3.5（`@SpringBootApplication`，`@ComponentScan("com.proxy")`；2026-11 由 Java 8 / Boot 2.1.6 迁移，JPA 实体已迁 `jakarta.persistence`，Mongo 驱动 4.x API）
 - **Netty**：TCP 接入、拆帧、下行写回（事件循环，支撑高并发）
 - **Spring AMQP (RabbitMQ)**：上行发布（`iot.exchange` / `proxy.uplink`）+ 下行订阅（`iot.exchange` / `proxy.downlink`）
 - **MongoDB / H2**：下行消息状态、失败记录、设备档案持久化
 - **Gson**：上下行 `ServiceRequest` / `DownlinkMessage` 的 JSON 序列化（`com.proxy.utils.JsonUtils`，`byte[]` 以 base64 字符串读写，与 platform_java 的 `String`(base64) 对齐）
+- **JUnit 5**：单元/冒烟测试；`DeviceMockTCP` 内置套件基于 JUnit Platform Launcher 运行
 
 ---
 

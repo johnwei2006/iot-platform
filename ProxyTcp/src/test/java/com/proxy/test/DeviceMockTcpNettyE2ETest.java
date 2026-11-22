@@ -1,15 +1,15 @@
 package com.proxy.test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -48,10 +48,16 @@ public class DeviceMockTcpNettyE2ETest {
         }
     }
 
-    @Test(timeout = 90000)
+    @Test
+    @org.junit.jupiter.api.Timeout(90)
     public void sendsAndReceivesAll37ServiceTypes() throws Exception {
         System.setProperty("tcpport", "0");
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(NettyConfig.class);
+        // 网关认证服务用 Mockito 桩：refresh 前手动注册单例，绕开 Spring 对 mock 的字段注入
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.getBeanFactory().registerSingleton("gatewayAuthService",
+                org.mockito.Mockito.mock(com.proxy.auth.GatewayAuthService.class));
+        ctx.register(NettyConfig.class);
+        ctx.refresh();
         DeviceMockTCP device = null;
         try {
             NettyTcpServer server = ctx.getBean(NettyTcpServer.class);
@@ -65,7 +71,7 @@ public class DeviceMockTcpNettyE2ETest {
 
             startServer(server);
             int port = awaitBoundPort(server);
-            assertTrue("Netty server should bind an ephemeral port", port > 0);
+            assertTrue(port > 0, "Netty server should bind an ephemeral port");
 
             MockProtocolCodec codec = new MockProtocolCodec();
             List<MockServiceCase> cases = codec.allCases();
@@ -90,20 +96,20 @@ public class DeviceMockTcpNettyE2ETest {
                 }
 
                 Message uplink = receiveQueue.poll(5, TimeUnit.SECONDS);
-                assertNotNull("uplink not received for " + testCase, uplink);
+                assertNotNull(uplink, "uplink not received for " + testCase);
                 MockTransportMessage parsed = MockFrameCodec.decodePayload(
                         uplink.getPayload(), codec);
-                assertEquals("serviceType mismatch for " + testCase,
-                        serviceType, parsed.getServiceType());
-                assertEquals("deviceId mismatch for " + testCase,
-                        deviceId, parsed.getDeviceId());
-                assertArrayEquals("serviceData mismatch for " + testCase,
-                        serviceData, parsed.getServiceData());
+                assertEquals(serviceType, parsed.getServiceType(),
+                        "serviceType mismatch for " + testCase);
+                assertEquals(deviceId, parsed.getDeviceId(),
+                        "deviceId mismatch for " + testCase);
+                assertArrayEquals(serviceData, parsed.getServiceData(),
+                        "serviceData mismatch for " + testCase);
 
                 if (index == 1) {
                     registry.bindDevice(deviceId, uplink.getIp(), uplink.getPort());
-                    assertTrue("device should bind to Netty channel",
-                            registry.getOnlineDeviceIds().contains(deviceId));
+                    assertTrue(registry.getOnlineDeviceIds().contains(deviceId),
+                            "device should bind to Netty channel");
                 }
 
                 int eventId = 7000 + index;
@@ -113,35 +119,35 @@ public class DeviceMockTcpNettyE2ETest {
                 Message downlink = new Message();
                 downlink.setDeviceId(deviceId);
                 downlink.setPayload(downlinkPayload);
-                assertTrue("sendQueue should accept downlink", sendQueue.offer(downlink));
+                assertTrue(sendQueue.offer(downlink), "sendQueue should accept downlink");
 
                 MockTransportMessage received = device.awaitMessage(5000);
-                assertNotNull("downlink not received for " + testCase, received);
-                assertEquals("downlink serviceType mismatch for " + testCase,
-                        serviceType, received.getServiceType());
-                assertEquals("downlink eventId mismatch for " + testCase,
-                        eventId, received.getEventId());
-                assertEquals("downlink messageId mismatch for " + testCase,
-                        messageId, received.getMessageId());
-                assertNotNull("business result missing for " + testCase,
-                        received.getBusiness());
+                assertNotNull(received, "downlink not received for " + testCase);
+                assertEquals(serviceType, received.getServiceType(),
+                        "downlink serviceType mismatch for " + testCase);
+                assertEquals(eventId, received.getEventId(),
+                        "downlink eventId mismatch for " + testCase);
+                assertEquals(messageId, received.getMessageId(),
+                        "downlink messageId mismatch for " + testCase);
+                assertNotNull(received.getBusiness(),
+                        "business result missing for " + testCase);
 
                 if (testCase.isUnsupported()) {
-                    assertEquals("unsupported protocol should report UNSUPPORTED",
-                            MockDecodeResult.Status.UNSUPPORTED,
-                            received.getBusiness().getStatus());
+                    assertEquals(MockDecodeResult.Status.UNSUPPORTED,
+                            received.getBusiness().getStatus(),
+                            "unsupported protocol should report UNSUPPORTED");
                 } else {
-                    assertTrue("downlink business decode failed for " + testCase
-                                    + ": " + received.getBusiness(),
-                            received.getBusiness().isSuccess());
-                    assertArrayEquals("downlink re-encode mismatch for " + testCase,
-                            serviceData,
-                            codec.encode(serviceType, received.getBusiness().getBusiness()));
+                    assertTrue(received.getBusiness().isSuccess(),
+                            "downlink business decode failed for " + testCase
+                                    + ": " + received.getBusiness());
+                    assertArrayEquals(serviceData,
+                            codec.encode(serviceType, received.getBusiness().getBusiness()),
+                            "downlink re-encode mismatch for " + testCase);
                 }
             }
 
-            assertEquals("all 37 service types should be received",
-                    37L, device.getReceiveCount());
+            assertEquals(37L, device.getReceiveCount(),
+                    "all 37 service types should be received");
         } finally {
             if (device != null) {
                 device.close();

@@ -3,11 +3,11 @@ package com.iot.platform.mq;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 下行契约：结构化字段与旧 base64 通道都对齐 dtm 的 EnvelopeService 输入。 */
 public class DownlinkMessageContractTest {
@@ -30,7 +30,7 @@ public class DownlinkMessageContractTest {
         assertEquals("30410007102", json.path("deviceId").asText());
         assertEquals(101, json.path("serviceType").asInt());
         assertEquals(9, json.path("serviceDataDecoded").path("action").asInt());
-        assertFalse("null serviceData 不应序列化", json.has("serviceData"));
+        assertFalse(json.has("serviceData"), "null serviceData 不应序列化");
     }
 
     @Test

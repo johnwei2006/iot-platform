@@ -17,9 +17,10 @@
 
 ## 技术栈
 
-- Spring Boot 2.1.6（与 `ProxyTcp`/`dtm` 对齐，Java 8）
-- Spring AMQP（RabbitMQ）、Spring Data MongoDB、Spring Data Redis（Lettuce）、Actuator
-- TDengine（原生 JDBC `taos-jdbcdriver` + `JdbcTemplate`，仅用于传感器时序数据）
+- Spring Boot 3.3.5（与 `ProxyTcp`/`dtm` 对齐，Java 17；2026-11 由 Boot 2.1.6 / Java 8 迁移）
+- Spring AMQP（RabbitMQ）、Spring Data MongoDB、Spring Data Redis（Lettuce，配置键 `spring.data.redis.*`）、Actuator
+- TDengine（原生 JDBC `taos-jdbcdriver` 3.2.11 + `JdbcTemplate`，仅用于传感器时序数据）
+- jjwt 0.12.6（本地验签）、JUnit 5
 
 ## 主要接口
 

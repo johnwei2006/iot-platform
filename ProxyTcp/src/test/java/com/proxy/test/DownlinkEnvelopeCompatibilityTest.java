@@ -6,13 +6,13 @@ import com.proxy.model.ServiceRequest;
 import com.proxy.model.ServiceResponse;
 import com.proxy.transport.TransportDownlinkProcessor;
 import com.proxy.utils.JsonUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * 三端契约回归：dtm 输出到 proxy.downlink 的「标准 ServiceRequest JSON」必须能被
@@ -35,7 +35,7 @@ public class DownlinkEnvelopeCompatibilityTest {
     @Test
     public void dtmOutputParsesIntoServiceRequestWithBinaryPayload() {
         ServiceRequest req = JsonUtils.gson().fromJson(DTM_OUTPUT_JSON, ServiceRequest.class);
-        assertEquals("30410007102", req.getDeviceId());
+        assertEquals(req.getDeviceId(), "30410007102");
         assertEquals(101, req.getServiceType());
         assertArrayEquals(new byte[]{1, 9}, req.getServiceData());
     }
@@ -58,7 +58,7 @@ public class DownlinkEnvelopeCompatibilityTest {
         receiver.handleDownlink(DTM_OUTPUT_JSON);
 
         assertNotNull(captured[0]);
-        assertEquals("30410007102", captured[0].getDeviceId());
+        assertEquals(captured[0].getDeviceId(), "30410007102");
         assertArrayEquals(new byte[]{1, 9}, captured[0].getServiceData());
     }
 

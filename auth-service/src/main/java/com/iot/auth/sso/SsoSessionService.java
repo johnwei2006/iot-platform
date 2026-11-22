@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -77,11 +77,11 @@ public class SsoSessionService {
     }
 
     private String readCookie(HttpServletRequest request, String name) {
-        javax.servlet.http.Cookie[] cookies = request.getCookies();
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             return null;
         }
-        for (javax.servlet.http.Cookie cookie : cookies) {
+        for (jakarta.servlet.http.Cookie cookie : cookies) {
             if (name.equals(cookie.getName())) {
                 return cookie.getValue();
             }

@@ -8,8 +8,8 @@ import com.iot.dtm.profile.DeviceProfileCache;
 import com.iot.dtm.protocol.ProtocolRegistry;
 import com.iot.dtm.protocol.ProtocolTestSupport;
 import com.iot.dtm.protocol.encoder.TransportEncoderManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
@@ -17,11 +17,11 @@ import org.springframework.amqp.core.MessageProperties;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -38,7 +38,7 @@ public class UplinkServiceTest {
     private UplinkService service;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         ProtocolRegistry registry = new ProtocolRegistry();
         registry.init();
@@ -54,13 +54,13 @@ public class UplinkServiceTest {
         Message out = service.process(message(uplinkJson(101, "AQI=", 2)));
 
         JsonNode body = mapper.readTree(out.getBody());
-        assertEquals("GATEWAY_REBOOT", body.path("protocolName").asText());
-        assertEquals("OK", body.path("decodeStatus").asText());
-        assertEquals("downlink", body.path("transactionType").asText());
+        assertEquals(body.path("protocolName").asText(), "GATEWAY_REBOOT");
+        assertEquals(body.path("decodeStatus").asText(), "OK");
+        assertEquals(body.path("transactionType").asText(), "downlink");
         assertEquals(1, body.path("serviceDataDecoded").path("appType").asInt());
         assertEquals(2, body.path("serviceDataDecoded").path("action").asInt());
-        assertEquals("AQI=", body.path("serviceData").asText());
-        assertNotNull("profile should be cached", profileCache.get("D1"));
+        assertEquals(body.path("serviceData").asText(), "AQI=");
+        assertNotNull(profileCache.get("D1"), "profile should be cached");
         verify(publisher).publish(eq("iot.exchange"), eq("platform.uplink"), any(Message.class));
     }
 
@@ -69,9 +69,9 @@ public class UplinkServiceTest {
         Message out = service.process(message(uplinkJson(2, "MTIzNDU2Nzg5MA==", 2)));
 
         JsonNode body = mapper.readTree(out.getBody());
-        assertEquals("UNSUPPORTED", body.path("decodeStatus").asText());
+        assertEquals(body.path("decodeStatus").asText(), "UNSUPPORTED");
         assertFalse(body.has("serviceDataDecoded"));
-        assertEquals("MTIzNDU2Nzg5MA==", body.path("serviceData").asText());
+        assertEquals(body.path("serviceData").asText(), "MTIzNDU2Nzg5MA==");
         verify(publisher).publish(eq("iot.exchange"), eq("platform.uplink"), any(Message.class));
     }
 
@@ -82,8 +82,8 @@ public class UplinkServiceTest {
 
         Message out = service.process(original);
 
-        assertEquals("not-json", new String(out.getBody(), StandardCharsets.UTF_8));
-        assertEquals("FAILED", out.getMessageProperties().getHeaders().get("decodeStatus"));
+        assertEquals(new String(out.getBody(), StandardCharsets.UTF_8), "not-json");
+        assertEquals(out.getMessageProperties().getHeaders().get("decodeStatus"), "FAILED");
         verify(publisher).publish(eq("iot.exchange"), eq("platform.uplink"), eq(original));
     }
 

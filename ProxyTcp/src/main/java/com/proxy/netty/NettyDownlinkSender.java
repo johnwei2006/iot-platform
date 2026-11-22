@@ -14,7 +14,7 @@ import com.proxy.utils.ByteUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Netty 下行发送（ProxyTcp 唯一 TCP 接入层的下行路径）。从 sendQueue 取 Message，按 deviceId 取

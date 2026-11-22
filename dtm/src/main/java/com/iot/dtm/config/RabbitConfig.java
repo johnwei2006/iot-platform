@@ -97,9 +97,11 @@ public class RabbitConfig {
                         correlation == null ? "-" : correlation.getId(), cause);
             }
         });
-        template.setReturnCallback((message, replyCode, replyText, exchange, routingKey) ->
+        // Spring AMQP 3.x：setReturnCallback 已移除，改用 ReturnsCallback（returned message 含 exchange/routingKey）
+        template.setReturnsCallback(returned ->
                 log.error("unroutable message: exchange={} routingKey={} reply={} {}",
-                        exchange, routingKey, replyCode, replyText));
+                        returned.getExchange(), returned.getRoutingKey(),
+                        returned.getReplyCode(), returned.getReplyText()));
         return template;
     }
 }

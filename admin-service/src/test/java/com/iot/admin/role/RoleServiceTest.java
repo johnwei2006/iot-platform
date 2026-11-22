@@ -2,11 +2,13 @@ package com.iot.admin.role;
 
 import com.iot.admin.common.AppException;
 import com.iot.admin.config.AdminProperties;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Arrays;
@@ -16,12 +18,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class RoleServiceTest {
 
     @Mock
@@ -30,7 +33,7 @@ public class RoleServiceTest {
     private AdminProperties properties;
     private RoleService roleService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         properties = new AdminProperties();
         AdminProperties.Entity device = new AdminProperties.Entity();

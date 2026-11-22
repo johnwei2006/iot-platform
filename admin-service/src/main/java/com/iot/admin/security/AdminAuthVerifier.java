@@ -63,11 +63,12 @@ public class AdminAuthVerifier {
         Claims claims;
         try {
             claims = Jwts.parser()
-                    .setSigningKey(key)
+                    .verifyWith(key)
                     .requireIssuer(issuer)
                     .requireAudience(audience)
-                    .parseClaimsJws(token)
-                    .getBody();
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
         } catch (JwtException e) {
             throw AppException.unauthorized("invalid or expired token");
         }

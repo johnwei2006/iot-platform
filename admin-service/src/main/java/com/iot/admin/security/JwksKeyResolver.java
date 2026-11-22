@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -48,7 +48,7 @@ public class JwksKeyResolver {
                            @org.springframework.beans.factory.annotation.Value("${admin.auth.jwks-refresh-ms:300000}") long refreshMs,
                            @org.springframework.beans.factory.annotation.Value("${admin.auth.static-public-key:}") String staticPublicKey,
                            @org.springframework.beans.factory.annotation.Value("${admin.auth.static-key-id:auth-key-1}") String staticKeyId) {
-        this(builder.setConnectTimeout(2000).setReadTimeout(3000).build(),
+        this(com.iot.admin.common.RestTemplates.build(builder, 2000, 3000),
                 baseUrl, jwksUrl, refreshMs, staticPublicKey, staticKeyId);
     }
 

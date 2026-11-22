@@ -3,14 +3,14 @@ package com.iot.dtm.protocol;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.iot.dtm.model.DeviceProfile;
 import com.iot.dtm.protocol.encoder.TransportEncoderManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 依据 C 侧编码器/Excel 明细构造的字节级黄金向量，锁定端序与字段偏移。 */
 public class CodecGoldenVectorTest {
@@ -19,7 +19,7 @@ public class CodecGoldenVectorTest {
     private TransportEncoderManager manager;
     private DeviceProfile binaryProfile;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         registry = new ProtocolRegistry();
         registry.init();

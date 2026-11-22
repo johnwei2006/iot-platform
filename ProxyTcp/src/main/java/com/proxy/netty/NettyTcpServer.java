@@ -15,7 +15,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PreDestroy;
 
 /**
  * Netty 事件循环接入层（ProxyTcp 唯一 TCP 入口）。采用 boss+worker 事件循环，支撑大量并发连接，

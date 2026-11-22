@@ -4,24 +4,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.config.RealtimeProperties;
 import com.iot.platform.model.DeviceRealtimeStatus;
 import com.iot.platform.mq.UplinkMessage;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class DeviceRealtimeStatusServiceTest {
 
     @Mock
@@ -31,7 +34,7 @@ public class DeviceRealtimeStatusServiceTest {
     private RealtimeProperties properties;
     private DeviceRealtimeStatusService service;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         properties = new RealtimeProperties();
         service = new DeviceRealtimeStatusService(store, properties, mapper);

@@ -3,23 +3,26 @@ package com.iot.auth.internal;
 import com.iot.auth.common.ApiResponse;
 import com.iot.auth.config.AuthProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class InternalAuthFilterTest {
 
     private static final String SERVICE_ID = "admin_service";
@@ -30,7 +33,7 @@ public class InternalAuthFilterTest {
 
     private InternalAuthFilter filter;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         when(properties.findServiceSecret(SERVICE_ID)).thenReturn(SECRET);
         when(properties.findServiceSecret("unknown")).thenReturn(null);
@@ -55,7 +58,7 @@ public class InternalAuthFilterTest {
         AtomicReference<String> seenBody = new AtomicReference<String>();
         MockFilterChain chain = new MockFilterChain() {
             @Override
-            public void doFilter(javax.servlet.ServletRequest req, javax.servlet.ServletResponse res) {
+            public void doFilter(jakarta.servlet.ServletRequest req, jakarta.servlet.ServletResponse res) {
                 try {
                     seenBody.set(((CachedBodyRequest) req).bodyAsString());
                 } catch (Exception ignored) {

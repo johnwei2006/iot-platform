@@ -2,23 +2,27 @@ package com.iot.platform.service;
 
 import com.iot.platform.model.Device;
 import com.iot.platform.repository.DeviceRepository;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class DeviceServiceTest {
 
     @Mock
@@ -42,10 +46,10 @@ public class DeviceServiceTest {
         assertNotNull(saved.getUpdatedAt());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void updateThrowsWhenNotFound() {
         when(deviceRepository.findById("missing")).thenReturn(Optional.empty());
-        deviceService.update("missing", new Device());
+        assertThrows(RuntimeException.class, () -> deviceService.update("missing", new Device()));
     }
 
     @Test

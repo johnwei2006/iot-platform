@@ -52,7 +52,7 @@ public class HmacClient {
                 new HttpEntity<String>(body, headers), String.class);
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new IllegalStateException("internal call failed: " + method + " " + path
-                    + " -> " + response.getStatusCodeValue());
+                    + " -> " + response.getStatusCode().value());
         }
         return response.getBody();
     }
@@ -98,7 +98,7 @@ public class HmacClient {
         }
 
         public RestTemplate restTemplate() {
-            return builder.setConnectTimeout(2000).setReadTimeout(3000).build();
+            return com.iot.admin.common.RestTemplates.build(builder, 2000, 3000);
         }
     }
 }

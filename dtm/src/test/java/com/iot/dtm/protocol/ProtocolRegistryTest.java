@@ -1,20 +1,20 @@
 package com.iot.dtm.protocol;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProtocolRegistryTest {
 
     private ProtocolRegistry registry;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         registry = new ProtocolRegistry();
         registry.init();
@@ -23,13 +23,13 @@ public class ProtocolRegistryTest {
     @Test
     public void loadsAll37ProtocolsWithoutDuplicateCodes() {
         assertEquals(37, registry.size());
-        assertEquals("5.0", registry.getVersion());
+        assertEquals(registry.getVersion(), "5.0");
         Set<Integer> codes = new HashSet<Integer>();
         for (ProtocolSpec spec : registry.all()) {
-            assertTrue("duplicate " + spec.getHex(), codes.add(spec.code()));
+            assertTrue(codes.add(spec.code()), "duplicate " + spec.getHex());
             assertNotNull(spec.getName());
-            assertTrue("missing direction " + spec.getHex(), spec.getDirection().length() > 0);
-            assertTrue("missing transactionType " + spec.getHex(), spec.getTransactionType().length() > 0);
+            assertTrue(spec.getDirection().length() > 0, "missing direction " + spec.getHex());
+            assertTrue(spec.getTransactionType().length() > 0, "missing transactionType " + spec.getHex());
         }
     }
 
@@ -37,7 +37,7 @@ public class ProtocolRegistryTest {
     public void enumAndSchemaAreOneToOne() {
         for (ServiceType type : ServiceType.values()) {
             ProtocolSpec spec = registry.get(type);
-            assertNotNull("missing schema for " + type, spec);
+            assertNotNull(spec, "missing schema for " + type);
             assertEquals(type.getProtocolName(), spec.getName());
             assertEquals(type.getDirection(), spec.getDirection());
             assertEquals(type.getTransactionType(), spec.getTransactionType());
@@ -58,7 +58,7 @@ public class ProtocolRegistryTest {
     public void emptyProtocolsHaveNoFields() {
         for (ServiceType type : ServiceType.values()) {
             if (type.isEmpty()) {
-                assertTrue(type.name(), registry.get(type).getFields().isEmpty());
+                assertTrue(registry.get(type).getFields().isEmpty(), type.name());
             }
         }
     }

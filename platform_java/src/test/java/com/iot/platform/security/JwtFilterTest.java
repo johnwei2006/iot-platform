@@ -2,21 +2,21 @@ package com.iot.platform.security;
 
 import com.iot.platform.security.local.LocalJwtVerifier;
 import com.iot.platform.security.local.RevocationChecker;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class JwtFilterTest {
@@ -26,7 +26,7 @@ public class JwtFilterTest {
     private RevocationChecker revocationChecker;
     private JwtFilter filter;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         client = mock(AuthServiceClient.class);
         localVerifier = mock(LocalJwtVerifier.class);
@@ -43,7 +43,7 @@ public class JwtFilterTest {
         filter.doFilter(request("/api/auth/login", null), new MockHttpServletResponse(), chain);
 
         assertNotNull(chain.getRequest());
-        verifyZeroInteractions(client);
+        verifyNoInteractions(client);
     }
 
     @Test
@@ -54,7 +54,7 @@ public class JwtFilterTest {
 
         assertEquals(401, response.getStatus());
         assertTrue(response.getContentAsString().contains("\"code\":401"));
-        verifyZeroInteractions(client);
+        verifyNoInteractions(client);
     }
 
     @Test
@@ -109,7 +109,7 @@ public class JwtFilterTest {
 
         assertNotNull(chain.getRequest());
         assertEquals("u2", request.getAttribute("subject"));
-        verifyZeroInteractions(client);
+        verifyNoInteractions(client);
         verify(revocationChecker).check(org.mockito.ArgumentMatchers.any(AuthServiceClient.TokenVerification.class));
     }
 

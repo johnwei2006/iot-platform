@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -50,7 +50,7 @@ public class JwksKeyResolver {
                            @Value("${app.auth.local.refresh-ms:300000}") long refreshMs,
                            @Value("${app.auth.local.static-public-key:}") String staticPublicKey,
                            @Value("${app.auth.local.static-key-id:auth-key-1}") String staticKeyId) {
-        this(builder.setConnectTimeout(2000).setReadTimeout(3000).build(),
+        this(com.iot.platform.common.RestTemplates.build(builder, 2000, 3000),
                 trimTrailingSlash(baseUrl), jwksUrl, refreshMs, staticPublicKey, staticKeyId);
     }
 

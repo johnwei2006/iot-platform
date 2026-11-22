@@ -1,12 +1,12 @@
 package com.proxy.test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.proxy.mq.PlatformDownlinkReceiver;
 import com.proxy.model.DownlinkTransportMessage;
@@ -51,14 +51,14 @@ public class PlatformDownlinkReceiverTest {
 
         receiver.handleDownlink(DOWNLINK_JSON);
 
-        assertNotNull("process 应被调用", captured[0]);
-        assertEquals("deviceId 应映射", "30410007102", captured[0].getDeviceId());
-        assertEquals("nodeId 应映射", "node01", captured[0].getNodeId());
-        assertEquals("serviceType 应映射", 3, captured[0].getServiceType());
-        assertEquals("serviceVersion 应映射", (short) 1, captured[0].getServiceVersion());
-        assertNotNull("serviceData 应反序列化为 byte[]", captured[0].getServiceData());
-        assertEquals("serviceData base64->byte[] 应为 ABC",
-                "ABC", new String(captured[0].getServiceData(), "UTF-8"));
+        assertNotNull(captured[0], "process 应被调用");
+        assertEquals("30410007102", captured[0].getDeviceId(), "deviceId 应映射");
+        assertEquals("node01", captured[0].getNodeId(), "nodeId 应映射");
+        assertEquals(3, captured[0].getServiceType(), "serviceType 应映射");
+        assertEquals((short) 1, captured[0].getServiceVersion(), "serviceVersion 应映射");
+        assertNotNull(captured[0].getServiceData(), "serviceData 应反序列化为 byte[]");
+        assertEquals("ABC", new String(captured[0].getServiceData(), "UTF-8"),
+                "serviceData base64->byte[] 应为 ABC");
     }
 
     @Test
@@ -75,7 +75,7 @@ public class PlatformDownlinkReceiverTest {
         setField(receiver, "transportDownlinkProcessor", stub);
 
         receiver.handleDownlink("not-a-json{");
-        assertTrue("非法 JSON 不应派发 process", !called[0]);
+        assertTrue(!called[0], "非法 JSON 不应派发 process");
     }
 
     @Test
@@ -92,7 +92,7 @@ public class PlatformDownlinkReceiverTest {
         setField(receiver, "transportDownlinkProcessor", stub);
 
         receiver.handleDownlink("{\"serviceType\":1}");
-        assertTrue("缺少 deviceId 不应派发 process", !called[0]);
+        assertTrue(!called[0], "缺少 deviceId 不应派发 process");
     }
 
     private static void setField(Object target, String name, Object value) throws Exception {

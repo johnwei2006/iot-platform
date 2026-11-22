@@ -1,18 +1,18 @@
 package com.proxy.test.protocol;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,8 +30,8 @@ public class MockProtocolCodecTest {
         assertNotNull(codec.protocol(1));
         assertNotNull(codec.protocol(3));
         assertNotNull(codec.protocol(101));
-        assertEquals("GATEWAY_REBOOT", codec.name(101));
-        assertEquals("downlink", codec.direction(101));
+        assertEquals(codec.name(101), "GATEWAY_REBOOT");
+        assertEquals(codec.direction(101), "downlink");
     }
 
     @Test
@@ -47,8 +47,8 @@ public class MockProtocolCodecTest {
                 MockDecodeResult result = codec.decode(type, MockProtocolCodec.ENCODING_BINARY,
                         MockProtocolCodec.PROTOCOL_VERSION_1, MockProtocolCodec.ENCRYPTION_NONE,
                         new byte[] {1, 2, 3});
-                assertEquals(type + " should be unsupported",
-                        MockDecodeResult.Status.UNSUPPORTED, result.getStatus());
+                assertEquals(MockDecodeResult.Status.UNSUPPORTED, result.getStatus(),
+                        type + " should be unsupported");
                 try {
                     codec.encode(type, sample);
                     fail("unsupported " + type + " should not encode");
@@ -61,11 +61,11 @@ public class MockProtocolCodecTest {
             byte[] encoded = codec.encode(type, sample);
             MockDecodeResult decoded = codec.decode(type, MockProtocolCodec.ENCODING_BINARY,
                     MockProtocolCodec.PROTOCOL_VERSION_1, MockProtocolCodec.ENCRYPTION_NONE, encoded);
-            assertTrue(type + " " + testCase.getName() + " decode failed: " + decoded,
-                    decoded.isSuccess());
+            assertTrue(decoded.isSuccess(),
+                    type + " " + testCase.getName() + " decode failed: " + decoded);
             byte[] reEncoded = codec.encode(type, decoded.getBusiness());
-            assertArrayEquals(type + " " + testCase.getName() + " not byte-stable",
-                    encoded, reEncoded);
+            assertArrayEquals(encoded, reEncoded,
+                    type + " " + testCase.getName() + " not byte-stable");
         }
     }
 
@@ -88,7 +88,7 @@ public class MockProtocolCodecTest {
                 assertNotNull(decoded.getBusiness());
             }
         }
-        assertTrue("schema should contain empty protocols", emptyCount > 0);
+        assertTrue(emptyCount > 0, "schema should contain empty protocols");
     }
 
     @Test
@@ -122,8 +122,8 @@ public class MockProtocolCodecTest {
                 MockProtocolCodec.PROTOCOL_VERSION_1, MockProtocolCodec.ENCRYPTION_NONE,
                 new byte[0]);
         assertEquals(MockDecodeResult.Status.EMPTY, result.getStatus());
-        assertEquals("SERVICE_ACK", codec.name(0));
-        assertEquals("downlink", codec.direction(0));
+        assertEquals(codec.name(0), "SERVICE_ACK");
+        assertEquals(codec.direction(0), "downlink");
     }
 
     @Test
@@ -156,7 +156,7 @@ public class MockProtocolCodecTest {
         assertEquals(null, MockFrameCodec.readFrame(in));
 
         MockTransportMessage message = MockFrameCodec.decodePayload(payload, codec);
-        assertEquals("30410007102", message.getDeviceId());
+        assertEquals(message.getDeviceId(), "30410007102");
         assertEquals(101, message.getServiceType());
         assertEquals(7, message.getEventId());
         assertEquals(9, message.getMessageId());

@@ -1,8 +1,8 @@
 package com.iot.platform.security;
 
 import com.iot.platform.controller.DeviceController;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.method.HandlerMethod;
@@ -10,15 +10,15 @@ import org.springframework.web.method.HandlerMethod;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RoleInterceptorTest {
 
     private RoleInterceptor interceptor;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         interceptor = new RoleInterceptor();
     }
@@ -65,7 +65,7 @@ public class RoleInterceptorTest {
     @Test
     public void unannotatedHandlerPasses() throws Exception {
         HandlerMethod listHandler = new HandlerMethod(new DeviceController(),
-                DeviceController.class.getMethod("list", javax.servlet.http.HttpServletRequest.class));
+                DeviceController.class.getMethod("list", jakarta.servlet.http.HttpServletRequest.class));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices");
         request.setAttribute("roles", Collections.emptyList());
 

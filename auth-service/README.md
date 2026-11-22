@@ -4,9 +4,12 @@
 
 ## 技术栈
 
-- Java 8 / Spring Boot 2.1.6（与 platform-java / dtm / ProxyTcp 一致）
+- Java 17 / Spring Boot 3.3.5（2026-11 由 Java 8 / Boot 2.1.6 迁移，全部 Java 模块统一）
 - MongoDB（用户、SSO 客户端、审计）、Redis（refresh token、黑名单、SSO ticket）
-- jjwt 0.9.1（HS256 标准 JWT）、spring-security-crypto（BCrypt）
+- jjwt 0.12.6（RS256/HS256，`Jwts.SIG` 新 API）、spring-security-crypto（BCrypt）
+- JUnit 5（`org.junit.jupiter`）
+
+> 构建要求：JDK 17+、Maven 3.6.3+（本机用 `C:\Programs\apache-maven-3.9.9\bin\mvn.cmd`）。
 
 ## 启动
 

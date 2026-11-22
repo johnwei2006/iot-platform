@@ -2,21 +2,24 @@ package com.iot.platform.security.local;
 
 import com.iot.platform.security.AuthServiceClient;
 import com.iot.platform.security.AuthServiceException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class RevocationCheckerTest {
 
     @Mock
@@ -26,7 +29,7 @@ public class RevocationCheckerTest {
 
     private RevocationChecker checker;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         checker = new RevocationChecker(redis, true, "auth:", 15_000L, true);
         when(redis.opsForValue()).thenReturn(valueOperations);

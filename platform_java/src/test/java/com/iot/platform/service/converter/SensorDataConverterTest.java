@@ -7,17 +7,17 @@ import com.iot.platform.config.TdEngineProperties;
 import com.iot.platform.model.SensorReading;
 import com.iot.platform.mq.UplinkMessage;
 import com.iot.platform.timeseries.SensorReadingWriter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -33,7 +33,7 @@ public class SensorDataConverterTest {
     private SensorReadingWriter writer;
     private SensorDataConverter converter;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         registry = new SensorMetadataRegistry();
         registry.register("GW1", "NODE1", 1, "TEMP01", "1");

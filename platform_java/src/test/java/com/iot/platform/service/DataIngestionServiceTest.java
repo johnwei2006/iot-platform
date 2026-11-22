@@ -3,19 +3,23 @@ package com.iot.platform.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.mq.UplinkMessage;
 import com.iot.platform.mq.UplinkProcessingService;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 
 /** 兼容 facade 测试：仅验证反序列化后委托给编排服务。 */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class DataIngestionServiceTest {
 
     @Mock
@@ -38,9 +42,10 @@ public class DataIngestionServiceTest {
         assertEquals(24, captor.getValue().getServiceType());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void badJsonThrowsRuntimeException() {
         Message msg = new Message("not-json".getBytes(), new MessageProperties());
-        new DataIngestionService(objectMapper, processingService).onUplink(msg);
+        assertThrows(RuntimeException.class,
+                () -> new DataIngestionService(objectMapper, processingService).onUplink(msg));
     }
 }

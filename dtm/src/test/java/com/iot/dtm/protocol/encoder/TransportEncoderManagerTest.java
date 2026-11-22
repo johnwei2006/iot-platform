@@ -8,16 +8,16 @@ import com.iot.dtm.protocol.DecodeResult;
 import com.iot.dtm.protocol.ProtocolRegistry;
 import com.iot.dtm.protocol.ProtocolTestSupport;
 import com.iot.dtm.protocol.ServiceType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /** 编码器管理器：37 条全覆盖、按 DeviceProfile 校验、JSON 透传与启动校验。 */
 public class TransportEncoderManagerTest {
@@ -26,7 +26,7 @@ public class TransportEncoderManagerTest {
     private TransportEncoderManager manager;
     private DeviceProfile binary;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         registry = new ProtocolRegistry();
         registry.init();
@@ -38,7 +38,7 @@ public class TransportEncoderManagerTest {
     public void registersAll37Encoders() {
         assertEquals(ServiceType.values().length, manager.size());
         for (ServiceType type : ServiceType.values()) {
-            assertNotNull("missing encoder for " + type.name(), manager.getEncoder(type.getCode()));
+            assertNotNull(manager.getEncoder(type.getCode()), "missing encoder for " + type.name());
             assertEquals(type, manager.getEncoder(type.getCode()).serviceType());
         }
     }

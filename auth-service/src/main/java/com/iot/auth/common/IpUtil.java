@@ -1,6 +1,6 @@
 package com.iot.auth.common;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /** 客户端 IP 提取：优先 X-Forwarded-For 首段（反向代理场景），否则 remoteAddr。 */
 public final class IpUtil {

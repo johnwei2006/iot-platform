@@ -3,13 +3,15 @@ package com.iot.platform.realtime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.config.RealtimeProperties;
 import com.iot.platform.model.DeviceRealtimeStatus;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -22,19 +24,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class RedisDeviceStatusStoreTest {
 
     @Mock
@@ -46,7 +49,7 @@ public class RedisDeviceStatusStoreTest {
     private RealtimeProperties properties;
     private RedisDeviceStatusStore store;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         properties = new RealtimeProperties();
         store = new RedisDeviceStatusStore(template, mapper, properties);
@@ -107,7 +110,7 @@ public class RedisDeviceStatusStoreTest {
         assertFalse(store.find("D4").isPresent());
         assertTrue(store.list().isEmpty());
 
-        verifyZeroInteractions(template);
+        verifyNoInteractions(template);
     }
 
     @Test
@@ -178,7 +181,7 @@ public class RedisDeviceStatusStoreTest {
                 .thenReturn(Collections.<String>emptyList());
 
         assertTrue(store.list().isEmpty());
-        verifyZeroInteractions(valueOps);
+        verifyNoInteractions(valueOps);
     }
 
     private DeviceRealtimeStatus status(String deviceId) {

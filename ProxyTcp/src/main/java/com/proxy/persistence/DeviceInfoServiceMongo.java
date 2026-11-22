@@ -59,7 +59,7 @@ public class DeviceInfoServiceMongo implements DeviceInfoService {
 	}
 	
 	public List<com.proxy.persistence.model.DeviceInfo> getAllDeviceInfo(){
-		Sort sort = new Sort(Sort.Direction.ASC,"lastConnectedTime");
+		Sort sort = Sort.by(Sort.Direction.ASC, "lastConnectedTime");
 		Iterator<DeviceInfo> s = deviceStatusRespository.findAll(sort).iterator();
 		List<com.proxy.persistence.model.DeviceInfo> status = new ArrayList<com.proxy.persistence.model.DeviceInfo>();
 		while (s.hasNext()) {

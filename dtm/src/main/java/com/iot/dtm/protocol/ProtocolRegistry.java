@@ -6,7 +6,7 @@ import com.iot.dtm.protocol.ProtocolSpec.FieldSpec;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;

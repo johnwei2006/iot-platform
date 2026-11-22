@@ -2,7 +2,7 @@ package com.proxy.persistence.mongodb;
 
 import java.util.Date;
 import java.util.List;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;

@@ -3,11 +3,12 @@ package com.iot.platform.service.uplink;
 import com.iot.platform.mq.UplinkMessage;
 import com.iot.platform.realtime.DeviceRealtimeStatusService;
 import com.iot.platform.service.converter.UplinkBusinessDispatcher;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -31,13 +32,14 @@ public class SideHandlersTest {
         new BusinessConversionHandler(provider(null)).handle(new UplinkMessage());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void businessConversionFailureIsNotSwallowedByHandler() {
         UplinkBusinessDispatcher dispatcher = mock(UplinkBusinessDispatcher.class);
         doThrow(new RuntimeException("writer down"))
                 .when(dispatcher).dispatch(any(UplinkMessage.class));
 
-        new BusinessConversionHandler(provider(dispatcher)).handle(new UplinkMessage());
+        assertThrows(RuntimeException.class, () ->
+                new BusinessConversionHandler(provider(dispatcher)).handle(new UplinkMessage()));
     }
 
     @Test

@@ -1,7 +1,7 @@
 package com.iot.platform.security;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -10,8 +10,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -25,7 +25,7 @@ public class AuthServiceClientTest {
     private MockRestServiceServer server;
     private AuthServiceClient client;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         RestTemplate restTemplate = new RestTemplate();
         server = MockRestServiceServer.createServer(restTemplate);

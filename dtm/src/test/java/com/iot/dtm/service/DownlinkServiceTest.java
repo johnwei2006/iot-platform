@@ -9,8 +9,8 @@ import com.iot.dtm.profile.DeviceProfileCache;
 import com.iot.dtm.protocol.ProtocolRegistry;
 import com.iot.dtm.protocol.ProtocolTestSupport;
 import com.iot.dtm.protocol.encoder.TransportEncoderManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -18,10 +18,10 @@ import org.springframework.amqp.core.MessageProperties;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -36,7 +36,7 @@ public class DownlinkServiceTest {
     private DownlinkService service;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         ProtocolRegistry registry = new ProtocolRegistry();
         registry.init();
@@ -58,7 +58,7 @@ public class DownlinkServiceTest {
 
         assertArrayEquals(new byte[]{1, 9},
                 Base64.getDecoder().decode(body.path("serviceData").asText()));
-        assertFalse("extension fields must be stripped", body.has("serviceDataDecoded"));
+        assertFalse(body.has("serviceDataDecoded"), "extension fields must be stripped");
         assertFalse(body.has("protocolName"));
         verify(publisher).publish(eq("iot.exchange"), eq("proxy.downlink"), any(Message.class));
     }
@@ -72,7 +72,7 @@ public class DownlinkServiceTest {
         Message out = service.process(message(json));
         JsonNode body = mapper.readTree(out.getBody());
 
-        assertEquals("QUJD", body.path("serviceData").asText());
+        assertEquals(body.path("serviceData").asText(), "QUJD");
         assertFalse(body.has("serviceDataDecoded"));
     }
 
@@ -84,7 +84,7 @@ public class DownlinkServiceTest {
         Message out = service.process(message(json));
         JsonNode body = mapper.readTree(out.getBody());
 
-        assertEquals("", body.path("serviceData").asText());
+        assertEquals(body.path("serviceData").asText(), "");
     }
 
     @Test

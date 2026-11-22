@@ -1,13 +1,15 @@
 package com.iot.auth.config;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class AuthPropertiesTest {
 
@@ -54,9 +56,14 @@ public class AuthPropertiesTest {
         assertFalse(properties.isRegisteredRedirect(null));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void jwtSecretIsMandatory() {
-        new AuthProperties().validate();
+        try {
+            new AuthProperties().validate();
+            fail("missing jwt secret should be rejected");
+        } catch (IllegalStateException e) {
+            // expected
+        }
     }
 
     @Test
@@ -65,7 +72,7 @@ public class AuthPropertiesTest {
         properties.setJwtSecret("too-short");
         try {
             properties.validate();
-            org.junit.Assert.fail("weak secret should be rejected");
+            fail("weak secret should be rejected");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage().contains("32"));
         }
@@ -79,9 +86,5 @@ public class AuthPropertiesTest {
         assertEquals("Strict", cookie.getSameSite());
         assertEquals("/api/auth", cookie.getPath());
         assertTrue(cookie.getDomain() == null || cookie.getDomain().isEmpty());
-    }
-
-    private void assertNotNull(Object value) {
-        org.junit.Assert.assertNotNull(value);
     }
 }

@@ -1,9 +1,9 @@
 package com.iot.platform.mq;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,11 +55,11 @@ public class UplinkMessageContractTest {
     public void gsonServiceRequestJsonParsesIntoUplinkMessage() throws Exception {
         UplinkMessage up = mapper().readValue(SERVICEREQUEST_JSON, UplinkMessage.class);
 
-        assertEquals("deviceId 应正确映射", "30410007102", up.getDeviceId());
-        assertEquals("serviceType 应正确映射", 2, up.getServiceType());
-        assertEquals("serviceData(base64) 应原样透传", "QUJD", up.getServiceData());
-        assertEquals("serviceEncryption 应正确映射（对齐 ServiceRequest）", 1, up.getServiceEncryption());
-        assertNull("旧版透传报文没有结构化字段", up.getServiceDataDecoded());
+        assertEquals("30410007102", up.getDeviceId(), "deviceId 应正确映射");
+        assertEquals(2, up.getServiceType(), "serviceType 应正确映射");
+        assertEquals("QUJD", up.getServiceData(), "serviceData(base64) 应原样透传");
+        assertEquals(1, up.getServiceEncryption(), "serviceEncryption 应正确映射（对齐 ServiceRequest）");
+        assertNull(up.getServiceDataDecoded(), "旧版透传报文没有结构化字段");
     }
 
     @Test

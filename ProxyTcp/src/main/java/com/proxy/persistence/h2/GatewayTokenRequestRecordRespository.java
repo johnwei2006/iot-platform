@@ -10,7 +10,8 @@ import com.proxy.persistence.h2.model.GatewayTokenRequestRecord;
 
 @Repository
 public interface GatewayTokenRequestRecordRespository
-		extends PagingAndSortingRepository<GatewayTokenRequestRecord, Long> {
+		extends PagingAndSortingRepository<GatewayTokenRequestRecord, Long>,
+		org.springframework.data.repository.CrudRepository<GatewayTokenRequestRecord, Long> {
 
 	List<GatewayTokenRequestRecord> findByDeviceIdOrderByRequestTimeDesc(String deviceId, Pageable pageable);
 

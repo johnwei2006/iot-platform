@@ -2,13 +2,13 @@ package com.proxy.test;
 
 import java.util.Date;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.proxy.DownlinkRetryPolicy;
 import com.proxy.DownlinkRetryPolicy.Decision;
 import com.proxy.persistence.model.DownlinkMessage;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 下行重发决策纯逻辑单测（无 Mongo / 无 Channel 依赖）。

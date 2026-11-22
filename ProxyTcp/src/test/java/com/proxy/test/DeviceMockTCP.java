@@ -18,11 +18,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.junit.runner.Description;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
-import org.junit.runner.notification.RunListener;
+import org.junit.platform.engine.TestExecutionResult;
+import org.junit.platform.launcher.TestIdentifier;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
+
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -534,34 +537,44 @@ public class DeviceMockTCP implements Closeable {
     /**
      * 内置完整测试套件：37 协议编解码 + schema 同步 + 真实 Netty 37 类上下行闭环。
      * 不依赖外部 ProxyTcp / RabbitMQ / DB。
+     *
+     * <p>迁移说明：JUnit 4 移除后 JUnitCore/RunListener 不可用，
+     * 改用 JUnit Platform Launcher API 运行内置测试。
      */
     private static void runBuiltInTests() {
         System.out.println("[DeviceMockTCP] no live args: running built-in full test suite ("
                 + BUILTIN_TEST_CLASSES.length + " test classes)");
-        JUnitCore core = new JUnitCore();
-        core.addListener(new RunListener() {
+        LauncherDiscoveryRequestBuilder builder = LauncherDiscoveryRequestBuilder.request();
+        for (Class<?> testClass : BUILTIN_TEST_CLASSES) {
+            builder.selectors(selectClass(testClass));
+        }
+        SummaryGeneratingListener listener = new SummaryGeneratingListener() {
             @Override
-            public void testFinished(Description description) {
-                System.out.println("[TEST PASS] " + description.getClassName()
-                        + "." + description.getMethodName());
+            public void executionFinished(TestIdentifier identifier, TestExecutionResult result) {
+                super.executionFinished(identifier, result);
+                if (identifier.isTest()) {
+                    if (result.getStatus() == TestExecutionResult.Status.SUCCESSFUL) {
+                        System.out.println("[TEST PASS] " + identifier.getDisplayName());
+                    } else if (result.getStatus() == TestExecutionResult.Status.FAILED) {
+                        Throwable throwable = result.getThrowable().orElse(null);
+                        System.err.println("[TEST FAIL] " + identifier.getDisplayName()
+                                + ": " + (throwable == null ? "" : throwable.getMessage()));
+                    }
+                }
             }
-
-            @Override
-            public void testFailure(Failure failure) {
-                System.err.println("[TEST FAIL] " + failure.getTestHeader()
-                        + ": " + failure.getMessage());
-            }
-        });
-        Result result = core.run(BUILTIN_TEST_CLASSES);
-        System.out.println("[DeviceMockTCP] built-in tests: run=" + result.getRunCount()
-                + " failures=" + result.getFailureCount()
-                + " ignored=" + result.getIgnoreCount()
-                + " time=" + result.getRunTime() + "ms"
-                + " => " + (result.wasSuccessful() ? "PASS" : "FAIL"));
-        if (!result.wasSuccessful()) {
-            for (Failure failure : result.getFailures()) {
-                System.err.println(failure.getTrace());
-            }
+        };
+        LauncherFactory.create().execute(builder.build(), listener);
+        TestExecutionSummary summary = listener.getSummary();
+        long run = summary.getTestsSucceededCount() + summary.getTestsFailedCount()
+                + summary.getTestsSkippedCount() + summary.getTestsAbortedCount();
+        System.out.println("[DeviceMockTCP] built-in tests: run=" + run
+                + " failures=" + summary.getTestsFailedCount()
+                + " skipped=" + summary.getTestsSkippedCount()
+                + " aborted=" + summary.getTestsAbortedCount()
+                + " time=" + summary.getTimeFinished() + "ms"
+                + " => " + (summary.getTotalFailureCount() == 0 ? "PASS" : "FAIL"));
+        if (summary.getTotalFailureCount() > 0) {
+            summary.printFailuresTo(new java.io.PrintWriter(System.err));
             System.exit(1);
         }
     }

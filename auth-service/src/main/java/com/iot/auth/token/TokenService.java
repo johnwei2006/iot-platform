@@ -5,12 +5,13 @@ import com.iot.auth.config.AuthProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.MacAlgorithm;
+import io.jsonwebtoken.security.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -50,10 +51,14 @@ public class TokenService {
     private final AuthProperties properties;
     private final StringRedisTemplate redis;
 
-    private SignatureAlgorithm algorithm;
+    /** true=RS256（私钥签名）；false=HS256（共享密钥兼容模式） */
+    private boolean rsaMode;
+    private io.jsonwebtoken.security.SignatureAlgorithm rsaAlgorithm;
+    private io.jsonwebtoken.security.MacAlgorithm macAlgorithm;
     private KeyFactory rsaKeyFactory;
     private PrivateKey rsaPrivateKey;
     private PublicKey rsaPublicKey;
+    private javax.crypto.SecretKey hmacKey;
 
     @Autowired
     public TokenService(AuthProperties properties, StringRedisTemplate redis) {
@@ -63,7 +68,8 @@ public class TokenService {
 
     @PostConstruct
     public void initCrypto() {
-        if (properties.isRsaMode()) {
+        rsaMode = properties.isRsaMode();
+        if (rsaMode) {
             try {
                 rsaKeyFactory = KeyFactory.getInstance("RSA");
                 byte[] decoded = Base64.getMimeDecoder().decode(pemBody(properties.getJwtPrivateKey()));
@@ -72,20 +78,22 @@ public class TokenService {
                 rsaPrivateKey = crt;
                 rsaPublicKey = rsaKeyFactory.generatePublic(
                         new RSAPublicKeySpec(crt.getModulus(), crt.getPublicExponent()));
-                algorithm = SignatureAlgorithm.RS256;
+                rsaAlgorithm = Jwts.SIG.RS256;
             } catch (Exception e) {
                 throw new IllegalStateException("invalid auth.jwt-private-key (PKCS#8 RSA PEM required)", e);
             }
         } else {
-            algorithm = SignatureAlgorithm.HS256;
+            macAlgorithm = Jwts.SIG.HS256;
+            hmacKey = io.jsonwebtoken.security.Keys.hmacShaKeyFor(
+                    properties.getJwtSecret().getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
     }
 
     public String issueAccessToken(TokenClaims claims) {
         Date now = new Date();
         io.jsonwebtoken.JwtBuilder builder = Jwts.builder()
-                .setSubject(claims.getSubject())
-                .setId(claims.getJti())
+                .subject(claims.getSubject())
+                .id(claims.getJti())
                 .claim(CLAIM_CLIENT, claims.getClientId())
                 .claim(CLAIM_ROLES, claims.getRoles())
                 .claim(CLAIM_VER, claims.getTokenVersion())
@@ -93,22 +101,22 @@ public class TokenService {
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
                 .claim(CLAIM_ORG, claims.getOrgCode() == null ? "" : claims.getOrgCode())
                 .claim(CLAIM_DS, claims.getDataScopes())
-                .setIssuer(properties.getJwtIssuer())
-                .setAudience(properties.getJwtAudience())
-                .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + properties.getAccessTtlMs()));
-        if (algorithm == SignatureAlgorithm.RS256) {
-            builder.setHeaderParam("kid", properties.getJwtKeyId());
-            builder.signWith(algorithm, rsaPrivateKey);
+                .issuer(properties.getJwtIssuer())
+                .audience().add(properties.getJwtAudience()).and()
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + properties.getAccessTtlMs()));
+        if (rsaMode) {
+            builder.header().add("kid", properties.getJwtKeyId()).and();
+            builder.signWith(rsaPrivateKey, rsaAlgorithm);
         } else {
-            builder.signWith(algorithm, properties.getJwtSecret().getBytes());
+            builder.signWith(hmacKey, macAlgorithm);
         }
         return builder.compact();
     }
 
     /** RS256 模式下返回公钥 JWK（kid/n/e，base64url）；HS256 模式返回 null。 */
     public Map<String, Object> publicJwk() {
-        if (algorithm != SignatureAlgorithm.RS256 || !(rsaPublicKey instanceof java.security.interfaces.RSAPublicKey)) {
+        if (!rsaMode || !(rsaPublicKey instanceof java.security.interfaces.RSAPublicKey)) {
             return null;
         }
         java.security.interfaces.RSAPublicKey key = (java.security.interfaces.RSAPublicKey) rsaPublicKey;
@@ -180,15 +188,13 @@ public class TokenService {
 
     /** 解析并验签 access token（含 iss/aud 强校验），不查黑名单。 */
     public Claims parseAccessToken(String token) {
-        io.jsonwebtoken.JwtParser parser = Jwts.parser()
+        io.jsonwebtoken.JwtParserBuilder parserBuilder = Jwts.parser()
                 .requireIssuer(properties.getJwtIssuer())
                 .requireAudience(properties.getJwtAudience());
-        if (algorithm == SignatureAlgorithm.RS256) {
-            parser.setSigningKey(rsaPublicKey);
-        } else {
-            parser.setSigningKey(properties.getJwtSecret().getBytes());
-        }
-        return parser.parseClaimsJws(token).getBody();
+        io.jsonwebtoken.JwtParser parser = rsaMode
+                ? parserBuilder.verifyWith(rsaPublicKey).build()
+                : parserBuilder.verifyWith(hmacKey).build();
+        return parser.parseSignedClaims(token).getPayload();
     }
 
     /**

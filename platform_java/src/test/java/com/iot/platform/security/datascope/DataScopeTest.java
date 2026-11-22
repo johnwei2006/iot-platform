@@ -1,8 +1,8 @@
 package com.iot.platform.security.datascope;
 
 import com.iot.platform.model.Device;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
@@ -10,18 +10,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class DataScopeTest {
 
     private DataScopeRegistry registry;
     private DeviceDataScopeRule deviceRule;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         deviceRule = new DeviceDataScopeRule();
         registry = new DataScopeRegistry(Collections.<DataScopeRule>singletonList(deviceRule));

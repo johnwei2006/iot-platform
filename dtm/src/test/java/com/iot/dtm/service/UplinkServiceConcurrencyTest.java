@@ -7,7 +7,7 @@ import com.iot.dtm.profile.DeviceProfileCache;
 import com.iot.dtm.protocol.ProtocolRegistry;
 import com.iot.dtm.protocol.ProtocolTestSupport;
 import com.iot.dtm.protocol.encoder.TransportEncoderManager;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 
@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;

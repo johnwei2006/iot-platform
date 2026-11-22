@@ -262,7 +262,8 @@ public class TransportDataEncoder {
 		MessageHeader header = new MessageHeader();
 		header.setTransportDataEncoding((byte)2);
 		header.setTransportDataLength((short)(UplinkTransportMessage.TRANSPORT_PART_FIX_LENGTH + (serviceData == null ? 0 : serviceData.length)));
-		header.setTransportVersion((byte)1);
+		// 传输版本 2 起携带网关认证 token；版本 1 已不再被 MessageCoderFactory 接受
+		header.setTransportVersion((byte)2);
 		message.setHeader(header);
 		
 		message.setDeviceId(deviceId);

@@ -17,10 +17,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +49,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                          @Value("${admin.auth.verify-path:/api/auth/verify}") String verifyPath) {
         this.verifier = verifier;
         this.revocationChecker = revocationChecker;
-        this.restTemplate = builder.setConnectTimeout(2000).setReadTimeout(2000).build();
+        this.restTemplate = com.iot.admin.common.RestTemplates.build(builder, 2000, 2000);
         String base = baseUrl == null ? "" : baseUrl.trim();
         this.verifyUrl = (base.endsWith("/") ? base.substring(0, base.length() - 1) : base) + verifyPath;
     }
@@ -105,7 +105,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     new HttpEntity<String>("{}", headers), String.class);
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode data = root.path("data");
-            if (response.getStatusCodeValue() != 200 || data.isMissingNode()) {
+            if (response.getStatusCode().value() != 200 || data.isMissingNode()) {
                 throw com.iot.admin.common.AppException.unauthorized("invalid or expired token");
             }
             List<String> roles = new ArrayList<String>();

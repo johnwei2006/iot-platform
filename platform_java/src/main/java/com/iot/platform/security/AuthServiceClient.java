@@ -40,7 +40,7 @@ public class AuthServiceClient {
                              @Value("${app.auth-service.verify-path:/api/auth/verify}") String verifyPath,
                              @Value("${app.auth-service.connect-timeout-ms:2000}") int connectTimeoutMs,
                              @Value("${app.auth-service.read-timeout-ms:2000}") int readTimeoutMs) {
-        this(builder.setConnectTimeout(connectTimeoutMs).setReadTimeout(readTimeoutMs).build(),
+        this(com.iot.platform.common.RestTemplates.build(builder, connectTimeoutMs, readTimeoutMs),
                 baseUrl, verifyPath);
     }
 
@@ -87,9 +87,9 @@ public class AuthServiceClient {
             ResponseEntity<String> response = restTemplate.exchange(
                     baseUrl + withLeadingSlash(path), HttpMethod.POST,
                     new HttpEntity<String>(jsonBody, headers), String.class);
-            return new ProxyResponse(response.getStatusCodeValue(), response.getBody());
+            return new ProxyResponse(response.getStatusCode().value(), response.getBody());
         } catch (HttpStatusCodeException e) {
-            return new ProxyResponse(e.getRawStatusCode(), e.getResponseBodyAsString());
+            return new ProxyResponse(e.getStatusCode().value(), e.getResponseBodyAsString());
         } catch (RestClientException e) {
             throw AuthServiceException.unavailable("auth service unavailable: " + e.getMessage());
         }
@@ -119,8 +119,8 @@ public class AuthServiceClient {
     }
 
     private AuthServiceException mapHttpError(HttpStatusCodeException e) {
-        if (e.getStatusCode().series() == HttpStatus.Series.SERVER_ERROR) {
-            return AuthServiceException.unavailable("auth service error: " + e.getRawStatusCode());
+        if (e.getStatusCode().is5xxServerError()) {
+            return AuthServiceException.unavailable("auth service error: " + e.getStatusCode().value());
         }
         return AuthServiceException.unauthorized("invalid access token");
     }

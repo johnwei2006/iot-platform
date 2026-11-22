@@ -3,8 +3,8 @@ package com.iot.dtm.mq;
 import com.iot.dtm.config.WorkerProperties;
 import com.iot.dtm.service.DownlinkService;
 import com.rabbitmq.client.Channel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -27,7 +27,7 @@ public class DownlinkConsumerTest {
     private DownlinkConsumer consumer;
     private Message message;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         service = mock(DownlinkService.class);
         executor = mock(ThreadPoolTaskExecutor.class);

@@ -16,9 +16,9 @@
 
 ## 技术栈
 
-- Spring Boot 2.1.6（与 `ProxyTcp` 对齐，Java 8）
-- Spring AMQP（RabbitMQ）
-- Actuator（健康检查）
+- Spring Boot 3.3.5（与 `ProxyTcp` 对齐，Java 17；2026-11 由 Boot 2.1.6 / Java 8 迁移）
+- Spring AMQP 3.x（RabbitMQ；返回消息回调改用 `ReturnsCallback`）
+- Actuator（健康检查）、JUnit 5
 
 ## 处理链路（按架构图）
 

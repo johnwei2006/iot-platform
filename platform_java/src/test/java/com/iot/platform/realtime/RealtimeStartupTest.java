@@ -2,12 +2,12 @@ package com.iot.platform.realtime;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.config.RealtimeConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * 验证 Redis 相关 Bean 在「没有 Redis 服务」时仍能完成装配：Lettuce 是懒连接，

@@ -13,6 +13,14 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI:mongodb://localhost:27017/iot_platform}
+    # 设备实时状态缓存。Lettuce 为懒连接，未部署 Redis 时应用仍可启动。
+    # （Spring Boot 3 起 Redis 连接属性由 spring.redis 迁移到 spring.data.redis）
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: ${REDIS_TIMEOUT:2000}
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -28,13 +36,6 @@ spring:
           multiplier: 2.0
           max-interval: 10000
         default-requeue-rejected: false
-  # 设备实时状态缓存。Lettuce 为懒连接，未部署 Redis 时应用仍可启动。
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
-    database: ${REDIS_DATABASE:0}
-    timeout: ${REDIS_TIMEOUT:2000}
 
 app:
   # 鉴权（阶段 3）：优先本地验签——从 auth-service JWKS 拉取 RS256 公钥，

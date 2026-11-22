@@ -3,13 +3,13 @@ package com.iot.platform.service.converter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.model.SensorMetadata;
 import com.iot.platform.mq.UplinkMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SensorConfigConverterTest {
 
@@ -17,7 +17,7 @@ public class SensorConfigConverterTest {
     private SensorMetadataRegistry registry;
     private SensorConfigConverter converter;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         registry = new SensorMetadataRegistry();
         converter = new SensorConfigConverter(registry);

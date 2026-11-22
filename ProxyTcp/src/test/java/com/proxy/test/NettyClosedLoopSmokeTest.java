@@ -1,8 +1,8 @@
 package com.proxy.test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +11,7 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -55,7 +55,12 @@ public class NettyClosedLoopSmokeTest {
     public void closedLoopUplinkDownlink() throws Exception {
         // 使用临时端口避免本地 50001 被占用导致 bind 失败（默认 50001 仅在未显式设置时生效）
         System.setProperty("tcpport", "0");
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(SmokeConfig.class);
+        // 网关认证服务用 Mockito 桩：refresh 前手动注册单例，绕开 Spring 对 mock 的字段注入
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.getBeanFactory().registerSingleton("gatewayAuthService",
+                org.mockito.Mockito.mock(com.proxy.auth.GatewayAuthService.class));
+        ctx.register(SmokeConfig.class);
+        ctx.refresh();
         try {
             NettyTcpServer server = ctx.getBean(NettyTcpServer.class);
             ChannelRegistry registry = ctx.getBean(ChannelRegistry.class);
@@ -89,7 +94,7 @@ public class NettyClosedLoopSmokeTest {
             }
             System.out.println("DEBUG alive=" + serverThread.isAlive()
                     + " boundPort=" + boundPort + " err=" + serverError[0]);
-            assertTrue("Netty 应已绑定到临时端口", boundPort > 0);
+            assertTrue(boundPort > 0, "Netty 应已绑定到临时端口");
             System.out.println("Netty TCP server bound on " + boundPort);
 
             String deviceId = "30410007102";
@@ -108,7 +113,7 @@ public class NettyClosedLoopSmokeTest {
 
                 // 等价 TransportUplinkProcessor 解码出 deviceId 后的绑定（真实链路由处理器完成）
                 registry.bindDevice(deviceId, "127.0.0.1", localPort);
-                assertTrue("deviceId 应已绑定到 Channel", registry.getOnlineDeviceIds().contains(deviceId));
+                assertTrue(registry.getOnlineDeviceIds().contains(deviceId), "deviceId 应已绑定到 Channel");
 
                 // 下行：平台经 sendQueue -> NettyDownlinkSender -> Channel 写回
                 byte[] downPayload = "HELLO-DOWNLINK".getBytes();
@@ -121,10 +126,10 @@ public class NettyClosedLoopSmokeTest {
                 InputStream in = sock.getInputStream();
                 sock.setSoTimeout(5000);
                 byte[] received = readExact(in, 4 + downPayload.length);
-                assertNotNull("设备应在超时内收到下行帧", received);
-                assertTrue("下行帧头应为 FF EE", received[0] == (byte) 0xFF && received[1] == (byte) 0xEE);
+                assertNotNull(received, "设备应在超时内收到下行帧");
+                assertTrue(received[0] == (byte) 0xFF && received[1] == (byte) 0xEE, "下行帧头应为 FF EE");
                 byte[] tail = Arrays.copyOfRange(received, 4, received.length);
-                assertArrayEquals("下行 payload 应与发送一致", downPayload, tail);
+                assertArrayEquals(downPayload, tail, "下行 payload 应与发送一致");
                 System.out.println("CLOSED-LOOP SMOKE PASS: device " + deviceId
                         + " received downlink (" + new String(tail) + ")");
             }

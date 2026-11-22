@@ -3,13 +3,13 @@ package com.iot.dtm.protocol;
 import com.iot.dtm.config.CodecProperties;
 import com.iot.dtm.model.DeviceProfile;
 import com.iot.dtm.protocol.encoder.TransportEncoderManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 容错：未知类型、空载荷、截断、加密、版本、超长计数都必须 fail-open 而不是抛 MQ 异常。 */
 public class CodecFailureTest {
@@ -18,7 +18,7 @@ public class CodecFailureTest {
     private TransportEncoderManager manager;
     private DeviceProfile binaryProfile;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         registry = new ProtocolRegistry();
         registry.init();
@@ -37,14 +37,14 @@ public class CodecFailureTest {
     public void gnssWithoutSchemaIsUnsupported() {
         DecodeResult r = manager.decode(binaryProfile, 0x60, new byte[]{1, 2, 3});
         assertEquals(DecodeResult.Status.UNSUPPORTED, r.getStatus());
-        assertEquals("UNSUPPORTED", r.getStatus().name());
+        assertEquals(r.getStatus().name(), "UNSUPPORTED");
     }
 
     @Test
     public void emptyPayloadProtocolReturnsEmpty() {
         DecodeResult r = manager.decode(binaryProfile, 0x01, new byte[0]);
         assertEquals(DecodeResult.Status.EMPTY, r.getStatus());
-        assertEquals("GATEWAY_HEART_BEAT", r.getProtocolName());
+        assertEquals(r.getProtocolName(), "GATEWAY_HEART_BEAT");
     }
 
     @Test

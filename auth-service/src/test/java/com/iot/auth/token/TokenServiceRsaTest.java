@@ -3,12 +3,13 @@ package com.iot.auth.token;
 import com.iot.auth.common.AppException;
 import com.iot.auth.config.AuthProperties;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -19,14 +20,15 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class TokenServiceRsaTest {
 
     @Mock
@@ -38,7 +40,7 @@ public class TokenServiceRsaTest {
     private TokenService tokenService;
     private String publicJwkKid = "test-key-1";
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(2048);
@@ -124,10 +126,10 @@ public class TokenServiceRsaTest {
         // 用同一 RSA 密钥但错误 iss/aud 手工签发
         RSAPrivateCrtKey privateKey = (RSAPrivateCrtKey) privateKeyFromService();
         String wrong = Jwts.builder()
-                .setSubject("u9")
-                .setIssuer("other-issuer")
-                .setAudience("iot-platform")
-                .signWith(SignatureAlgorithm.RS256, privateKey)
+                .subject("u9")
+                .issuer("other-issuer")
+                .audience().add("iot-platform").and()
+                .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
         try {
             tokenService.verifyAccessToken(wrong);

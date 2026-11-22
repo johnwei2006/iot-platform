@@ -144,8 +144,6 @@ public class RedisDeviceStatusStore {
                             found.add(new String(raw, StandardCharsets.UTF_8));
                         }
                     }
-                } catch (java.io.IOException e) {
-                    throw new IllegalStateException("redis SCAN cursor close failed", e);
                 }
                 return found;
             }

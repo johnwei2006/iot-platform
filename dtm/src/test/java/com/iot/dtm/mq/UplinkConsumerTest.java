@@ -3,8 +3,8 @@ package com.iot.dtm.mq;
 import com.iot.dtm.config.WorkerProperties;
 import com.iot.dtm.service.UplinkService;
 import com.rabbitmq.client.Channel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,7 +28,7 @@ public class UplinkConsumerTest {
     private UplinkConsumer consumer;
     private Message message;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         service = mock(UplinkService.class);
         executor = mock(ThreadPoolTaskExecutor.class);
@@ -70,7 +70,7 @@ public class UplinkConsumerTest {
 
         consumer.onUplink(message, channel);
 
-        assertTrue("timed-out worker should be cancelled", pending.isCancelled());
+        assertTrue(pending.isCancelled(), "timed-out worker should be cancelled");
         verify(channel).basicNack(7L, false, true);
     }
 }
