@@ -113,7 +113,8 @@ public class AuthServiceClient {
             throw AuthServiceException.unauthorized("invalid token subject");
         }
         List<String> roles = data.getRoles() == null ? Collections.<String>emptyList() : data.getRoles();
-        return new TokenVerification(data.getSubject(), data.getClientId(), roles, data.getTokenVersion());
+        return new TokenVerification(data.getSubject(), data.getClientId(), roles,
+                data.getTokenVersion(), data.getJti());
     }
 
     private AuthServiceException mapHttpError(HttpStatusCodeException e) {
@@ -145,18 +146,27 @@ public class AuthServiceClient {
         private final String clientId;
         private final List<String> roles;
         private final long tokenVersion;
+        /** access token 的 jti（本地撤销检查用；远程 verify 也会返回） */
+        private final String jti;
 
         public TokenVerification(String subject, String clientId, List<String> roles, long tokenVersion) {
+            this(subject, clientId, roles, tokenVersion, null);
+        }
+
+        public TokenVerification(String subject, String clientId, List<String> roles,
+                                 long tokenVersion, String jti) {
             this.subject = subject;
             this.clientId = clientId;
             this.roles = roles;
             this.tokenVersion = tokenVersion;
+            this.jti = jti;
         }
 
         public String getSubject() { return subject; }
         public String getClientId() { return clientId; }
         public List<String> getRoles() { return roles; }
         public long getTokenVersion() { return tokenVersion; }
+        public String getJti() { return jti; }
     }
 
     /** 代理转发的 HTTP 状态与响应体。 */
@@ -196,6 +206,7 @@ public class AuthServiceClient {
         private String clientId;
         private List<String> roles;
         private long tokenVersion;
+        private String jti;
 
         public String getSubject() { return subject; }
         public void setSubject(String subject) { this.subject = subject; }
@@ -205,5 +216,7 @@ public class AuthServiceClient {
         public void setRoles(List<String> roles) { this.roles = roles; }
         public long getTokenVersion() { return tokenVersion; }
         public void setTokenVersion(long tokenVersion) { this.tokenVersion = tokenVersion; }
+        public String getJti() { return jti; }
+        public void setJti(String jti) { this.jti = jti; }
     }
 }

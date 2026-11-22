@@ -2,8 +2,10 @@ package com.iot.auth.sso;
 
 import com.iot.auth.api.AuthDtos;
 import com.iot.auth.api.AuthService;
+import com.iot.auth.audit.AuditService;
 import com.iot.auth.common.ApiResponse;
 import com.iot.auth.common.AppException;
+import com.iot.auth.common.IpUtil;
 import com.iot.auth.token.RefreshCookieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,14 +28,17 @@ public class SsoController {
     private final AuthService authService;
     private final SsoSessionService sessionService;
     private final RefreshCookieService cookieService;
+    private final AuditService auditService;
 
     @Autowired
     public SsoController(SsoService ssoService, AuthService authService,
-                         SsoSessionService sessionService, RefreshCookieService cookieService) {
+                         SsoSessionService sessionService, RefreshCookieService cookieService,
+                         AuditService auditService) {
         this.ssoService = ssoService;
         this.authService = authService;
         this.sessionService = sessionService;
         this.cookieService = cookieService;
+        this.auditService = auditService;
     }
 
     /**
@@ -67,7 +72,7 @@ public class SsoController {
     public ApiResponse<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         String userId = sessionService.destroySession(request, response);
         if (userId != null) {
-            authService.revokeAllSessions(userId);
+            authService.revokeAllSessions(userId, IpUtil.clientIp(request));
         }
         cookieService.clearRefreshCookie(response);
         return ApiResponse.success(null);
@@ -87,12 +92,15 @@ public class SsoController {
     /** 客户端用一次性 ticket + clientSecret + redirectUri 换取令牌（轮换 refresh 走 Cookie）。 */
     @PostMapping("/token")
     public ApiResponse<AuthDtos.TokenResponse> exchange(@Valid @RequestBody ExchangeRequest request,
+                                                        HttpServletRequest httpRequest,
                                                         HttpServletResponse response) {
         String userId = ssoService.consumeTicket(request.getTicket(), request.getClientId(),
                 request.getClientSecret(), request.getRedirectUri());
         AuthDtos.TokenResponse data = authService.issueTokensById(userId, request.getClientId(),
                 request.getDeviceId());
         cookieService.addRefreshCookie(response, data.getRefreshToken());
+        auditService.record(AuditService.SSO_EXCHANGE, userId, null,
+                request.getClientId(), IpUtil.clientIp(httpRequest), null);
         return ApiResponse.success(data);
     }
 

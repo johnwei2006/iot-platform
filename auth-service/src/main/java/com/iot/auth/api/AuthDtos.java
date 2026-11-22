@@ -82,6 +82,8 @@ public final class AuthDtos {
         private String clientId;
         private List<String> roles;
         private long tokenVersion;
+        /** access token 的 jti，供下游本地撤销检查使用 */
+        private String jti;
 
         public String getSubject() { return subject; }
         public void setSubject(String subject) { this.subject = subject; }
@@ -91,5 +93,7 @@ public final class AuthDtos {
         public void setRoles(List<String> roles) { this.roles = roles; }
         public long getTokenVersion() { return tokenVersion; }
         public void setTokenVersion(long tokenVersion) { this.tokenVersion = tokenVersion; }
+        public String getJti() { return jti; }
+        public void setJti(String jti) { this.jti = jti; }
     }
 }

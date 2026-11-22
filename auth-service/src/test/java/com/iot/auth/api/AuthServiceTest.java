@@ -1,5 +1,6 @@
 package com.iot.auth.api;
 
+import com.iot.auth.audit.AuditService;
 import com.iot.auth.common.AppException;
 import com.iot.auth.config.AuthProperties;
 import com.iot.auth.identity.User;
@@ -38,6 +39,10 @@ public class AuthServiceTest {
     private StringRedisTemplate redis;
     @Mock
     private ValueOperations<String, String> valueOperations;
+    @Mock
+    private LoginRateLimiter rateLimiter;
+    @Mock
+    private AuditService auditService;
 
     private AuthProperties properties;
     private AuthService authService;
@@ -48,7 +53,8 @@ public class AuthServiceTest {
         properties.setJwtSecret("test-secret-at-least-32-characters-long-1234567890");
         properties.setRedisPrefix("auth:");
         when(redis.opsForValue()).thenReturn(valueOperations);
-        authService = new AuthService(userRepository, tokenService, properties, redis);
+        authService = new AuthService(userRepository, tokenService, properties, redis,
+                rateLimiter, auditService);
     }
 
     private User user(String id, long tokenVersion) {
@@ -181,21 +187,48 @@ public class AuthServiceTest {
         User user = user("u1", 7L);
         when(userRepository.findById("u1")).thenReturn(Optional.of(user));
 
-        authService.revokeAllSessions("u1");
+        authService.revokeAllSessions("u1", "10.0.0.1");
 
         assertEquals(8L, user.getTokenVersion());
         verify(userRepository).save(user);
         verify(redis).delete("auth:userver:u1");
+        verify(auditService).record(eq("REVOKE_ALL"), eq("u1"), eq("user-u1"),
+                eq(null), eq("10.0.0.1"), anyString());
     }
 
     @Test
     public void revokeAllUnknownUserIsRejected() {
         when(userRepository.findById("ghost")).thenReturn(Optional.empty());
         try {
-            authService.revokeAllSessions("ghost");
+            authService.revokeAllSessions("ghost", null);
             fail("unknown user should be rejected");
         } catch (AppException e) {
             assertEquals(404, e.getResultCode().getCode());
         }
+    }
+
+    @Test
+    public void loginChecksRateLimitAndAuditsSuccess() {
+        AuthDtos.LoginRequest request = new AuthDtos.LoginRequest();
+        request.setUsername("alice");
+        request.setPassword("pw");
+        request.setClientId("web");
+        User alice = user("u1", 1L);
+        alice.setPasswordHash(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("pw"));
+        AuthProperties.Client webClient = new AuthProperties.Client();
+        webClient.setId("web");
+        properties.setClients(java.util.Collections.singletonList(webClient));
+        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
+        when(tokenService.issueRefreshToken(anyString(), anyString(),
+                org.mockito.ArgumentMatchers.any(), anyLong())).thenReturn("refresh");
+        when(tokenService.issueAccessToken(org.mockito.ArgumentMatchers.any(TokenClaims.class)))
+                .thenReturn("access");
+
+        authService.login(request, "10.0.0.9");
+
+        verify(rateLimiter).check("alice", "10.0.0.9");
+        verify(rateLimiter).recordSuccess("alice", "10.0.0.9");
+        verify(auditService).record(eq("LOGIN_SUCCESS"), eq("u1"), eq("alice"),
+                eq("web"), eq("10.0.0.9"), eq(null));
     }
 }

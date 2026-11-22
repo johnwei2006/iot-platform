@@ -13,8 +13,21 @@ import java.util.List;
 @ConfigurationProperties(prefix = "auth")
 public class AuthProperties {
 
-    /** JWT 密钥（HS256），至少 32 字符 */
+    /** JWT 密钥（HS256 兼容模式），至少 32 字符；未配置私钥时必填 */
     private String jwtSecret;
+    /**
+     * JWT 签名私钥（RS256，PKCS#8 PEM，openssl genpkey 输出格式）。
+     * 配置后优先于 jwt-secret，启用非对称签名：下游服务持公钥本地验签，无需共享秘密。
+     */
+    private String jwtPrivateKey;
+    /** JWT kid 头（RS256 模式），配合 JWKS 端点支持密钥轮换 */
+    private String jwtKeyId = "auth-key-1";
+    /** JWT iss 声明 */
+    private String jwtIssuer = "iot-auth";
+    /** JWT aud 声明 */
+    private String jwtAudience = "iot-platform";
+    /** 登录失败限流 */
+    private RateLimit rateLimit = new RateLimit();
     /** access token 有效期（毫秒），默认 30 分钟 */
     private long accessTtlMs = 30L * 60 * 1000;
     /** refresh token 有效期（毫秒），默认 7 天 */
@@ -36,10 +49,29 @@ public class AuthProperties {
 
     @PostConstruct
     public void validate() {
-        if (jwtSecret == null || jwtSecret.length() < 32) {
-            throw new IllegalStateException("auth.jwt-secret must be configured with at least 32 characters");
+        boolean hasRsa = jwtPrivateKey != null && jwtPrivateKey.contains("PRIVATE KEY");
+        boolean hasHmac = jwtSecret != null && jwtSecret.length() >= 32;
+        if (!hasRsa && !hasHmac) {
+            throw new IllegalStateException("auth.jwt-private-key (RS256, PKCS#8 PEM) or auth.jwt-secret "
+                    + "(HS256, at least 32 characters) must be configured");
         }
     }
+
+    /** 是否启用 RS256 非对称签名模式（配置私钥时优先）。 */
+    public boolean isRsaMode() {
+        return jwtPrivateKey != null && jwtPrivateKey.contains("PRIVATE KEY");
+    }
+
+    public String getJwtPrivateKey() { return jwtPrivateKey; }
+    public void setJwtPrivateKey(String jwtPrivateKey) { this.jwtPrivateKey = jwtPrivateKey; }
+    public String getJwtKeyId() { return jwtKeyId; }
+    public void setJwtKeyId(String jwtKeyId) { this.jwtKeyId = jwtKeyId; }
+    public String getJwtIssuer() { return jwtIssuer; }
+    public void setJwtIssuer(String jwtIssuer) { this.jwtIssuer = jwtIssuer; }
+    public String getJwtAudience() { return jwtAudience; }
+    public void setJwtAudience(String jwtAudience) { this.jwtAudience = jwtAudience; }
+    public RateLimit getRateLimit() { return rateLimit; }
+    public void setRateLimit(RateLimit rateLimit) { this.rateLimit = rateLimit == null ? new RateLimit() : rateLimit; }
 
     public Client findClient(String clientId) {
         for (Client client : clients) {
@@ -209,6 +241,22 @@ public class AuthProperties {
         public void setSessionCookieSecure(boolean sessionCookieSecure) { this.sessionCookieSecure = sessionCookieSecure; }
         public String getSessionCookieSameSite() { return sessionCookieSameSite; }
         public void setSessionCookieSameSite(String sessionCookieSameSite) { this.sessionCookieSameSite = sessionCookieSameSite; }
+    }
+
+    /** 登录失败限流：同一用户名/来源 IP 在窗口内失败次数超限即拒绝（429）。 */
+    public static class RateLimit {
+        private boolean enabled = true;
+        /** 窗口内最大失败次数 */
+        private int maxFailures = 10;
+        /** 计数窗口（毫秒），默认 15 分钟 */
+        private long windowMs = 15L * 60 * 1000;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public int getMaxFailures() { return maxFailures; }
+        public void setMaxFailures(int maxFailures) { this.maxFailures = maxFailures; }
+        public long getWindowMs() { return windowMs; }
+        public void setWindowMs(long windowMs) { this.windowMs = windowMs; }
     }
 
     public static class Client {

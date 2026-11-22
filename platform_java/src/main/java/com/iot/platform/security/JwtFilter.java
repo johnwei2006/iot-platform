@@ -2,6 +2,8 @@ package com.iot.platform.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.common.ApiResponse;
+import com.iot.platform.security.local.LocalJwtVerifier;
+import com.iot.platform.security.local.RevocationChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -19,8 +21,9 @@ import java.util.List;
 /**
  * 统一鉴权过滤器：校验 Bearer 令牌，白名单路径跳过。
  *
- * <p>验签委托给 auth-service（{@link AuthServiceClient}），本地不再持有 JWT 密钥，
- * 从而由认证服务统一执行签名校验、过期检查、黑名单与 tokenVersion 校验。
+ * <p>验签策略（阶段 3）：公钥就绪时走本地验签（RS256，{@link com.iot.platform.security.local.LocalJwtVerifier}），
+ * 再由本地撤销层做黑名单/tokenVersion 检查——auth-service 故障不阻断业务；
+ * 公钥未就绪时自动回退远程验签（{@link AuthServiceClient}，fail-closed）。
  * 校验通过后把身份声明写入 request 属性：subject、clientId、roles、tokenVersion。
  * 白名单：登录、健康检查、actuator、静态资源。
  */
@@ -30,13 +33,19 @@ public class JwtFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
 
     private final AuthServiceClient authServiceClient;
+    private final LocalJwtVerifier localVerifier;
+    private final RevocationChecker revocationChecker;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final AntPathMatcher matcher = new AntPathMatcher();
     private final List<String> whiteList = Arrays.asList(
             "/api/auth/**", "/health", "/actuator/**", "/error", "/favicon.ico");
 
-    public JwtFilter(AuthServiceClient authServiceClient) {
+    public JwtFilter(AuthServiceClient authServiceClient,
+                     LocalJwtVerifier localVerifier,
+                     RevocationChecker revocationChecker) {
         this.authServiceClient = authServiceClient;
+        this.localVerifier = localVerifier;
+        this.revocationChecker = revocationChecker;
     }
 
     @Override
@@ -59,8 +68,14 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
         try {
-            AuthServiceClient.TokenVerification verification =
-                    authServiceClient.verify(header.substring("Bearer ".length()).trim());
+            String token = header.substring("Bearer ".length()).trim();
+            AuthServiceClient.TokenVerification verification;
+            if (localVerifier.isReady()) {
+                verification = localVerifier.verify(token);
+                revocationChecker.check(verification);
+            } else {
+                verification = authServiceClient.verify(token);
+            }
             request.setAttribute("subject", verification.getSubject());
             request.setAttribute("clientId", verification.getClientId());
             request.setAttribute("roles", verification.getRoles());

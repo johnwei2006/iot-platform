@@ -7,14 +7,20 @@ import {
 } from '@/api/auth';
 import type { LoginPayload, TokenResponse, UserInfo } from '@/types';
 import { tokens } from '@/utils/token';
+import { storage } from '@/utils/storage';
 
 interface UserState {
   userInfo: UserInfo | null;
 }
 
+/** userInfo 持久化：页面刷新后路由角色守卫仍可工作 */
+function loadUserInfo(): UserInfo | null {
+  return storage.get<UserInfo>('userInfo');
+}
+
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
-    userInfo: null,
+    userInfo: loadUserInfo(),
   }),
   getters: {
     /** 直接派生自响应式令牌源，refresh 刷新后无需手动同步。 */
@@ -37,6 +43,7 @@ export const useUserStore = defineStore('user', {
           username: data.user.username,
           roles: data.user.roles ?? [],
         };
+        storage.set('userInfo', this.userInfo);
       }
     },
     async logout(): Promise<void> {
@@ -48,6 +55,7 @@ export const useUserStore = defineStore('user', {
         await ssoCentralLogout();
       }
       tokens.clear();
+      storage.remove('userInfo');
       this.userInfo = null;
     },
   },

@@ -1,5 +1,7 @@
 package com.iot.platform.security;
 
+import com.iot.platform.security.local.LocalJwtVerifier;
+import com.iot.platform.security.local.RevocationChecker;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockFilterChain;
@@ -11,19 +13,27 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class JwtFilterTest {
 
     private AuthServiceClient client;
+    private LocalJwtVerifier localVerifier;
+    private RevocationChecker revocationChecker;
     private JwtFilter filter;
 
     @Before
     public void setUp() {
         client = mock(AuthServiceClient.class);
-        filter = new JwtFilter(client);
+        localVerifier = mock(LocalJwtVerifier.class);
+        revocationChecker = mock(RevocationChecker.class);
+        // 默认公钥未就绪 → 走远程回退路径（保持原行为）
+        when(localVerifier.isReady()).thenReturn(false);
+        filter = new JwtFilter(client, localVerifier, revocationChecker);
     }
 
     @Test
@@ -85,6 +95,22 @@ public class JwtFilterTest {
 
         assertEquals(503, response.getStatus());
         assertTrue(response.getContentAsString().contains("auth service down"));
+    }
+
+    @Test
+    public void localVerifyUsedWhenKeyReady() throws Exception {
+        when(localVerifier.isReady()).thenReturn(true);
+        when(localVerifier.verify("local-token")).thenReturn(
+                new AuthServiceClient.TokenVerification("u2", "mini", Arrays.asList("ADMIN"), 1L, "jti-1"));
+        MockHttpServletRequest request = request("/api/devices", "Bearer local-token");
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+        assertNotNull(chain.getRequest());
+        assertEquals("u2", request.getAttribute("subject"));
+        verifyZeroInteractions(client);
+        verify(revocationChecker).check(org.mockito.ArgumentMatchers.any(AuthServiceClient.TokenVerification.class));
     }
 
     private MockHttpServletRequest request(String path, String authorization) {

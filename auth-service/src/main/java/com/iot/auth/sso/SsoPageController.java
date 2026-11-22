@@ -47,7 +47,7 @@ public class SsoPageController {
                          HttpServletRequest request, HttpServletResponse response) {
         String userId = sessionService.destroySession(request, response);
         if (userId != null) {
-            authService.revokeAllSessions(userId);
+            authService.revokeAllSessions(userId, request.getRemoteAddr());
         }
         cookieService.clearRefreshCookie(response);
         if (postLogoutRedirectUri != null && properties.isRegisteredRedirect(postLogoutRedirectUri)) {

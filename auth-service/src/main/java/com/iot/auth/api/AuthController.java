@@ -2,6 +2,7 @@ package com.iot.auth.api;
 
 import com.iot.auth.common.ApiResponse;
 import com.iot.auth.common.AppException;
+import com.iot.auth.common.IpUtil;
 import com.iot.auth.sso.SsoSessionService;
 import com.iot.auth.token.RefreshCookieService;
 import com.iot.auth.token.TokenClaims;
@@ -40,8 +41,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<AuthDtos.TokenResponse> login(@Valid @RequestBody AuthDtos.LoginRequest request,
+                                                     HttpServletRequest httpRequest,
                                                      HttpServletResponse response) {
-        AuthDtos.TokenResponse data = authService.login(request);
+        AuthDtos.TokenResponse data = authService.login(request, IpUtil.clientIp(httpRequest));
         cookieService.addRefreshCookie(response, data.getRefreshToken());
         // 统一登录页场景：登录成功即建立 SSO 中央会话，后续跨客户端换票免密
         if (data.getUser() != null) {
@@ -72,7 +74,7 @@ public class AuthController {
             request.setRefreshToken(cookieService.extractRefreshCookie(httpRequest));
         }
         if (request.getRefreshToken() != null || request.getAccessToken() != null) {
-            authService.logout(request);
+            authService.logout(request, IpUtil.clientIp(httpRequest));
         }
         cookieService.clearRefreshCookie(response);
         return ApiResponse.success(null);
@@ -85,7 +87,8 @@ public class AuthController {
     @PostMapping("/revoke-all")
     public ApiResponse<Void> revokeAll(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody(required = false) RevokeAllRequest request) {
+            @RequestBody(required = false) RevokeAllRequest request,
+            HttpServletRequest httpRequest) {
         TokenClaims claims = tokenService.verifyAccessToken(extractBearer(authorization));
         String target = claims.getSubject();
         if (request != null && request.getUserId() != null && !request.getUserId().trim().isEmpty()
@@ -95,7 +98,7 @@ public class AuthController {
             }
             target = request.getUserId();
         }
-        authService.revokeAllSessions(target);
+        authService.revokeAllSessions(target, IpUtil.clientIp(httpRequest));
         return ApiResponse.success(null);
     }
 

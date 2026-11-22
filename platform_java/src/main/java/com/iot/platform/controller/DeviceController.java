@@ -3,6 +3,7 @@ package com.iot.platform.controller;
 import com.iot.platform.common.ApiResponse;
 import com.iot.platform.common.ResultCode;
 import com.iot.platform.model.Device;
+import com.iot.platform.security.RequireRoles;
 import com.iot.platform.service.DeviceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -42,7 +43,8 @@ public class DeviceController {
         return ApiResponse.fail(ResultCode.NOT_FOUND);
     }
 
-    /** 更新网关认证预共享密钥；body 可为空（自动生成随机密钥）或 {"authSecret":"xxx"} */
+    /** 更新网关认证预共享密钥；body 可为空（自动生成随机密钥）或 {"authSecret":"xxx"}。仅 ADMIN。 */
+    @RequireRoles({"ADMIN"})
     @PutMapping("/{id}/secret")
     public ApiResponse<?> updateSecret(@PathVariable String id,
                                        @RequestBody(required = false) Map<String, String> body) {
@@ -60,11 +62,15 @@ public class DeviceController {
         }
     }
 
+    /** 新建设备，仅 ADMIN。 */
+    @RequireRoles({"ADMIN"})
     @PostMapping
     public ApiResponse<?> create(@RequestBody Device d) {
         return ApiResponse.success(deviceService.create(d));
     }
 
+    /** 更新设备，仅 ADMIN。 */
+    @RequireRoles({"ADMIN"})
     @PutMapping("/{id}")
     public ApiResponse<?> update(@PathVariable String id, @RequestBody Device d) {
         try {
@@ -74,6 +80,8 @@ public class DeviceController {
         }
     }
 
+    /** 删除设备，仅 ADMIN。 */
+    @RequireRoles({"ADMIN"})
     @DeleteMapping("/{id}")
     public ApiResponse<?> delete(@PathVariable String id) {
         deviceService.delete(id);

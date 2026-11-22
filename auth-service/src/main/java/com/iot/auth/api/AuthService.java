@@ -1,5 +1,6 @@
 package com.iot.auth.api;
 
+import com.iot.auth.audit.AuditService;
 import com.iot.auth.common.AppException;
 import com.iot.auth.config.AuthProperties;
 import com.iot.auth.identity.User;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/** 认证业务：账号密码校验、令牌签发、刷新、登出、令牌校验、全局撤销。 */
+/** 认证业务：账号密码校验、令牌签发、刷新、登出、令牌校验、全局撤销、限流与审计。 */
 @Service
 public class AuthService {
 
@@ -28,32 +29,56 @@ public class AuthService {
     private final TokenService tokenService;
     private final AuthProperties properties;
     private final StringRedisTemplate redis;
+    private final LoginRateLimiter rateLimiter;
+    private final AuditService auditService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Autowired
     public AuthService(UserRepository userRepository, TokenService tokenService,
-                       AuthProperties properties, StringRedisTemplate redis) {
+                       AuthProperties properties, StringRedisTemplate redis,
+                       LoginRateLimiter rateLimiter, AuditService auditService) {
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.properties = properties;
         this.redis = redis;
+        this.rateLimiter = rateLimiter;
+        this.auditService = auditService;
     }
 
-    public AuthDtos.TokenResponse login(AuthDtos.LoginRequest request) {
+    public AuthDtos.TokenResponse login(AuthDtos.LoginRequest request, String ip) {
         AuthProperties.Client client = properties.findClient(request.getClientId());
         if (client == null) {
             throw AppException.badRequest("unknown clientId: " + request.getClientId());
         }
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> AppException.unauthorized("invalid username or password"));
+        rateLimiter.check(request.getUsername(), ip);
+        User user;
+        try {
+            user = userRepository.findByUsername(request.getUsername())
+                    .orElseThrow(() -> AppException.unauthorized("invalid username or password"));
+        } catch (AppException e) {
+            rateLimiter.recordFailure(request.getUsername(), ip);
+            auditService.record(AuditService.LOGIN_FAILED, null, request.getUsername(),
+                    request.getClientId(), ip, "unknown username");
+            throw e;
+        }
         if (!user.isEnabled()) {
+            rateLimiter.recordFailure(request.getUsername(), ip);
+            auditService.record(AuditService.LOGIN_FAILED, user.getId(), request.getUsername(),
+                    request.getClientId(), ip, "user disabled");
             throw AppException.forbidden("user disabled");
         }
         if (user.getPasswordHash() == null
                 || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            rateLimiter.recordFailure(request.getUsername(), ip);
+            auditService.record(AuditService.LOGIN_FAILED, user.getId(), request.getUsername(),
+                    request.getClientId(), ip, "wrong password");
             throw AppException.unauthorized("invalid username or password");
         }
-        return issueTokens(user, request.getClientId(), request.getDeviceId());
+        rateLimiter.recordSuccess(request.getUsername(), ip);
+        AuthDtos.TokenResponse response = issueTokens(user, request.getClientId(), request.getDeviceId());
+        auditService.record(AuditService.LOGIN_SUCCESS, user.getId(), request.getUsername(),
+                request.getClientId(), ip, null);
+        return response;
     }
 
     public AuthDtos.TokenResponse issueTokens(User user, String clientId, String deviceId) {
@@ -124,7 +149,9 @@ public class AuthService {
         try {
             data = tokenService.rotateRefresh(refreshToken);
         } catch (TokenService.RefreshReuseException e) {
-            revokeAllSessions(e.getUserId());
+            revokeAllSessions(e.getUserId(), null);
+            auditService.record(AuditService.REFRESH_REUSE, e.getUserId(), null, null, null,
+                    "rotated refresh token reuse detected; all sessions revoked");
             throw AppException.unauthorized("refresh token reuse detected; all sessions revoked");
         }
         User user = userRepository.findById(data.getUserId())
@@ -145,20 +172,25 @@ public class AuthService {
     }
 
     /** 登出单个会话：撤销 refresh、拉黑 access。 */
-    public void logout(AuthDtos.LogoutRequest request) {
+    public void logout(AuthDtos.LogoutRequest request, String ip) {
         tokenService.revoke(request.getRefreshToken(), request.getAccessToken());
+        if (request.getRefreshToken() != null || request.getAccessToken() != null) {
+            auditService.record(AuditService.LOGOUT, null, null, null, ip, null);
+        }
     }
 
     /**
      * 撤销该用户全部会话：递增 tokenVersion，使所有历史 access/refresh 立即失效。
      * 用于改密、禁用、管理员踢人与 refresh 重用响应。
      */
-    public void revokeAllSessions(String userId) {
+    public void revokeAllSessions(String userId, String ip) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> AppException.notFound("user not found"));
         user.setTokenVersion(user.getTokenVersion() + 1L);
         userRepository.save(user);
         redis.delete(sessionStateKey(userId));
+        auditService.record(AuditService.REVOKE_ALL, userId, user.getUsername(), null, ip,
+                "tokenVersion bumped to " + user.getTokenVersion());
     }
 
     /** 校验 access token：签名/过期/黑名单之外，再核对用户状态与 tokenVersion。 */
@@ -176,6 +208,7 @@ public class AuthService {
         response.setClientId(claims.getClientId());
         response.setRoles(claims.getRoles());
         response.setTokenVersion(claims.getTokenVersion());
+        response.setJti(claims.getJti());
         return response;
     }
 

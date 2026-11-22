@@ -37,13 +37,35 @@ spring:
     timeout: ${REDIS_TIMEOUT:2000}
 
 app:
-  # 鉴权统一委托独立 auth-service：本地不持有 JWT 密钥，也不签发令牌。
-  # 过滤器调用 /api/auth/verify 验签（含签名、过期、黑名单校验），认证服务不可达时 fail-closed。
+  # 鉴权（阶段 3）：优先本地验签——从 auth-service JWKS 拉取 RS256 公钥，
+  # 本地完成签名/过期/iss/aud 校验 + Redis 撤销检查（内存短缓存）；
+  # 公钥未就绪时自动回退远程 /api/auth/verify（fail-closed）。
   auth-service:
     base-url: ${AUTH_SERVICE_BASE_URL:http://localhost:8083}
     verify-path: ${AUTH_SERVICE_VERIFY_PATH:/api/auth/verify}
     connect-timeout-ms: ${AUTH_SERVICE_CONNECT_TIMEOUT_MS:2000}
     read-timeout-ms: ${AUTH_SERVICE_READ_TIMEOUT_MS:2000}
+  auth:
+    local:
+      # JWKS 地址；留空使用 base-url + /.well-known/jwks.json
+      jwks-url: ${AUTH_JWKS_URL:}
+      # JWKS 刷新间隔（毫秒），即密钥轮换生效上限
+      refresh-ms: ${AUTH_JWKS_REFRESH_MS:300000}
+      # 可选静态 PEM 公钥兜底（X.509 SubjectPublicKeyInfo，openssl rsa -pubout 输出）
+      static-public-key: ${AUTH_JWT_PUBLIC_KEY:}
+      static-key-id: ${AUTH_JWT_PUBLIC_KEY_ID:auth-key-1}
+      # 与 auth-service 的 AUTH_JWT_ISSUER / AUTH_JWT_AUDIENCE 保持一致
+      issuer: ${AUTH_JWT_ISSUER:iot-auth}
+      audience: ${AUTH_JWT_AUDIENCE:iot-platform}
+      revocation:
+        # 关闭后仅依赖签名+版本过期，建议生产保持开启
+        enabled: ${AUTH_REVOCATION_CHECK:true}
+        # 与 auth-service 的 AUTH_REDIS_PREFIX 一致（共享 Redis）
+        redis-prefix: ${AUTH_REDIS_PREFIX:auth:}
+        # 撤销状态内存缓存 TTL（毫秒）：撤销生效延迟上限
+        cache-ttl-ms: ${AUTH_REVOCATION_CACHE_TTL_MS:15000}
+        # true：Redis 不可用时放行并告警；false：返回 503
+        fail-open: ${AUTH_REVOCATION_FAIL_OPEN:true}
   mq:
     exchange: iot.exchange
     platform-uplink: platform.uplink

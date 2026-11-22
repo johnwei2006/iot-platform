@@ -38,4 +38,8 @@ public class AppException extends RuntimeException {
     public static AppException conflict(String message) {
         return new AppException(ResultCode.CONFLICT, message);
     }
+
+    public static AppException rateLimited(String message) {
+        return new AppException(ResultCode.RATE_LIMITED, message);
+    }
 }

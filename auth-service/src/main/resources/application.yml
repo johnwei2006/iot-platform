@@ -20,9 +20,20 @@ management:
       exposure:
         include: health,info
 
-# 认证中心配置。jwt-secret 必须通过 AUTH_JWT_SECRET 注入（>=32 字符），不提供弱默认值。
+# 认证中心配置。签名二选一：
+#   RS256（推荐）：AUTH_JWT_PRIVATE_KEY 注入 PKCS#8 PEM 私钥（openssl genpkey -algorithm RSA），
+#                 下游经 /.well-known/jwks.json 本地验签，kid 支持平滑轮换；
+#   HS256（兼容）：AUTH_JWT_SECRET 注入至少 32 字符随机密钥。
 auth:
-  jwt-secret: ${AUTH_JWT_SECRET}
+  jwt-secret: ${AUTH_JWT_SECRET:}
+  jwt-private-key: ${AUTH_JWT_PRIVATE_KEY:}
+  jwt-key-id: ${AUTH_JWT_KEY_ID:auth-key-1}
+  jwt-issuer: ${AUTH_JWT_ISSUER:iot-auth}
+  jwt-audience: ${AUTH_JWT_AUDIENCE:iot-platform}
+  rate-limit:
+    enabled: ${AUTH_RATE_LIMIT_ENABLED:true}
+    max-failures: ${AUTH_RATE_LIMIT_MAX_FAILURES:10}
+    window-ms: ${AUTH_RATE_LIMIT_WINDOW_MS:900000}
   access-ttl-ms: ${AUTH_ACCESS_TTL_MS:1800000}
   refresh-ttl-ms: ${AUTH_REFRESH_TTL_MS:604800000}
   ticket-ttl-ms: ${AUTH_TICKET_TTL_MS:300000}

@@ -1,7 +1,6 @@
 package com.iot.auth.token;
 
 import com.iot.auth.common.AppException;
-import com.iot.auth.common.ResultCode;
 import com.iot.auth.config.AuthProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -11,18 +10,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 标准 JWT（HS256）+ Redis Refresh Token + 黑名单。
+ * 标准 JWT（RS256 非对称签名优先，HS256 兼容模式）+ Redis Refresh Token + 黑名单。
  *
- * <p>Access Token claims 最小化：sub/clientId/roles/jti/ver/deviceId/iat/exp。
- * Refresh Token 是不透明随机串，存 Redis，可单独撤销；登出还会把 access jti 加入黑名单，
- * 并递增用户 tokenVersion 使全部历史 token 失效。
+ * <p>Access Token claims 最小化：sub/clientId/roles/jti/ver/deviceId/iat/exp/iss/aud。
+ * RS256 模式：auth-service 持私钥签名，下游服务经 JWKS（/.well-known/jwks.json）
+ * 获取公钥本地验签，不再逐请求远程调用；kid 头支持密钥平滑轮换。
+ * HS256 模式：共享密钥，保留兼容。Refresh Token 是不透明随机串，存 Redis，可单独撤销；
+ * 登出还会把 access jti 加入黑名单，并递增用户 tokenVersion 使全部历史 token 失效。
  */
 @Service
 public class TokenService {
@@ -37,15 +48,40 @@ public class TokenService {
     private final AuthProperties properties;
     private final StringRedisTemplate redis;
 
+    private SignatureAlgorithm algorithm;
+    private KeyFactory rsaKeyFactory;
+    private PrivateKey rsaPrivateKey;
+    private PublicKey rsaPublicKey;
+
     @Autowired
     public TokenService(AuthProperties properties, StringRedisTemplate redis) {
         this.properties = properties;
         this.redis = redis;
     }
 
+    @PostConstruct
+    public void initCrypto() {
+        if (properties.isRsaMode()) {
+            try {
+                rsaKeyFactory = KeyFactory.getInstance("RSA");
+                byte[] decoded = Base64.getMimeDecoder().decode(pemBody(properties.getJwtPrivateKey()));
+                RSAPrivateCrtKey crt = (RSAPrivateCrtKey) rsaKeyFactory
+                        .generatePrivate(new PKCS8EncodedKeySpec(decoded));
+                rsaPrivateKey = crt;
+                rsaPublicKey = rsaKeyFactory.generatePublic(
+                        new RSAPublicKeySpec(crt.getModulus(), crt.getPublicExponent()));
+                algorithm = SignatureAlgorithm.RS256;
+            } catch (Exception e) {
+                throw new IllegalStateException("invalid auth.jwt-private-key (PKCS#8 RSA PEM required)", e);
+            }
+        } else {
+            algorithm = SignatureAlgorithm.HS256;
+        }
+    }
+
     public String issueAccessToken(TokenClaims claims) {
         Date now = new Date();
-        return Jwts.builder()
+        io.jsonwebtoken.JwtBuilder builder = Jwts.builder()
                 .setSubject(claims.getSubject())
                 .setId(claims.getJti())
                 .claim(CLAIM_CLIENT, claims.getClientId())
@@ -53,10 +89,34 @@ public class TokenService {
                 .claim(CLAIM_VER, claims.getTokenVersion())
                 .claim(CLAIM_DEVICE, claims.getDeviceId() == null ? "" : claims.getDeviceId())
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
+                .setIssuer(properties.getJwtIssuer())
+                .setAudience(properties.getJwtAudience())
                 .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + properties.getAccessTtlMs()))
-                .signWith(SignatureAlgorithm.HS256, properties.getJwtSecret().getBytes())
-                .compact();
+                .setExpiration(new Date(now.getTime() + properties.getAccessTtlMs()));
+        if (algorithm == SignatureAlgorithm.RS256) {
+            builder.setHeaderParam("kid", properties.getJwtKeyId());
+            builder.signWith(algorithm, rsaPrivateKey);
+        } else {
+            builder.signWith(algorithm, properties.getJwtSecret().getBytes());
+        }
+        return builder.compact();
+    }
+
+    /** RS256 模式下返回公钥 JWK（kid/n/e，base64url）；HS256 模式返回 null。 */
+    public Map<String, Object> publicJwk() {
+        if (algorithm != SignatureAlgorithm.RS256 || !(rsaPublicKey instanceof java.security.interfaces.RSAPublicKey)) {
+            return null;
+        }
+        java.security.interfaces.RSAPublicKey key = (java.security.interfaces.RSAPublicKey) rsaPublicKey;
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        Map<String, Object> jwk = new LinkedHashMap<String, Object>();
+        jwk.put("kty", "RSA");
+        jwk.put("kid", properties.getJwtKeyId());
+        jwk.put("use", "sig");
+        jwk.put("alg", "RS256");
+        jwk.put("n", encoder.encodeToString(key.getModulus().toByteArray()));
+        jwk.put("e", encoder.encodeToString(key.getPublicExponent().toByteArray()));
+        return jwk;
     }
 
     /** 生成并存储 Refresh Token；返回不透明随机串。 */
@@ -70,40 +130,51 @@ public class TokenService {
         return refresh;
     }
 
-    /** 校验 access token；黑名单、过期、签名失败均抛 401。 */
+    /** 校验 access token；签名/过期/iss/aud 不符、黑名单命中均抛 401。 */
     public TokenClaims verifyAccessToken(String token) {
         if (token == null || token.trim().isEmpty()) {
             throw AppException.unauthorized("missing access token");
         }
+        Claims claims;
         try {
-            Claims claims = Jwts.parser()
-                    .setSigningKey(properties.getJwtSecret().getBytes())
-                    .parseClaimsJws(token)
-                    .getBody();
-            if (!TYPE_ACCESS.equals(claims.get(CLAIM_TYPE, String.class))) {
-                throw AppException.unauthorized("invalid token type");
-            }
-            String jti = claims.getId();
-            if (jti != null && redis.hasKey(blacklistKey(jti))) {
-                throw AppException.unauthorized("token revoked");
-            }
-            List<String> roles = new ArrayList<String>();
-            Object rawRoles = claims.get(CLAIM_ROLES);
-            if (rawRoles instanceof List) {
-                for (Object role : (List<?>) rawRoles) {
-                    if (role != null) {
-                        roles.add(role.toString());
-                    }
-                }
-            }
-            long ver = claims.get(CLAIM_VER, Number.class) == null
-                    ? 0L : claims.get(CLAIM_VER, Number.class).longValue();
-            return new TokenClaims(claims.getSubject(),
-                    claims.get(CLAIM_CLIENT, String.class), roles, jti, ver,
-                    claims.get(CLAIM_DEVICE, String.class));
+            claims = parseAccessToken(token);
         } catch (JwtException e) {
             throw AppException.unauthorized("invalid or expired token");
         }
+        if (!TYPE_ACCESS.equals(claims.get(CLAIM_TYPE, String.class))) {
+            throw AppException.unauthorized("invalid token type");
+        }
+        String jti = claims.getId();
+        if (jti != null && redis.hasKey(blacklistKey(jti))) {
+            throw AppException.unauthorized("token revoked");
+        }
+        List<String> roles = new ArrayList<String>();
+        Object rawRoles = claims.get(CLAIM_ROLES);
+        if (rawRoles instanceof List) {
+            for (Object role : (List<?>) rawRoles) {
+                if (role != null) {
+                    roles.add(role.toString());
+                }
+            }
+        }
+        long ver = claims.get(CLAIM_VER, Number.class) == null
+                ? 0L : claims.get(CLAIM_VER, Number.class).longValue();
+        return new TokenClaims(claims.getSubject(),
+                claims.get(CLAIM_CLIENT, String.class), roles, jti, ver,
+                claims.get(CLAIM_DEVICE, String.class));
+    }
+
+    /** 解析并验签 access token（含 iss/aud 强校验），不查黑名单。 */
+    public Claims parseAccessToken(String token) {
+        io.jsonwebtoken.JwtParser parser = Jwts.parser()
+                .requireIssuer(properties.getJwtIssuer())
+                .requireAudience(properties.getJwtAudience());
+        if (algorithm == SignatureAlgorithm.RS256) {
+            parser.setSigningKey(rsaPublicKey);
+        } else {
+            parser.setSigningKey(properties.getJwtSecret().getBytes());
+        }
+        return parser.parseClaimsJws(token).getBody();
     }
 
     /**
@@ -147,10 +218,7 @@ public class TokenService {
         }
         if (accessToken != null && !accessToken.trim().isEmpty()) {
             try {
-                Claims claims = Jwts.parser()
-                        .setSigningKey(properties.getJwtSecret().getBytes())
-                        .parseClaimsJws(accessToken)
-                        .getBody();
+                Claims claims = parseAccessToken(accessToken);
                 long remaining = claims.getExpiration().getTime() - System.currentTimeMillis();
                 if (remaining > 0 && claims.getId() != null) {
                     redis.opsForValue().set(blacklistKey(claims.getId()), "1",
@@ -160,6 +228,12 @@ public class TokenService {
                 // 无效 token 无需加入黑名单
             }
         }
+    }
+
+    private String pemBody(String pem) {
+        return pem.replaceAll("-----BEGIN [A-Z ]+-----", "")
+                .replaceAll("-----END [A-Z ]+-----", "")
+                .replaceAll("\\s", "");
     }
 
     private String refreshKey(String refreshToken) {

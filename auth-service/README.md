@@ -1,6 +1,6 @@
 # auth-service
 
-独立认证中心：标准 JWT + Refresh、自建 SSO、微信小程序登录、RBAC、内部服务 HMAC 密钥下发/校验。
+独立认证中心：RS256 非对称签名 JWT（JWKS）+ Refresh 轮换、自建 SSO（统一登录页 + 中央会话）、微信小程序登录、RBAC、登录限流与审计。
 
 ## 技术栈
 
@@ -39,7 +39,11 @@ com.iot.auth
 ## 安全约定
 
 - 口令只在 auth-service 以 BCrypt 存储，其他服务不再接触密码。
-- `jwt-secret`、微信 AppSecret、服务密钥只从环境变量/配置注入，不写日志、不下发前端。
+- `jwt-private-key`（RS256）、`jwt-secret`（HS256 兼容）、微信 AppSecret、服务密钥只从
+  环境变量/配置注入，不写日志、不下发前端。
+- **非对称签名（推荐）**：配置 `AUTH_JWT_PRIVATE_KEY`（PKCS#8 PEM）后使用 RS256，
+  下游经 `GET /.well-known/jwks.json` 获取公钥本地验签；JWT 带 `kid` 头，
+  更换私钥并更新 `AUTH_JWT_KEY_ID` 即完成平滑轮换；claims 强校验 `iss`/`aud`。
 - Access Token 短有效期（默认 30 分钟），Refresh Token 存 Redis 并可撤销。
 - **Refresh Token 轮换**：每次刷新作废旧 refresh 并签发新 token；已轮换 token 再次提交
   视为泄露（重用检测），立即递增 `tokenVersion` 撤销该用户全部会话。
@@ -53,6 +57,10 @@ com.iot.auth
   `AUTH_COOKIE_ENABLED=false` 退回 body 模式（小程序/原生仍走响应体）。
 - **SSO 兑票强校验**：`POST /api/sso/token` 需 `clientSecret`（客户端已配置密钥时
   常量时间比对）且 `redirectUri` 与签票绑定一致，校验失败不消费 ticket。
+- **登录限流**：同一用户名/来源 IP 在 15 分钟窗口内失败超 10 次即拒绝（429），
+  可通过 `AUTH_RATE_LIMIT_*` 调整。
+- **审计**：LOGIN_SUCCESS/LOGIN_FAILED/LOGOUT/REVOKE_ALL/REFRESH_REUSE/SSO_EXCHANGE
+  写入 MongoDB `auth_events` 集合（写入失败仅告警不影响主流程）。
 - 单点登出/全局失效通过递增用户 `tokenVersion` + Redis 黑名单实现。
 
 ## 主要端点

@@ -41,6 +41,7 @@ public class TokenServiceTest {
         properties.setRedisPrefix("auth:");
         when(redis.opsForValue()).thenReturn(valueOperations);
         tokenService = new TokenService(properties, redis);
+        tokenService.initCrypto();
     }
 
     @Test

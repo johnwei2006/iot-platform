@@ -39,6 +39,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- 本地 JWT 验签（与 auth-service 同版本，RS256 公钥来自 JWKS） -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.1</version>
+        </dependency>
         <!-- 仅使用 JdbcTemplate API，不引入 starter-jdbc（避免 Hikari/自动配置与 MongoDB 冲突） -->
         <dependency>
             <groupId>org.springframework</groupId>
