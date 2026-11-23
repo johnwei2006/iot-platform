@@ -48,7 +48,7 @@ admin:
     audience: ${AUTH_JWT_AUDIENCE:iot-platform}
     # HMAC 内部服务身份（对应 auth-service service-keys 中的 admin_service）
     service-id: admin_service
-    service-secret: ${AUTH_SERVICE_ADMIN_SECRET:}
+    service-secret: ${AUTH_SERVICE_ADMIN_SECRET:iot-admin-internal-secret}
     revocation:
       enabled: ${ADMIN_REVOCATION_CHECK:true}
       redis-prefix: ${AUTH_REDIS_PREFIX:auth:}

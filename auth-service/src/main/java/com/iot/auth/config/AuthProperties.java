@@ -3,6 +3,11 @@ package com.iot.auth.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,9 +57,36 @@ public class AuthProperties {
         boolean hasRsa = jwtPrivateKey != null && jwtPrivateKey.contains("PRIVATE KEY");
         boolean hasHmac = jwtSecret != null && jwtSecret.length() >= 32;
         if (!hasRsa && !hasHmac) {
+            // 本地开发兜底：未注入环境变量时读取项目内被 gitignore 的 PEM，
+            // 保持 RS256 / JWKS 链路与 platform-java 验签一致。
+            String local = loadLocalDevPrivateKey();
+            if (local != null) {
+                jwtPrivateKey = local;
+                hasRsa = true;
+            }
+        }
+        if (!hasRsa && !hasHmac) {
             throw new IllegalStateException("auth.jwt-private-key (RS256, PKCS#8 PEM) or auth.jwt-secret "
                     + "(HS256, at least 32 characters) must be configured");
         }
+    }
+
+    private String loadLocalDevPrivateKey() {
+        String[] candidates = {
+                "auth-service/local-dev-jwt-private.pem",
+                "local-dev-jwt-private.pem",
+               System.getProperty("user.home") + "/.iot-platform/local-dev-jwt-private.pem"
+        };
+        for (String p : candidates) {
+            try {
+                Path path = Paths.get(p);
+                if (Files.isRegularFile(path)) {
+                    String pem = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+                    if (pem.contains("PRIVATE KEY")) return pem;
+                }
+            } catch (IOException ignored) { /* 继续尝试下一个候选路径 */ }
+        }
+        return null;
     }
 
     /** 是否启用 RS256 非对称签名模式（配置私钥时优先）。 */

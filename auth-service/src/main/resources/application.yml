@@ -95,7 +95,7 @@ auth:
     - id: proxytcp
       secret: ${AUTH_SERVICE_PROXY_SECRET:proxy-service-secret-change-me}
     - id: admin_service
-      secret: ${AUTH_SERVICE_ADMIN_SECRET:}
+      secret: ${AUTH_SERVICE_ADMIN_SECRET:iot-admin-internal-secret}
   wechat:
     app-id: ${WECHAT_APPID:}
     app-secret: ${WECHAT_APPSECRET:}

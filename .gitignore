@@ -23,3 +23,6 @@ Thumbs.db
 
 #codebuddy
 .codebuddy/
+
+# 本地开发密钥（禁止提交）
+**/local-dev-*.pem
