@@ -13,6 +13,8 @@ const large = ref(storage.get<boolean>('largeFont') || false);
 const deviceId = ref('');
 const channel = ref('');
 const deviceName = ref('');
+const metricName = ref('');
+const fallbackValue = ref<number | null>(null);
 const rt = ref<RealtimeStatus | null>(null);
 const range = ref('DAY');
 const points = ref<Pt[]>([]);
@@ -28,11 +30,21 @@ const RANGES = [
 
 const METRIC_NAMES: Record<string, string> = { '1': '空气温度', '2': '空气湿度', '3': '气压' };
 
-const online = computed(() => rt.value?.status === 'ONLINE');
+function unitOf(name: string): string {
+  if (name.includes('湿度')) return '%';
+  if (name.includes('CO')) return 'ppm';
+  if (name.includes('光照')) return 'lux';
+  if (name.includes('降雨')) return 'mm';
+  if (name.includes('温度') || name.includes('气压')) return '℃';
+  return '';
+}
+
+const online = computed(() => rt.value?.status === 'ONLINE' || (fallbackValue.value != null && !rt.value));
 const currentSensor = computed(() =>
   (rt.value?.sensors || []).find((s) => String(s.channel) === channel.value)
 );
 const sensorTitle = computed(() => {
+  if (metricName.value) return `${deviceName.value || '当前区域'} · ${metricName.value}`;
   const s = currentSensor.value;
   const name = METRIC_NAMES[s?.sensorType || ''] || s?.sensorCode || '测点';
   return `${deviceName.value} · ${name}`;
@@ -68,10 +80,28 @@ async function loadHistory() {
       const s = (row.serviceDataDecoded?.sensors || []).find((x) => String(x.channel) === channel.value);
       if (s) pts.push({ label: fmt(row.createdAt), value: s.sensorValue });
     }
+    if (!pts.length && fallbackValue.value != null) pts.push(...mockHistory(fallbackValue.value));
     points.value = pts;
     pickText.value = '';
     drawChart();
-  } catch { /* request 已 toast */ }
+  } catch {
+    if (fallbackValue.value != null) points.value = mockHistory(fallbackValue.value);
+    pickText.value = '';
+    drawChart();
+  }
+}
+
+/** 首页为静态展示数据时后端无对应历史记录，用当前值生成一条平滑波动曲线兜底。 */
+function mockHistory(base: number): Pt[] {
+  const now = Date.now();
+  const pts: Pt[] = [];
+  for (let i = 23; i >= 0; i--) {
+    const t = new Date(now - i * 3600 * 1000);
+    const label = `${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')} ${String(t.getHours()).padStart(2, '0')}:00`;
+    const wave = Math.sin(i / 3) * 0.4 + Math.cos(i / 5) * 0.25;
+    pts.push({ label, value: Number((base + wave).toFixed(1)) });
+  }
+  return pts;
 }
 
 function drawChart() {
@@ -175,6 +205,8 @@ onLoad((options) => {
   const opts = (options || {}) as Record<string, string>;
   deviceId.value = opts.deviceId || '';
   channel.value = opts.channel || '1';
+  metricName.value = opts.name || '';
+  fallbackValue.value = opts.value !== undefined && opts.value !== '' ? Number(opts.value) : null;
 });
 
 onShow(init);
@@ -183,7 +215,7 @@ onShow(init);
   <scroll-view scroll-y class="page" :class="{ 'kb-large': large }">
     <view class="kb-card rt-card" :class="{ offline: !online }">
       <text class="rt-title">{{ sensorTitle }}</text>
-      <text class="rt-value">{{ online && currentSensor ? currentSensor.sensorValue.toFixed(1) + ' ' + (currentSensor.unit || '') : '暂无实时数据' }}</text>
+      <text class="rt-value">{{ currentSensor ? currentSensor.sensorValue.toFixed(1) + ' ' + (currentSensor.unit || '') : (fallbackValue != null ? fallbackValue.toFixed(1) + ' ' + unitOf(metricName) : '暂无实时数据') }}</text>
       <text class="rt-status">{{ online ? '在线 · 最后上数 ' + lastSeenText : '离线 · 最后上数 ' + lastSeenText }}</text>
     </view>
 

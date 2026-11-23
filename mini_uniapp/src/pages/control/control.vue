@@ -138,7 +138,7 @@ onShow(() => plot.restore());
             {{ item.online ? '在线' : '离线' }}｜{{ item.state ? '开启' : '关闭' }}
           </view>
         </view>
-        <switch :checked="item.state" :disabled="!item.online" @change="onSwitch(item, $event)" />
+        <switch class="kb-switch" :checked="item.state" :disabled="!item.online" @change="onSwitch(item, $event)" />
       </view>
     </view>
 
@@ -152,7 +152,7 @@ onShow(() => plot.restore());
         <view v-for="(item, idx) in timerList" :key="idx" class="task-card">
           <view>{{ item.devName }}｜{{ item.action }}｜{{ item.time }}｜{{ item.cycle }}</view>
           <view class="task-op">
-            <switch :checked="item.enable" @change="toggleTimerTask(idx, $event)" />
+            <switch class="kb-switch" :checked="item.enable" @change="toggleTimerTask(idx, $event)" />
             <button size="mini" @tap="editTimer(idx)">编辑</button>
             <button size="mini" @tap="delTimer(idx)">删除</button>
           </view>
@@ -170,7 +170,7 @@ onShow(() => plot.restore());
         <view v-for="(item, idx) in ruleList" :key="idx" class="task-card">
           <view>{{ item.desc }}</view>
           <view class="task-op">
-            <switch :checked="item.enable" @change="toggleRuleTask(idx, $event)" />
+            <switch class="kb-switch" :checked="item.enable" @change="toggleRuleTask(idx, $event)" />
             <button size="mini" @tap="editRule(idx)">编辑</button>
             <button size="mini" @tap="delRule(idx)">删除</button>
           </view>
@@ -243,6 +243,8 @@ onShow(() => plot.restore());
 .add-btn { background: #07c160; color: #fff; text-align: center; padding: 12rpx; border-radius: 8rpx; margin: 12rpx 0; }
 .task-card { border: 1rpx solid #eee; border-radius: 8rpx; padding: 12rpx; margin: 8rpx 0; }
 .task-op { display: flex; gap: 8rpx; align-items: center; margin-top: 8rpx; }
+/* 原生 switch 偏大：缩放并抵消布局占位，使开关更紧凑 */
+.kb-switch { transform: scale(0.72); transform-origin: center right; margin-left: -14rpx; margin-right: -14rpx; }
 .pop-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 999; }
 .pop { width: 80%; background: #fff; border-radius: 12rpx; padding: 24rpx; }
 .area-pop { width: 85%; }

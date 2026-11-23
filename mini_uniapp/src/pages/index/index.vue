@@ -44,12 +44,13 @@ function sensorBy(type: string) {
   return (realtime.value?.sensors || []).find((s) => s.sensorType === type);
 }
 
-/** 棚内指标卡片 → 历史数据页（device-detail）。 */
-function goHistory(type: string) {
+/** 传感器卡片 → 历史数据页（device-detail）。无登录态时用模拟设备 id 占位，保证历史页仍可渲染。 */
+function goHistory(type: string, name: string, value: number) {
   const s = sensorBy(type);
-  uni.navigateTo({
-    url: `/pages/device-detail/device-detail?deviceId=${activeDevice.value}&channel=${s ? s.channel : type}`,
-  });
+  const deviceId = activeDevice.value || 'LOCAL-PLOT';
+  const channel = s ? s.channel : type;
+  const query = `deviceId=${encodeURIComponent(deviceId)}&channel=${encodeURIComponent(String(channel))}&name=${encodeURIComponent(name)}&value=${value}&metric=${encodeURIComponent(type)}`;
+  uni.navigateTo({ url: `/pages/device-detail/device-detail?${query}` });
 }
 
 function openAreaPop() { areaPopShow.value = true; }
@@ -122,26 +123,26 @@ onShow(() => { plot.restore(); void refresh(); });
     <view class="block">
       <view class="block-title">棚外气象</view>
       <view class="card-row">
-        <view class="data-card"><view class="val">{{ outTemp }}℃</view><view class="label">室外温度</view></view>
-        <view class="data-card"><view class="val">{{ outHum }}%</view><view class="label">室外湿度</view></view>
-        <view class="data-card"><view class="val">{{ wind }}</view><view class="label">风向风速</view></view>
-        <view class="data-card"><view class="val">{{ rain }}mm</view><view class="label">降雨量</view></view>
+        <view class="data-card" hover-class="kb-press" @tap="goHistory('OUT_TEMP', '室外温度', outTemp)"><view class="val">{{ outTemp }}℃</view><view class="label">室外温度</view></view>
+        <view class="data-card" hover-class="kb-press" @tap="goHistory('OUT_HUM', '室外湿度', outHum)"><view class="val">{{ outHum }}%</view><view class="label">室外湿度</view></view>
+        <view class="data-card" hover-class="kb-press" @tap="goHistory('WIND', '风向风速', 0)"><view class="val">{{ wind }}</view><view class="label">风向风速</view></view>
+        <view class="data-card" hover-class="kb-press" @tap="goHistory('RAIN', '降雨量', rain)"><view class="val">{{ rain }}mm</view><view class="label">降雨量</view></view>
       </view>
     </view>
 
     <view class="block">
       <view class="block-title">棚内环境监测</view>
       <view class="card-row">
-        <view class="data-card" :class="tempStatus" hover-class="kb-press" @tap="goHistory('1')">
+        <view class="data-card" :class="tempStatus" hover-class="kb-press" @tap="goHistory('1', '棚内温度', inTemp)">
           <view class="val">{{ inTemp }}℃</view><view class="label">棚内温度</view><view class="tag">{{ tempTag }}</view>
         </view>
-        <view class="data-card" :class="humStatus" hover-class="kb-press" @tap="goHistory('2')">
+        <view class="data-card" :class="humStatus" hover-class="kb-press" @tap="goHistory('2', '棚内湿度', inHum)">
           <view class="val">{{ inHum }}%</view><view class="label">棚内湿度</view><view class="tag">{{ humTag }}</view>
         </view>
-        <view class="data-card" hover-class="kb-press" @tap="goHistory('4')">
+        <view class="data-card" hover-class="kb-press" @tap="goHistory('4', 'CO₂浓度', co2)">
           <view class="val">{{ co2 }}ppm</view><view class="label">CO₂浓度</view>
         </view>
-        <view class="data-card" hover-class="kb-press" @tap="goHistory('5')">
+        <view class="data-card" hover-class="kb-press" @tap="goHistory('5', '光照', light)">
           <view class="val">{{ light }}lux</view><view class="label">光照</view>
         </view>
       </view>
