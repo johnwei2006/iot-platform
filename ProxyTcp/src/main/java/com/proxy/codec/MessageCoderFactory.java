@@ -1,6 +1,6 @@
 package com.proxy.codec;
 
-import com.proxy.Constants;
+import com.proxy.app.Constants;
 import com.proxy.codec.v3.TransportcoderByteImplV3;
 import com.proxy.model.MessageHeader;
 

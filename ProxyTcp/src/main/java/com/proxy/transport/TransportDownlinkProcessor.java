@@ -8,9 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.internal.HexUtils;
-import com.proxy.Constants;
+import com.proxy.app.Constants;
 import com.proxy.auth.GatewayAuthService;
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants.Status;
 import com.proxy.codec.MessageCodeHandler;
 import com.proxy.handler.DownlinkProcessor;
 import com.proxy.model.DownlinkTransportMessage;

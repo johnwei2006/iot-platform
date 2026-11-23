@@ -1,4 +1,4 @@
-package com.proxy;
+package com.proxy.app;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

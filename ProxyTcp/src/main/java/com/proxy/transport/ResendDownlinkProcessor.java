@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import com.proxy.Constants;
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants;
+import com.proxy.app.Constants.Status;
 import com.proxy.handler.DownlinkProcessor;
 import com.proxy.model.Message;
 import com.proxy.persistence.DownlinkMessageService;

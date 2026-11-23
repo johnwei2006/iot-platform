@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants.Status;
 import com.proxy.persistence.mongodb.model.DownlinkMessage;
 
 @Service

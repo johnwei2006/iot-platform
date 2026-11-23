@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants.Status;
 import com.proxy.persistence.h2.model.DownlinkMessage;
 
 

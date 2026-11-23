@@ -1,4 +1,4 @@
-package com.proxy;
+package com.proxy.app;
 
 import java.io.IOException;
 import java.util.Date;

@@ -14,8 +14,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
-import com.proxy.Constants;
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants;
+import com.proxy.app.Constants.Status;
 import com.proxy.auth.GatewayAuthConstants;
 import com.proxy.auth.GatewayAuthService;
 import com.proxy.codec.DecodeException;

@@ -1,4 +1,4 @@
-package com.proxy;
+package com.proxy.app;
 
 import java.util.Date;
 import java.util.Set;
@@ -17,9 +17,9 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import com.proxy.Constants.Status;
-import com.proxy.DownlinkRetryPolicy;
-import com.proxy.DownlinkRetryPolicy.Decision;
+import com.proxy.app.Constants.Status;
+import com.proxy.app.DownlinkRetryPolicy;
+import com.proxy.app.DownlinkRetryPolicy.Decision;
 import com.proxy.model.SendFailureRequest;
 import com.proxy.persistence.DownlinkMessageService;
 import com.proxy.persistence.ProxyLockServiceMongo;
@@ -32,6 +32,7 @@ import com.proxy.persistence.model.DeviceInfo;
 import com.proxy.persistence.mongodb.model.ProxyLock;
 import com.proxy.netty.ChannelRegistry;
 import com.proxy.transport.ResendDownlinkProcessor;
+import com.proxy.utils.BeanRebuildUtil;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;

@@ -1,4 +1,4 @@
-package com.proxy;
+package com.proxy.app;
 
 import java.util.Date;
 import java.util.List;
@@ -11,7 +11,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants.Status;
 import com.proxy.persistence.DownlinkMessageService;
 import com.proxy.persistence.ProxyLockServiceMongo;
 import com.proxy.persistence.model.DownlinkMessage;

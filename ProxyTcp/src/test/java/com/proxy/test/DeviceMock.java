@@ -14,7 +14,7 @@ import org.apache.tomcat.util.buf.HexUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.proxy.Constants;
+import com.proxy.app.Constants;
 import com.proxy.codec.MessageCoderFactory;
 import com.proxy.codec.TransportCoder;
 import com.proxy.model.DownlinkTransportMessage;

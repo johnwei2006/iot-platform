@@ -1,4 +1,4 @@
-package com.proxy;
+package com.proxy.app;
 
 public class Constants {
 	public static int VEHICLEIDENTIFIERTYPE_VIN 		= 0;

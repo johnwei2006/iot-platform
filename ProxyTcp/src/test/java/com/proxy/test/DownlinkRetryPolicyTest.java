@@ -4,8 +4,8 @@ import java.util.Date;
 
 import org.junit.jupiter.api.Test;
 
-import com.proxy.DownlinkRetryPolicy;
-import com.proxy.DownlinkRetryPolicy.Decision;
+import com.proxy.app.DownlinkRetryPolicy;
+import com.proxy.app.DownlinkRetryPolicy.Decision;
 import com.proxy.persistence.model.DownlinkMessage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

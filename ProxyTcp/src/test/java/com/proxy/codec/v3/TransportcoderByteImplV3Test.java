@@ -9,7 +9,7 @@ import java.util.Date;
 
 import org.junit.jupiter.api.Test;
 
-import com.proxy.Constants;
+import com.proxy.app.Constants;
 import com.proxy.codec.MessageCoderFactory;
 import com.proxy.model.CommonTransportMessage;
 import com.proxy.model.DownlinkTransportMessage;

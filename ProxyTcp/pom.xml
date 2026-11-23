@@ -1,113 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.proxy</groupId>
-	<artifactId>proxytcp</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>ProxyTCP</name>
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.5</version>
-	</parent>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-				  <jvmArguments>-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5010</jvmArguments>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-	<properties>
-		<java.version>17</java.version>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-		<!-- JAX-RS 端点（Jersey 版本由 Boot 3 BOM 托管，jakarta.ws.rs 命名空间） -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-jersey</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk16</artifactId>
-			<version>1.46</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.protobuf</groupId>
-			<artifactId>protobuf-java</artifactId>
-			<version>3.12.2</version>
-		</dependency>
-		<dependency>
-			<groupId>joda-time</groupId>
-			<artifactId>joda-time</artifactId>
-			<version>2.9.8</version>
-		</dependency>
-	 	<!-- spring data jpa -->
-	    <dependency>
-	       <groupId>org.springframework.boot</groupId>
-	       <artifactId>spring-boot-starter-data-jpa</artifactId>
-	    </dependency>
-	    <dependency>
-		   <groupId>org.springframework.boot</groupId>
-		   <artifactId>spring-boot-configuration-processor</artifactId>
-		</dependency>
-	    <!-- 内存数据库h2-->
-	    <dependency>
-	        <groupId>com.h2database</groupId>
-	        <artifactId>h2</artifactId>
-	         <scope>runtime</scope>
-	    </dependency>
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-core</artifactId>
-			<version>1.8</version>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-client</artifactId>
-			<version>1.8</version>
-		</dependency>
-	    <dependency>
-	        <groupId>com.google.code.gson</groupId>
-	        <artifactId>gson</artifactId>
-	        <version>2.8.5</version>
-	    </dependency>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.proxy</groupId>
+    <artifactId>proxytcp</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>ProxyTCP</name>
+    <description>TCP gateway access layer for IoT devices</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <dependencies>
         <dependency>
-      		<groupId>org.springframework.boot</groupId>
-     		<artifactId>spring-boot-starter-data-mongodb</artifactId>
-		</dependency>
-		<!--rabbitmq 依赖客户端（版本由 Spring Boot BOM 托管，勿再固定 5.8.0）-->
-		<dependency>
-		  <groupId>org.springframework.boot</groupId>
-		  <artifactId>spring-boot-starter-amqp</artifactId>
-		</dependency>
-		<!-- Netty 事件循环接入层 (版本由 spring-boot-dependencies 托管) -->
-		<dependency>
-		  <groupId>io.netty</groupId>
-		  <artifactId>netty-all</artifactId>
-		</dependency>
-		<!-- 单元/冒烟测试（JUnit 5 + Mockito + MockMvc） -->
-		<dependency>
-		  <groupId>org.springframework.boot</groupId>
-		  <artifactId>spring-boot-starter-test</artifactId>
-		  <scope>test</scope>
-		</dependency>
-		<!-- DeviceMockTCP 内置套件使用 JUnit Platform Launcher API 运行测试 -->
-		<dependency>
-		  <groupId>org.junit.platform</groupId>
-		  <artifactId>junit-platform-launcher</artifactId>
-		  <scope>test</scope>
-		</dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- JAX-RS 端点（Jersey 版本由 Boot 3 BOM 托管，jakarta.ws.rs 命名空间） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jersey</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk16</artifactId>
+            <version>1.46</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.12.2</version>
+        </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>2.9.8</version>
+        </dependency>
+        <!-- spring data jpa -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+        </dependency>
+        <!-- 内存数据库 h2 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+            <version>1.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>1.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.8.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+        <!-- rabbitmq 依赖客户端（版本由 Spring Boot BOM 托管，勿再固定 5.8.0） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <!-- Netty 事件循环接入层 (版本由 spring-boot-dependencies 托管) -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+        </dependency>
+        <!-- 单元/冒烟测试（JUnit 5 + Mockito + MockMvc） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- DeviceMockTCP 内置套件使用 JUnit Platform Launcher API 运行测试 -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- 需要远程调试时：mvn spring-boot:run -Pdebug -->
+        <profile>
+            <id>debug</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <jvmArguments>-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5010</jvmArguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -3,7 +3,7 @@ package com.proxy.persistence;
 import java.util.Date;
 import java.util.List;
 
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants.Status;
 import com.proxy.persistence.model.DownlinkMessage;
 
 /**

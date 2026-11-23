@@ -4,7 +4,7 @@ import java.util.Date;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants.Status;
 
 public class DownlinkMessage {
 	@Id

@@ -1,7 +1,7 @@
 package com.proxy.persistence.model;
 
 import java.util.Date;
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants.Status;
 
 //@Document(collection="DownlinkMessage")
 public class DownlinkMessage {

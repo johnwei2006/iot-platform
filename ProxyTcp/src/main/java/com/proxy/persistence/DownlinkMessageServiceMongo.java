@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.proxy.Constants;
-import com.proxy.Constants.Status;
+import com.proxy.app.Constants;
+import com.proxy.app.Constants.Status;
 import com.proxy.persistence.mongodb.DownlinkMessageRepository;
 import com.proxy.persistence.mongodb.SendFailureMessageRepository;
 import com.proxy.persistence.mongodb.model.DownlinkMessage;
