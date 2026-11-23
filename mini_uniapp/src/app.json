@@ -1,0 +1,48 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/devices/devices",
+    "pages/control/control",
+    "pages/messages/messages",
+    "pages/mine/mine",
+    "pages/device-detail/device-detail",
+    "pages/threshold/threshold",
+    "pages/alarms/alarms",
+    "pages/control-rules/control-rules",
+    "pages/rule-form/rule-form",
+    "pages/control-logs/control-logs",
+    "pages/task-detail/task-detail",
+    "pages/login/login"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "XXX科技",
+    "navigationBarBackgroundColor": "#F5F7F4",
+    "backgroundColor": "#F5F7F4"
+  },
+  "tabBar": {
+    "color": "#52665D",
+    "selectedColor": "#17573F",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "看数据"
+      },
+      {
+        "pagePath": "pages/control/control",
+        "text": "控设备"
+      },
+      {
+        "pagePath": "pages/messages/messages",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的"
+      }
+    ]
+  },
+  "usingComponents": {}
+}

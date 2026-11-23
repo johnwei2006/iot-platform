@@ -28,6 +28,7 @@
     }
   },
   "compileType": "miniprogram",
+  "miniprogramRoot": "dist/build/mp-weixin/",
   "libVersion": "latest",
   "appid": "wx2fe1624aac580149",
   "projectname": "uni-app-starter",
