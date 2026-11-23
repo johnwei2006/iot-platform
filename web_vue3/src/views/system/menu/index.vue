@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import { createMenu, deleteMenu, fetchMenuTree, updateMenu } from '@/api/admin';
+import MenuIconPicker from '@/components/MenuIconPicker.vue';
 import type { MenuNode } from '@/types';
 
 const TYPE_LABELS: Record<string, string> = { DIR: '目录', MENU: '菜单', BUTTON: '按钮' };
@@ -147,6 +148,9 @@ onMounted(refresh);
               <el-tag size="small" :type="data.type === 'BUTTON' ? 'warning' : 'primary'" class="type-tag">
                 {{ TYPE_LABELS[data.type] || data.type }}
               </el-tag>
+              <el-icon v-if="data.type !== 'BUTTON'" class="tree-icon">
+                <component :is="data.icon || (data.type === 'DIR' ? 'Folder' : 'Document')" />
+              </el-icon>
               {{ data.name }}
               <span v-if="data.perm" class="perm-text">{{ data.perm }}</span>
               <el-tag v-if="data.status === 'DISABLED'" size="small" type="danger">停用</el-tag>
@@ -190,7 +194,7 @@ onMounted(refresh);
           <el-input v-model="form.perm" placeholder="如 system:org:create" />
         </el-form-item>
         <el-form-item label="图标">
-          <el-input v-model="form.icon" placeholder="Element Plus 图标名，如 Setting" />
+          <MenuIconPicker v-model="form.icon" />
         </el-form-item>
         <el-form-item label="排序">
           <el-input v-model="form.sort" placeholder="数字越小越靠前" />
@@ -227,6 +231,7 @@ onMounted(refresh);
 .type-tag {
   margin-right: 6px;
 }
+.tree-icon { margin-right: 6px; color: var(--kb-brand); vertical-align: -2px; }
 .perm-text {
   font-family: monospace;
   color: #909399;

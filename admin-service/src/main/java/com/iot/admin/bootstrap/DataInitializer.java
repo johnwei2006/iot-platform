@@ -64,7 +64,9 @@ public class DataInitializer implements ApplicationRunner {
             initMenus();
             ensureSystemProductMenu();
             initIotMenus();
+            ensureStaticMenus();
             initProductCatalog();
+            ensureMenuIcons();
             initSuperAdminRole();
             initOrgAdminRole();
             initAdminUser();
@@ -169,6 +171,70 @@ public class DataInitializer implements ApplicationRunner {
                 continue;
             }
             bindMenuSubtree(product, root.get());
+        }
+    }
+
+    /**
+     * 静态业务页面同样登记为菜单节点（无 component，不生成动态路由），
+     * 使侧栏图标统一来源于 sys_menu.icon。
+     */
+    private void ensureStaticMenus() {
+        java.util.Optional<Menu> iot = menuRepository.findByPath("/iot");
+        if (!iot.isPresent()) {
+            return;
+        }
+        staticMenu(iot.get().getId(), "首页", "/home", "House", "5");
+        staticMenu(iot.get().getId(), "设备管理", "/devices", "Monitor", "15");
+        staticMenu(iot.get().getId(), "告警看板", "/alarms", "WarningFilled", "25");
+        staticMenu(iot.get().getId(), "网关认证记录", "/gateway-records", "Key", "80");
+        staticMenu(iot.get().getId(), "数据查询", "/data", "DataLine", "90");
+    }
+
+    private void staticMenu(String parentId, String name, String path, String icon, String sort) {
+        if (menuRepository.findByPath(path).isPresent()) {
+            return;
+        }
+        Menu node = new Menu();
+        node.setParentId(parentId);
+        node.setName(name);
+        node.setType(Menu.TYPE_MENU);
+        node.setPath(path);
+        node.setIcon(icon);
+        node.setSort(sort);
+        menuRepository.save(node);
+    }
+
+    /** 预置图标仅在未配置时写入，超管可通过菜单管理随时覆盖。 */
+    private void ensureMenuIcons() {
+        java.util.Map<String, String> icons = new java.util.LinkedHashMap<String, String>();
+        icons.put("/system", "Setting");
+        icons.put("/system/org", "OfficeBuilding");
+        icons.put("/system/user", "User");
+        icons.put("/system/role", "Avatar");
+        icons.put("/system/menu", "Menu");
+        icons.put("/system/product", "Grid");
+        icons.put("/screen", "Monitor");
+        icons.put("/iot", "Monitor");
+        icons.put("/iot/data", "DataLine");
+        icons.put("/iot/alarm", "WarningFilled");
+        icons.put("/iot/control", "Cpu");
+        icons.put("/iot/control/rules", "Timer");
+        icons.put("/iot/control/logs", "Document");
+        icons.put("/iot/messages", "ChatDotRound");
+        icons.put("/iot/conflict-check", "MagicStick");
+        icons.put("/farm", "Sunny");
+        icons.put("/home", "House");
+        icons.put("/devices", "Monitor");
+        icons.put("/alarms", "WarningFilled");
+        icons.put("/gateway-records", "Key");
+        icons.put("/data", "DataLine");
+        for (java.util.Map.Entry<String, String> entry : icons.entrySet()) {
+            menuRepository.findByPath(entry.getKey()).ifPresent(menu -> {
+                if (menu.getIcon() == null || menu.getIcon().trim().isEmpty()) {
+                    menu.setIcon(entry.getValue());
+                    menuRepository.save(menu);
+                }
+            });
         }
     }
 

@@ -9,19 +9,13 @@ export interface ProductView {
 }
 
 /** 静态业务页面归入"物联网"产品，保证 admin-service 不可用时侧栏仍可用。 */
+// 图标不在前端写死：由 sys_menu.icon 中同路径的菜单节点提供
 const IOT_STATIC: MenuNode[] = [
-  { id: 'static-home', parentId: null, name: '首页', type: 'MENU', path: '/home', icon: 'HomeFilled' },
-  { id: 'static-devices', parentId: null, name: '设备管理', type: 'MENU', path: '/devices', icon: 'Monitor' },
-  { id: 'static-alarms', parentId: null, name: '告警看板', type: 'MENU', path: '/alarms', icon: 'Warning' },
-  {
-    id: 'static-gateway',
-    parentId: null,
-    name: '网关认证记录',
-    type: 'MENU',
-    path: '/gateway-records',
-    icon: 'Key',
-  },
-  { id: 'static-data', parentId: null, name: '数据查询', type: 'MENU', path: '/data', icon: 'DataLine' },
+  { id: 'static-home', parentId: null, name: '首页', type: 'MENU', path: '/home' },
+  { id: 'static-devices', parentId: null, name: '设备管理', type: 'MENU', path: '/devices' },
+  { id: 'static-alarms', parentId: null, name: '告警看板', type: 'MENU', path: '/alarms' },
+  { id: 'static-gateway', parentId: null, name: '网关认证记录', type: 'MENU', path: '/gateway-records' },
+  { id: 'static-data', parentId: null, name: '数据查询', type: 'MENU', path: '/data' },
 ];
 
 const PRODUCT_PATHS: Record<string, string> = {
@@ -38,21 +32,27 @@ const DEFAULT_PRODUCTS: ProductView[] = [
   { id: 'product-system', name: '系统管理', path: '/system', sort: 99, menus: [] },
 ];
 
-/** 静态入口只在动态菜单没有语义等价项时补充，避免同产品内重复。 */
-function mergeIotStatic(product: ProductView): ProductView {
+function menuIconByPath(nodes: MenuNode[], path: string): string | undefined {
+  for (const node of nodes) {
+    if (node.path === path) return node.icon;
+    const found = menuIconByPath(node.children || [], path);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/** 静态入口只在动态菜单没有语义等价项时补充，图标取自 sys_menu.icon。 */
+function mergeIotStatic(product: ProductView, menus: MenuNode[]): ProductView {
   const paths = new Set(product.menus.map((m) => m.path));
   const names = product.menus.map((m) => m.name).join('|');
   const equivalent: Record<string, string> = {
     '/devices': '设备', '/alarms': '告警', '/data': '数据',
   };
-  return {
-    ...product,
-    menus: [
-      ...product.menus,
-      ...IOT_STATIC.filter((m) => !paths.has(m.path || '')
-        && !(m.path && equivalent[m.path] && names.includes(equivalent[m.path]))),
-    ],
-  };
+  const added = IOT_STATIC
+    .filter((m) => !paths.has(m.path || '')
+      && !(m.path && equivalent[m.path] && names.includes(equivalent[m.path])))
+    .map((m) => ({ ...m, icon: menuIconByPath(menus, m.path || '') }));
+  return { ...product, menus: [...product.menus, ...added] };
 }
 
 /**
@@ -77,7 +77,7 @@ export function buildProducts(menus: MenuNode[], serverProducts?: ProductRecord[
           menus: root ? (root.children || []).filter((m) => m.type === 'MENU' || m.type === 'DIR') : [],
         } as ProductView;
       });
-    return products.map((p) => (p.path === '/iot' ? mergeIotStatic(p) : p))
+    return products.map((p) => (p.path === '/iot' ? mergeIotStatic(p, menus) : p))
       .sort((a, b) => a.sort - b.sort);
   }
   const products = new Map<string, ProductView>();
@@ -92,7 +92,7 @@ export function buildProducts(menus: MenuNode[], serverProducts?: ProductRecord[
   }
   if (products.size === 0) return DEFAULT_PRODUCTS;
   const iot = products.get('/iot');
-  if (iot) products.set('/iot', mergeIotStatic(iot));
+  if (iot) products.set('/iot', mergeIotStatic(iot, menus));
   return [...products.values()].sort((a, b) => a.sort - b.sort);
 }
 

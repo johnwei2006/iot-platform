@@ -1,6 +1,7 @@
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
+import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import type { App } from 'vue';
 
 /**
@@ -10,4 +11,8 @@ import type { App } from 'vue';
  */
 export function setupElementPlus(app: App): void {
   app.use(ElementPlus, { locale: zhCn });
+  // 菜单表存图标组件名（如 DataLine），此处全局注册后可通过 <component :is="name" /> 渲染
+  Object.entries(ElementPlusIconsVue).forEach(([name, component]) => {
+    app.component(name, component);
+  });
 }

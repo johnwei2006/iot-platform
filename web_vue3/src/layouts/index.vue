@@ -38,8 +38,9 @@ function selectProduct(product: ProductView): void {
   if (first?.path) void router.push(first.path);
 }
 
-function iconOf(node: MenuNode): string | undefined {
-  return typeof node.icon === 'string' && node.icon ? node.icon : undefined;
+function iconOf(node: MenuNode): string {
+  if (typeof node.icon === 'string' && node.icon) return node.icon;
+  return node.type === 'DIR' ? 'Folder' : 'Document';
 }
 
 function loadUnread(): void {
@@ -175,16 +176,16 @@ onMounted(() => {
             <template v-for="node in activeProduct?.menus || []" :key="node.id">
               <el-sub-menu v-if="node.type === 'DIR' && node.children?.length" :index="node.id">
                 <template #title>
-                  <el-icon v-if="iconOf(node)"><component :is="iconOf(node)" /></el-icon>
+                  <el-icon><component :is="iconOf(node)" /></el-icon>
                   <span>{{ node.name }}</span>
                 </template>
                 <el-menu-item v-for="child in node.children" :key="child.id" :index="child.path || child.id">
-                  <el-icon v-if="iconOf(child)"><component :is="iconOf(child)" /></el-icon>
+                  <el-icon><component :is="iconOf(child)" /></el-icon>
                   <span>{{ child.name }}</span>
                 </el-menu-item>
               </el-sub-menu>
               <el-menu-item v-else-if="node.type === 'MENU' && node.path" :index="node.path">
-                <el-icon v-if="iconOf(node)"><component :is="iconOf(node)" /></el-icon>
+                <el-icon><component :is="iconOf(node)" /></el-icon>
                 <span>{{ node.name }}</span>
                 <el-icon class="kb-menu__arrow"><ArrowRight /></el-icon>
               </el-menu-item>
