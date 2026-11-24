@@ -1,5 +1,7 @@
 package com.iot.platform.security;
 
+import com.iot.api.auth.AuthDtos;
+import com.iot.api.auth.AuthFeignClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -32,30 +34,57 @@ import java.util.Map;
 public class AuthServiceClient {
 
     private final RestTemplate restTemplate;
+    private final AuthFeignClient authFeignClient;
     private final String baseUrl;
     private final String verifyUrl;
 
     @org.springframework.beans.factory.annotation.Autowired
-    public AuthServiceClient(RestTemplateBuilder builder,
+    public AuthServiceClient(RestTemplateBuilder builder, AuthFeignClient authFeignClient,
                              @Value("${app.auth-service.base-url:http://localhost:8083}") String baseUrl,
                              @Value("${app.auth-service.verify-path:/api/auth/verify}") String verifyPath,
                              @Value("${app.auth-service.connect-timeout-ms:2000}") int connectTimeoutMs,
                              @Value("${app.auth-service.read-timeout-ms:2000}") int readTimeoutMs) {
         this(com.iot.platform.common.RestTemplates.build(builder, connectTimeoutMs, readTimeoutMs),
-                baseUrl, verifyPath);
+                authFeignClient, baseUrl, verifyPath);
     }
 
-    /** 便于单测注入 MockRestServiceServer 绑定的 RestTemplate。 */
+    /** 便于单测注入 MockRestServiceServer 绑定的 RestTemplate（Feign 为空时回退 RestTemplate）。 */
     AuthServiceClient(RestTemplate restTemplate, String baseUrl, String verifyPath) {
+        this(restTemplate, null, baseUrl, verifyPath);
+    }
+
+    AuthServiceClient(RestTemplate restTemplate, AuthFeignClient authFeignClient, String baseUrl, String verifyPath) {
         this.restTemplate = restTemplate;
+        this.authFeignClient = authFeignClient;
         this.baseUrl = trimTrailingSlash(baseUrl);
         this.verifyUrl = this.baseUrl + withLeadingSlash(verifyPath);
     }
 
-    /** 远程验签；成功返回身份声明，失败抛 {@link AuthServiceException}。 */
+    /** 远程验签；优先走 Feign，失败回退 RestTemplate（兼容既有测试与降级）。 */
     public TokenVerification verify(String accessToken) {
         if (accessToken == null || accessToken.trim().isEmpty()) {
             throw AuthServiceException.unauthorized("missing access token");
+        }
+        if (authFeignClient != null) {
+            try {
+                com.iot.api.auth.ApiResponse<AuthDtos.VerifyResponse> response =
+                        authFeignClient.verify("Bearer " + accessToken, "{}");
+                if (response == null || response.getCode() != 200 || response.getData() == null) {
+                    String message = response == null ? "invalid access token" : response.getMessage();
+                    throw AuthServiceException.unauthorized(message);
+                }
+                AuthDtos.VerifyResponse data = response.getData();
+                if (data.getSubject() == null || data.getSubject().trim().isEmpty()) {
+                    throw AuthServiceException.unauthorized("invalid token subject");
+                }
+                List<String> roles = data.getRoles() == null ? Collections.<String>emptyList() : data.getRoles();
+                return new TokenVerification(data.getSubject(), data.getClientId(), roles,
+                        data.getTokenVersion(), data.getJti(), data.getOrg(), data.getDataScopes());
+            } catch (AuthServiceException e) {
+                throw e;
+            } catch (Exception e) {
+                throw AuthServiceException.unavailable("auth service unavailable: " + e.getMessage());
+            }
         }
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);

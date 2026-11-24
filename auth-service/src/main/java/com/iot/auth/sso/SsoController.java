@@ -1,10 +1,10 @@
 package com.iot.auth.sso;
 
-import com.iot.auth.api.AuthDtos;
+import com.iot.api.auth.AuthDtos;
 import com.iot.auth.api.AuthService;
 import com.iot.auth.audit.AuditService;
-import com.iot.auth.common.ApiResponse;
-import com.iot.auth.common.AppException;
+import com.iot.api.auth.ApiResponse;
+import com.iot.api.auth.AppException;
 import com.iot.auth.common.IpUtil;
 import com.iot.auth.token.RefreshCookieService;
 import org.springframework.beans.factory.annotation.Autowired;

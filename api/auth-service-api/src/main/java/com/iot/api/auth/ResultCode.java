@@ -1,5 +1,6 @@
-package com.iot.auth.common;
+package com.iot.api.auth;
 
+/** Shared result codes, aligned across auth/admin/platform services. */
 public enum ResultCode {
     SUCCESS(200, "success"),
     BAD_REQUEST(400, "bad request"),

@@ -1,8 +1,8 @@
 package com.iot.auth.wechat;
 
-import com.iot.auth.api.AuthDtos;
+import com.iot.api.auth.AuthDtos;
 import com.iot.auth.api.AuthService;
-import com.iot.auth.common.ApiResponse;
+import com.iot.api.auth.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

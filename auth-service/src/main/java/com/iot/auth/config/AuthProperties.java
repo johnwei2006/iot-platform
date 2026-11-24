@@ -25,6 +25,8 @@ public class AuthProperties {
      * 配置后优先于 jwt-secret，启用非对称签名：下游服务持公钥本地验签，无需共享秘密。
      */
     private String jwtPrivateKey;
+    /** 本地开发兜底：未配置密钥时从被 gitignore 的 PEM 加载（单元测试 new 对象时默认关闭） */
+    private boolean localDevFallback = false;
     /** JWT kid 头（RS256 模式），配合 JWKS 端点支持密钥轮换 */
     private String jwtKeyId = "auth-key-1";
     /** JWT iss 声明 */
@@ -56,7 +58,7 @@ public class AuthProperties {
     public void validate() {
         boolean hasRsa = jwtPrivateKey != null && jwtPrivateKey.contains("PRIVATE KEY");
         boolean hasHmac = jwtSecret != null && jwtSecret.length() >= 32;
-        if (!hasRsa && !hasHmac) {
+        if (!hasRsa && !hasHmac && localDevFallback) {
             // 本地开发兜底：未注入环境变量时读取项目内被 gitignore 的 PEM，
             // 保持 RS256 / JWKS 链路与 platform-java 验签一致。
             String local = loadLocalDevPrivateKey();
@@ -96,6 +98,8 @@ public class AuthProperties {
 
     public String getJwtPrivateKey() { return jwtPrivateKey; }
     public void setJwtPrivateKey(String jwtPrivateKey) { this.jwtPrivateKey = jwtPrivateKey; }
+    public boolean isLocalDevFallback() { return localDevFallback; }
+    public void setLocalDevFallback(boolean localDevFallback) { this.localDevFallback = localDevFallback; }
     public String getJwtKeyId() { return jwtKeyId; }
     public void setJwtKeyId(String jwtKeyId) { this.jwtKeyId = jwtKeyId; }
     public String getJwtIssuer() { return jwtIssuer; }

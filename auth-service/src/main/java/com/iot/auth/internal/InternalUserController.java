@@ -1,6 +1,6 @@
 package com.iot.auth.internal;
 
-import com.iot.auth.common.ApiResponse;
+import com.iot.api.auth.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

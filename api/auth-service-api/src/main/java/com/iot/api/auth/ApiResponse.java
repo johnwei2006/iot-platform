@@ -1,8 +1,8 @@
-package com.iot.auth.common;
+package com.iot.api.auth;
 
 import java.io.Serializable;
 
-/** 统一 REST 响应体，与 platform-java 约定保持一致：{code, message, data, timestamp}。 */
+/** Shared REST envelope: {code, message, data, timestamp}. */
 public class ApiResponse<T> implements Serializable {
 
     private int code;

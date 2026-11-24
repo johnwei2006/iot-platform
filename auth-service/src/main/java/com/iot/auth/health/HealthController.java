@@ -1,6 +1,6 @@
 package com.iot.auth.health;
 
-import com.iot.auth.common.ApiResponse;
+import com.iot.api.auth.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 

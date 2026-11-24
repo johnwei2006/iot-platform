@@ -64,3 +64,11 @@ admin:
     admin-password: ${ADMIN_BOOTSTRAP_PASSWORD:Admin@123456}
     root-org-code: ${ADMIN_ROOT_ORG_CODE:0001}
     root-org-name: ${ADMIN_ROOT_ORG_NAME:总部}
+
+# Feign 客户端配置（复用现有环境变量）
+auth:
+  service:
+    base-url: ${AUTH_SERVICE_BASE_URL:http://localhost:8083}
+    internal:
+      service-id: admin_service
+      service-secret: ${AUTH_SERVICE_ADMIN_SECRET:iot-admin-internal-secret}

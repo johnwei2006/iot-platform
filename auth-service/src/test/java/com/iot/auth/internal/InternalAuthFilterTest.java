@@ -1,6 +1,6 @@
 package com.iot.auth.internal;
 
-import com.iot.auth.common.ApiResponse;
+import com.iot.api.auth.ApiResponse;
 import com.iot.auth.config.AuthProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

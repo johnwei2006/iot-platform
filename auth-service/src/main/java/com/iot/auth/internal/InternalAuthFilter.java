@@ -1,7 +1,7 @@
 package com.iot.auth.internal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iot.auth.common.ApiResponse;
+import com.iot.api.auth.ApiResponse;
 import com.iot.auth.config.AuthProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

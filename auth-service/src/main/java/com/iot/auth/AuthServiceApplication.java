@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import com.iot.auth.config.AuthProperties;
 
-@SpringBootApplication
+@SpringBootApplication(excludeName = "org.springframework.cloud.openfeign.FeignAutoConfiguration")
 @EnableConfigurationProperties(AuthProperties.class)
 public class AuthServiceApplication {
 

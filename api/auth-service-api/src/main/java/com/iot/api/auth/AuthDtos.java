@@ -1,20 +1,17 @@
-package com.iot.auth.api;
+package com.iot.api.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Map;
 
-/** 认证 API 的请求/响应 DTO 集中定义（feature-first，避免散落多个小文件）。 */
+/** Shared auth API request/response DTOs. Must stay JSON-compatible with auth-service endpoints. */
 public final class AuthDtos {
 
-    private AuthDtos() {
-    }
+    private AuthDtos() {}
 
     public static class LoginRequest {
-        @NotBlank
-        private String username;
-        @NotBlank
-        private String password;
+        @NotBlank private String username;
+        @NotBlank private String password;
         private String clientId = "web";
         private String deviceId;
 
@@ -47,10 +44,8 @@ public final class AuthDtos {
         public void setUser(UserInfo user) { this.user = user; }
     }
 
-    /** refresh 请求体可为空：浏览器端 refresh token 由 HttpOnly Cookie 携带。 */
     public static class RefreshRequest {
         private String refreshToken;
-
         public String getRefreshToken() { return refreshToken; }
         public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
     }
@@ -58,7 +53,6 @@ public final class AuthDtos {
     public static class LogoutRequest {
         private String refreshToken;
         private String accessToken;
-
         public String getRefreshToken() { return refreshToken; }
         public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
         public String getAccessToken() { return accessToken; }
@@ -81,16 +75,14 @@ public final class AuthDtos {
         public void setOrgCode(String orgCode) { this.orgCode = orgCode; }
     }
 
+    /** Response of POST /api/auth/verify. */
     public static class VerifyResponse {
         private String subject;
         private String clientId;
         private List<String> roles;
         private long tokenVersion;
-        /** access token 的 jti，供下游本地撤销检查使用 */
         private String jti;
-        /** 用户机构编码（4-2-2-2 层级前缀） */
         private String org;
-        /** 数据权限映射：业务实体编码 -> ALL|ORG_AND_CHILDREN|ORG_ONLY|SELF */
         private Map<String, String> dataScopes;
 
         public String getSubject() { return subject; }

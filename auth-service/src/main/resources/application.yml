@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: auth-service
+  # auth-service 只使用共享契约的 DTO/常量，不发起 Feign 调用。
+  # 排除 openfeign 自动配置，避免 IDE 缓存旧依赖时触发 FeignAutoConfiguration
+  # 因缺少 spring-cloud-context(NamedContextFactory) 而启动失败。
+  autoconfigure:
+    exclude: org.springframework.cloud.openfeign.FeignAutoConfiguration
   # 用户表 sys_user 在 MySQL；审计/SSO/refresh 仍在 MongoDB
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:iot-platform}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
@@ -46,6 +51,7 @@ management:
 auth:
   jwt-secret: ${AUTH_JWT_SECRET:}
   jwt-private-key: ${AUTH_JWT_PRIVATE_KEY:}
+  local-dev-fallback: ${AUTH_JWT_LOCAL_DEV_FALLBACK:true}
   jwt-key-id: ${AUTH_JWT_KEY_ID:auth-key-1}
   jwt-issuer: ${AUTH_JWT_ISSUER:iot-auth}
   jwt-audience: ${AUTH_JWT_AUDIENCE:iot-platform}

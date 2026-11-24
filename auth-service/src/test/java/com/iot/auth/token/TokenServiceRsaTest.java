@@ -1,6 +1,6 @@
 package com.iot.auth.token;
 
-import com.iot.auth.common.AppException;
+import com.iot.api.auth.AppException;
 import com.iot.auth.config.AuthProperties;
 import io.jsonwebtoken.Jwts;
 import org.junit.jupiter.api.BeforeEach;

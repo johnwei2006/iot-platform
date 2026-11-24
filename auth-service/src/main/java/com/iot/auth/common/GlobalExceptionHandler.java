@@ -1,5 +1,8 @@
 package com.iot.auth.common;
 
+import com.iot.api.auth.ApiResponse;
+import com.iot.api.auth.AppException;
+import com.iot.api.auth.ResultCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

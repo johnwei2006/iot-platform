@@ -1,7 +1,7 @@
 package com.iot.auth.internal;
 
 import com.iot.auth.audit.AuditService;
-import com.iot.auth.common.AppException;
+import com.iot.api.auth.AppException;
 import com.iot.auth.identity.User;
 import com.iot.auth.identity.UserRepository;
 import org.slf4j.Logger;

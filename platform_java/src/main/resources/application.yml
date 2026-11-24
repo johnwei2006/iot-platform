@@ -116,6 +116,11 @@ realtime:
   scan-count: ${REDIS_SCAN_COUNT:200}
   max-list-size: ${REDIS_MAX_LIST_SIZE:1000}
 
+# Feign 客户端配置（共享 @FeignClient 使用 auth.service.base-url）
+auth:
+  service:
+    base-url: ${AUTH_SERVICE_BASE_URL:http://localhost:8083}
+
 logging:
   level:
     com.iot.platform: info

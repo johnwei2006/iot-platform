@@ -1,7 +1,8 @@
 package com.iot.auth.api;
 
-import com.iot.auth.common.ApiResponse;
-import com.iot.auth.common.AppException;
+import com.iot.api.auth.ApiResponse;
+import com.iot.api.auth.AppException;
+import com.iot.api.auth.AuthDtos;
 import com.iot.auth.common.IpUtil;
 import com.iot.auth.sso.SsoSessionService;
 import com.iot.auth.token.RefreshCookieService;

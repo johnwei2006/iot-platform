@@ -2,9 +2,9 @@ package com.iot.auth.wechat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iot.auth.api.AuthDtos;
+import com.iot.api.auth.AuthDtos;
 import com.iot.auth.api.AuthService;
-import com.iot.auth.common.AppException;
+import com.iot.api.auth.AppException;
 import com.iot.auth.config.AuthProperties;
 import com.iot.auth.identity.User;
 import org.slf4j.Logger;
