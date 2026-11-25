@@ -170,11 +170,19 @@ public final class MockFrameCodec {
     public static byte[] buildPayload(String deviceId, int serviceType, byte[] serviceData,
                                       int serviceDataEncoding, Integer eventId, Integer messageId)
             throws Exception {
+        return buildPayload(deviceId, serviceType, serviceData, serviceDataEncoding,
+                eventId, messageId, null);
+    }
+
+    /** 携带网关认证 token 构造上行车；token 为 null 时填充全 0。 */
+    public static byte[] buildPayload(String deviceId, int serviceType, byte[] serviceData,
+                                      int serviceDataEncoding, Integer eventId, Integer messageId,
+                                      byte[] token) throws Exception {
         TransportDataEncoder encoder = new TransportDataEncoder();
         DownlinkTransportMessage message = encoder.mockDownlinkTransportMessage(
                 deviceId, serviceType, serviceData, serviceDataEncoding,
                 MockProtocolCodec.PROTOCOL_VERSION_1, MockProtocolCodec.ENCRYPTION_NONE,
-                eventId, messageId);
+                eventId, messageId, token);
         return encoder.createUplinkMessage(message);
     }
 }

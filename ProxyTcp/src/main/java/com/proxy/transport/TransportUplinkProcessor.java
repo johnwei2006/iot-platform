@@ -177,14 +177,15 @@ public class TransportUplinkProcessor implements UplinkProcessor {
 		// 记录连接事件（同一 TCP 连接只记一次，设备换连接视为重连）
 		gatewayAuthService.recordConnection(decodedUplinkTransportMessage.getDeviceId(), uplinkMessage.getIp(), uplinkMessage.getPort());
 
+		// 将 deviceId 绑定到 Netty Channel：认证响应同样经下行通道写回，必须在认证分支前完成绑定
+		channelRegistry.bindDevice(decodedUplinkTransportMessage.getDeviceId(), uplinkMessage.getIp(), uplinkMessage.getPort());
+
 		// 认证请求在 ProxyTcp 终结，不进入 ACK/去重/MQ 流程
 		if (decodedUplinkTransportMessage.getServiceType() == GatewayAuthConstants.SERVICE_TYPE_GATEWAY_AUTH_REQUEST) {
 			handleGatewayAuthRequest(decodedUplinkTransportMessage, uplinkMessage);
 			return;
 		}
 
-		// 将 deviceId 绑定到 Netty Channel，供下行按 deviceId 取 Channel 写回
-		channelRegistry.bindDevice(decodedUplinkTransportMessage.getDeviceId(), uplinkMessage.getIp(), uplinkMessage.getPort());
 		logDeviceConnectStatus(decodedUplinkTransportMessage.getDeviceId(), uplinkMessage.getIp(), uplinkMessage.getPort(), decodedUplinkTransportMessage.getHeader());
 
 		// token 校验：认证通过前的报文一律拒绝，不转发 MQ

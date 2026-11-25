@@ -257,6 +257,14 @@ public class TransportDataEncoder {
 	public DownlinkTransportMessage mockDownlinkTransportMessage(String deviceId, int serviceType, byte[] serviceData,
 			int serviceDataEncoding, int serviceDataProtocolVersion, int serviceDataEncryption,
 			Integer eventId, Integer messageId) {
+		return mockDownlinkTransportMessage(deviceId, serviceType, serviceData, serviceDataEncoding,
+				serviceDataProtocolVersion, serviceDataEncryption, eventId, messageId, null);
+	}
+
+	/** 带网关认证 token 的构造：token 为 null 时由 V3 编码器填全 0（认证请求/未认证场景）。 */
+	public DownlinkTransportMessage mockDownlinkTransportMessage(String deviceId, int serviceType, byte[] serviceData,
+			int serviceDataEncoding, int serviceDataProtocolVersion, int serviceDataEncryption,
+			Integer eventId, Integer messageId, byte[] token) {
 		DownlinkTransportMessage message = new DownlinkTransportMessage();
 		
 		MessageHeader header = new MessageHeader();
@@ -279,6 +287,7 @@ public class TransportDataEncoder {
 		message.setServiceDataProtocolVersion(serviceDataProtocolVersion);
 		message.setServiceDataEncryption(serviceDataEncryption);
 		message.setServiceVersion((short)1);
+		message.setToken(token);
 	    return message;
 	}
 }

@@ -6,8 +6,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +47,7 @@ import com.proxy.test.protocol.MockServiceCase;
  * DeviceMockTCP --live          连接本机 50001，发送全部 37 类业务并等待下行
  * DeviceMockTCP [host] [port] [--all] [--type=101] [--json={...}]
  *               [--listen=30] [--device-id=30410007102]
+ *               [--auth-secret=secret | --token=hex]
  * </pre>
  *
  * <p>发送：按 protocol-schemas.json 编码业务字段，经 TransportDataEncoder 组装
@@ -58,6 +61,9 @@ public class DeviceMockTCP implements Closeable {
     private static final int MAX_RECEIVE_QUEUE = 256;
     private static final int RECEIVE_TIMEOUT_MS = 5000;
     private static final int DEFAULT_LISTEN_SECONDS = 20;
+    private static final int SERVICE_TYPE_GATEWAY_AUTH_REQUEST = 105;  // 0x69
+    private static final int SERVICE_TYPE_GATEWAY_AUTH_RESPONSE = 106; // 0x6A
+    private static final int GATEWAY_TOKEN_LENGTH = 10;
 
     private static final Class<?>[] BUILTIN_TEST_CLASSES = {
             MockProtocolCodecTest.class,
@@ -81,6 +87,7 @@ public class DeviceMockTCP implements Closeable {
     private volatile boolean connected;
     private volatile Thread receiveThread;
     private volatile String deviceId = DEFAULT_DEVICE_ID;
+    private volatile byte[] authToken;
 
     public DeviceMockTCP() {
         this(new MockProtocolCodec());
@@ -105,6 +112,77 @@ public class DeviceMockTCP implements Closeable {
 
     public String getDeviceId() {
         return deviceId;
+    }
+
+    public void setAuthToken(byte[] token) {
+        this.authToken = token == null ? null : Arrays.copyOf(token, token.length);
+    }
+
+    public byte[] getAuthToken() {
+        return authToken == null ? null : Arrays.copyOf(authToken, authToken.length);
+    }
+
+    /**
+     * 按网关认证协议先发 0x69（serviceData=预共享密钥 ASCII，token 全 0），
+     * 等待 0x6A 响应并提取 token 作为后续业务上行的认证凭据。
+     *
+     * @return true=认证成功且 token 已写入；false=设备未注册/密钥错误/超时
+     */
+    public boolean authenticate(String secret, long timeoutMillis) throws Exception {
+        if (!connected) {
+            throw new IOException("not connected");
+        }
+        if (secret == null || secret.isEmpty()) {
+            throw new IllegalArgumentException("auth secret is required");
+        }
+        drainMessages();
+        byte[] secretBytes = secret.getBytes(StandardCharsets.US_ASCII);
+        byte[] payload = MockFrameCodec.buildPayload(deviceId, SERVICE_TYPE_GATEWAY_AUTH_REQUEST,
+                secretBytes, MockProtocolCodec.ENCODING_BINARY, null, null, null);
+        writeFrame(payload);
+        System.out.println("[DeviceMockTCP] sent 0x69 GATEWAY_AUTH_REQUEST secret=" + secretBytes.length + " bytes");
+
+        long deadline = System.currentTimeMillis() + Math.max(1L, timeoutMillis);
+        while (System.currentTimeMillis() < deadline) {
+            MockTransportMessage msg = awaitMessage(
+                    Math.max(1L, Math.min(deadline - System.currentTimeMillis(), 500L)));
+            if (msg == null || msg.getServiceType() != SERVICE_TYPE_GATEWAY_AUTH_RESPONSE) {
+                continue;
+            }
+            byte[] data = msg.getServiceData();
+            int result = data == null || data.length == 0 ? -1 : (data[0] & 0xFF);
+            if (result != 0) {
+                System.err.println("[DeviceMockTCP] gateway auth FAILED: result=" + result
+                        + " (1=UNKNOWN_DEVICE, 2=INVALID_SECRET, 3=ERROR)");
+                return false;
+            }
+            if (data.length < 1 + GATEWAY_TOKEN_LENGTH) {
+                System.err.println("[DeviceMockTCP] gateway auth response missing token, dataLen=" + data.length);
+                return false;
+            }
+            authToken = Arrays.copyOfRange(data, 1, 1 + GATEWAY_TOKEN_LENGTH);
+            System.out.println("[DeviceMockTCP] gateway auth SUCCESS, token(hex)=" + toHex(authToken));
+            return true;
+        }
+        System.err.println("[DeviceMockTCP] gateway auth response timeout");
+        return false;
+    }
+
+    /** 解析 --token：支持 10 字符 ASCII 或 20 位十六进制。 */
+    private static byte[] parseGatewayToken(String value) {
+        String v = value.trim();
+        if (v.length() == GATEWAY_TOKEN_LENGTH * 2 && v.matches("(?i)[0-9a-f]+")) {
+            byte[] token = new byte[GATEWAY_TOKEN_LENGTH];
+            for (int i = 0; i < GATEWAY_TOKEN_LENGTH; i++) {
+                token[i] = (byte) Integer.parseInt(v.substring(i * 2, i * 2 + 2), 16);
+            }
+            return token;
+        }
+        byte[] ascii = v.getBytes(StandardCharsets.US_ASCII);
+        if (ascii.length != GATEWAY_TOKEN_LENGTH) {
+            throw new IllegalArgumentException("token must be 10 ASCII chars or 20 hex chars: " + value);
+        }
+        return ascii;
     }
 
     /**
@@ -209,7 +287,7 @@ public class DeviceMockTCP implements Closeable {
         int eventId = eventSequence.incrementAndGet();
         int messageId = messageSequence.incrementAndGet();
         byte[] payload = MockFrameCodec.buildPayload(deviceId, serviceType, data,
-                encoding, eventId, messageId);
+                encoding, eventId, messageId, authToken);
         writeFrame(payload);
         MockTransportMessage sent = sentMessage(serviceType, data, encoding, eventId, messageId, payload);
         System.out.println("[DeviceMockTCP] sent " + codec.hex(serviceType) + " "
@@ -326,10 +404,18 @@ public class DeviceMockTCP implements Closeable {
     private void printBusiness(MockTransportMessage msg) {
         MockDecodeResult result = msg.getBusiness();
         StringBuilder sb = new StringBuilder();
+        int serviceType = msg.getServiceType();
+        String name = codec.name(serviceType);
+        byte[] downlinkData = msg.getServiceData();
+        // serviceType=0 既可能是正常 ACK（serviceData 为空），也可能是认证失败 NAK（首字节为错误码）
+        if (serviceType == MockProtocolCodec.SERVICE_ACK
+                && downlinkData != null && downlinkData.length > 0) {
+            name = "NAK(code=" + (downlinkData[0] & 0xFF) + ")";
+        }
         sb.append(System.lineSeparator());
-        sb.append("[DOWNLINK] ").append(codec.hex(msg.getServiceType()))
-                .append(" ").append(codec.name(msg.getServiceType()))
-                .append(" direction=").append(codec.direction(msg.getServiceType()))
+        sb.append("[DOWNLINK] ").append(codec.hex(serviceType))
+                .append(" ").append(name)
+                .append(" direction=").append(codec.direction(serviceType))
                 .append(System.lineSeparator());
         sb.append("  deviceId=").append(msg.getDeviceId())
                 .append(", nodeId=").append(msg.getNodeId())
@@ -425,6 +511,8 @@ public class DeviceMockTCP implements Closeable {
         int listenSeconds = DEFAULT_LISTEN_SECONDS;
         String deviceId = DEFAULT_DEVICE_ID;
         String json = null;
+        String authSecret = null;
+        String tokenHex = null;
         List<Integer> types = new ArrayList<Integer>();
         List<String> positional = new ArrayList<String>();
 
@@ -459,6 +547,14 @@ public class DeviceMockTCP implements Closeable {
                     deviceId = arg.substring("--device-id=".length());
                 } else if ("--device-id".equals(arg) && i + 1 < args.length) {
                     deviceId = args[++i];
+                } else if (arg.startsWith("--auth-secret=")) {
+                    authSecret = arg.substring("--auth-secret=".length());
+                } else if ("--auth-secret".equals(arg) && i + 1 < args.length) {
+                    authSecret = args[++i];
+                } else if (arg.startsWith("--token=")) {
+                    tokenHex = arg.substring("--token=".length());
+                } else if ("--token".equals(arg) && i + 1 < args.length) {
+                    tokenHex = args[++i];
                 } else if (arg.startsWith("--")) {
                     throw new IllegalArgumentException("unknown option: " + arg);
                 } else {
@@ -479,7 +575,8 @@ public class DeviceMockTCP implements Closeable {
 
         // 无参数（或 --test）默认执行完整测试套件，避免只发一条示例报文就退出。
         boolean explicitLive = live || !positional.isEmpty() || all
-                || !types.isEmpty() || json != null || listenSpecified;
+                || !types.isEmpty() || json != null || listenSpecified
+                || authSecret != null || tokenHex != null;
         if (testMode || !explicitLive) {
             runBuiltInTests();
             return;
@@ -493,6 +590,19 @@ public class DeviceMockTCP implements Closeable {
         int sent = 0;
         try {
             client.connect(host, port);
+            if (tokenHex != null && !tokenHex.trim().isEmpty()) {
+                client.setAuthToken(parseGatewayToken(tokenHex));
+                System.out.println("[DeviceMockTCP] using explicit token(hex)="
+                        + toHex(client.getAuthToken()));
+            } else if (authSecret != null && !authSecret.isEmpty()) {
+                if (!client.authenticate(authSecret, RECEIVE_TIMEOUT_MS)) {
+                    throw new IllegalStateException("gateway authentication failed; "
+                            + "check --auth-secret and device registration");
+                }
+            } else {
+                System.err.println("[DeviceMockTCP] WARNING: no --auth-secret/--token supplied; "
+                        + "uplink will be rejected with NAK unless master-token is enabled");
+            }
             if (all) {
                 sent = client.sendAllServices();
                 System.out.println("[DeviceMockTCP] sent all " + sent + " service types");
@@ -656,11 +766,14 @@ public class DeviceMockTCP implements Closeable {
                 + DEFAULT_LISTEN_SECONDS + ")");
         System.out.println("  --device-id=<id>       override simulated deviceId (default "
                 + DEFAULT_DEVICE_ID + ")");
+        System.out.println("  --auth-secret=<secret> send 0x69 auth request, use returned token for uplink");
+        System.out.println("  --token=<hex|ascii>    explicit 10-byte token (20 hex chars or 10 ASCII chars)");
         System.out.println("Examples:");
         System.out.println("  DeviceMockTCP                                   # 37-type codec + Netty closed-loop tests");
         System.out.println("  DeviceMockTCP --live --listen=30                 # all 37 types to 127.0.0.1:50001");
         System.out.println("  DeviceMockTCP 127.0.0.1 50001 --type=101 --listen=15");
         System.out.println("  DeviceMockTCP 127.0.0.1 50001 --all --listen=30");
         System.out.println("  DeviceMockTCP 127.0.0.1 50001 --type=101 --json={\"appType\":1,\"action\":9}");
+        System.out.println("  DeviceMockTCP 127.0.0.1 50001 --type=0x18 --auth-secret=<secret> --listen=20");
     }
 }

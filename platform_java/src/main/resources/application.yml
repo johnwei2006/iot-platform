@@ -33,7 +33,8 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: ${RABBITMQ_VHOST:/}
+    # 与 ProxyTcp / dtm 统一到 /iot_host，否则跨 vhost 收不到 platform.uplink
+    virtual-host: ${RABBITMQ_VHOST:/iot_host}
     listener:
       simple:
         retry:
