@@ -34,6 +34,8 @@ public class Gateway {
     private Date createdAt;
     @TableField("updated_at")
     private Date updatedAt;
+    /** 安装区域ID（iot_area.id） */
+    private String areaId;
     /** 安装地点 */
     private String address;
     /** 经度 */
@@ -74,6 +76,8 @@ public class Gateway {
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
     public Date getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    public String getAreaId() { return areaId; }
+    public void setAreaId(String areaId) { this.areaId = areaId; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
     public String getLongitude() { return longitude; }

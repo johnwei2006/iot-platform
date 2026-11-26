@@ -5,22 +5,27 @@ import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { listNodes, type NodeEntity } from '@/api/iot/node';
 import { listDevices } from '@/api/iot/gateway';
+import { listAreas } from '@/api/iot/area';
+import AreaSelect from '@/components/AreaSelect.vue';
 
 const router = useRouter();
 const loading = ref(false);
 const nodes = ref<NodeEntity[]>([]);
 const gatewayNames = ref(new Map<string, string>());
+const areaNames = ref(new Map<string, string>());
+
+function areaName(id?: string) {
+  return (id && areaNames.value.get(id)) || '--';
+}
 const gatewayField = ref('gatewayCode');
 const nodeField = ref('nodeCode');
 const gatewayKey = ref('');
 const nodeKey = ref('');
-const addressFilter = ref('');
+const areaFilter = ref('');
 const typeFilter = ref<number | ''>('');
 const onlineFilter = ref('');
 
 const NODE_TYPES: Record<number, string> = { 1: 'ACT', 2: 'IRRI', 3: 'DATA', 4: '植保机', 5: '开度' };
-
-const addressOptions = computed(() => [...new Set(nodes.value.map((n) => n.address).filter(Boolean))] as string[]);
 
 function typeName(type?: number) {
   if (type === undefined || type === null) return '--';
@@ -46,7 +51,7 @@ const filtered = computed(() => nodes.value.filter((n) => {
   const node = nodeKey.value.trim().toLowerCase();
   return (!gw || (n.gatewayCode ?? '').toLowerCase().includes(gw))
     && (!node || (n.nodeCode ?? '').toLowerCase().includes(node))
-    && (!addressFilter.value || n.address === addressFilter.value)
+    && (!areaFilter.value || n.areaId === areaFilter.value)
     && (typeFilter.value === '' || n.nodeType === typeFilter.value)
     && (!onlineFilter.value || (n.online === 1 ? 'ONLINE' : 'OFFLINE') === onlineFilter.value);
 }));
@@ -54,7 +59,7 @@ const filtered = computed(() => nodes.value.filter((n) => {
 function reset() {
   gatewayKey.value = '';
   nodeKey.value = '';
-  addressFilter.value = '';
+  areaFilter.value = '';
   typeFilter.value = '';
   onlineFilter.value = '';
 }
@@ -62,9 +67,10 @@ function reset() {
 async function load() {
   loading.value = true;
   try {
-    const [nodeRes, gatewayRes] = await Promise.all([listNodes(), listDevices()]);
+    const [nodeRes, gatewayRes, areaRes] = await Promise.all([listNodes(), listDevices(), listAreas()]);
     nodes.value = nodeRes.data ?? [];
     gatewayNames.value = new Map((gatewayRes.data ?? []).map((g) => [g.deviceId, g.name || g.deviceId]));
+    areaNames.value = new Map((areaRes.data ?? []).map((a) => [a.id, a.areaName]));
   } catch (error) {
     ElMessage.error((error as Error).message || '节点列表加载失败');
   } finally {
@@ -100,9 +106,7 @@ onMounted(load);
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
-      <el-select v-model="addressFilter" class="address-select" clearable placeholder="请选择安装区域" aria-label="安装区域">
-        <el-option v-for="address in addressOptions" :key="address" :label="address" :value="address" />
-      </el-select>
+      <AreaSelect v-model="areaFilter" class="area-select" placeholder="按安装区域筛选" />
       <el-select v-model="typeFilter" class="type-select" clearable placeholder="请选择节点类型" aria-label="节点类型">
         <el-option v-for="(label, value) in NODE_TYPES" :key="value" :label="label" :value="Number(value)" />
       </el-select>
@@ -134,7 +138,7 @@ onMounted(load);
           <template #default="{ row }">{{ typeName(row.nodeType) }}</template>
         </el-table-column>
         <el-table-column label="安装区域" min-width="140" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.address || '--' }}</template>
+          <template #default="{ row }">{{ areaName(row.areaId) }}</template>
         </el-table-column>
         <el-table-column label="最后上报时间" width="170" align="center">
           <template #default="{ row }">{{ formatTime(row.lastReportTime) }}</template>

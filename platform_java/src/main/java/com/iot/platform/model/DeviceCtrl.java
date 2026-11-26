@@ -29,6 +29,8 @@ public class DeviceCtrl {
     private Integer online;
     /** 是否自动：0-手动，1-自动 */
     private Integer auto;
+    /** 关联区域ID（iot_area.id） */
+    private String areaId;
     /** 安装地址 */
     private String address;
     private String longitude;
@@ -68,6 +70,8 @@ public class DeviceCtrl {
     public void setOnline(Integer online) { this.online = online; }
     public Integer getAuto() { return auto; }
     public void setAuto(Integer auto) { this.auto = auto; }
+    public String getAreaId() { return areaId; }
+    public void setAreaId(String areaId) { this.areaId = areaId; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
     public String getLongitude() { return longitude; }

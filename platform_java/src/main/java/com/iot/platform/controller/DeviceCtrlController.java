@@ -33,13 +33,14 @@ public class DeviceCtrlController {
     @Autowired
     private DataScopeRegistry dataScopeRegistry;
 
-    /** 控制设备列表：按 JWT 数据权限（ds.device_ctrl）过滤；可选 nodeCode 过滤。 */
+    /** 控制设备列表：按 JWT 数据权限（ds.device_ctrl）过滤；可选 nodeCode、areaId 过滤。 */
     @GetMapping
     public ApiResponse<?> list(@RequestParam(required = false) String nodeCode,
+                               @RequestParam(required = false) String areaId,
                                HttpServletRequest request) {
         ScopeContext ctx = scopeContext(request);
         List<DeviceCtrl> devices = deviceCtrlService.listByCriteria(
-                dataScopeRegistry.criteriaFor("device_ctrl", ctx.subject, ctx.orgCode, ctx.dataScopes));
+                dataScopeRegistry.criteriaFor("device_ctrl", ctx.subject, ctx.orgCode, ctx.dataScopes), areaId);
         if (nodeCode != null && !nodeCode.isEmpty()) {
             devices = devices.stream().filter(d -> nodeCode.equals(d.getNodeCode())).toList();
         }

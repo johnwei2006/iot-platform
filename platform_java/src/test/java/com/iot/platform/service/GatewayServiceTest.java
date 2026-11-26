@@ -86,6 +86,7 @@ public class GatewayServiceTest {
         patch.setAuthSecret(GatewayService.SECRET_MASK);
         patch.setOwnerUserId("other-user");
         patch.setOrgCode("0001");
+        patch.setAreaId("area-1");
         patch.setAddress("小日光温室配电柜");
         patch.setLongitude("120.15");
         patch.setLatitude("30.28");
@@ -96,6 +97,7 @@ public class GatewayServiceTest {
         Gateway updated = deviceService.update("x", patch);
 
         assertEquals("0001", updated.getOrgCode());
+        assertEquals("area-1", updated.getAreaId());
         assertEquals("小日光温室配电柜", updated.getAddress());
         assertEquals("120.15", updated.getLongitude());
         assertEquals("30.28", updated.getLatitude());

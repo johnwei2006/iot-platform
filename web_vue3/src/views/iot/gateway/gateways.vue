@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { listDevices } from '@/api/iot/gateway';
+import { listAreas } from '@/api/iot/area';
+import AreaSelect from '@/components/AreaSelect.vue';
 import type { Device } from '@/types';
 
 const router = useRouter();
@@ -13,8 +15,14 @@ const nameField = ref<'name' | 'deviceId'>('name');
 const keyword = ref('');
 const onlineFilter = ref('');
 const typeFilter = ref<number | ''>('');
+const areaFilter = ref('');
+const areaNameMap = ref(new Map<string, string>());
 
 const TYPE_NAMES: Record<number, string> = { 1: '4G网关', 2: '5G网关' };
+
+function areaName(id?: string) {
+  return (id && areaNameMap.value.get(id)) || '--';
+}
 
 function typeName(type?: number) {
   if (type === undefined || type === null) return '--';
@@ -36,7 +44,8 @@ const filtered = computed(() => gateways.value.filter((g) => {
     String(nameField.value === 'name' ? (g.name ?? '') : (g.deviceId ?? '')).toLowerCase().includes(text);
   const hitStatus = !onlineFilter.value || g.status === onlineFilter.value;
   const hitType = typeFilter.value === '' || g.gatewayType === typeFilter.value;
-  return hitName && hitStatus && hitType;
+  const hitArea = !areaFilter.value || g.areaId === areaFilter.value;
+  return hitName && hitStatus && hitType && hitArea;
 }));
 
 function reset() {
@@ -44,13 +53,15 @@ function reset() {
   nameField.value = 'name';
   onlineFilter.value = '';
   typeFilter.value = '';
+  areaFilter.value = '';
 }
 
 async function load() {
   loading.value = true;
   try {
-    const res = await listDevices();
-    gateways.value = res.data ?? [];
+    const [deviceRes, areaRes] = await Promise.all([listDevices(), listAreas()]);
+    gateways.value = deviceRes.data ?? [];
+    areaNameMap.value = new Map((areaRes.data ?? []).map((a) => [a.id, a.areaName]));
   } catch (error) {
     ElMessage.error((error as Error).message || '网关列表加载失败');
   } finally {
@@ -85,6 +96,7 @@ onMounted(load);
         <el-option label="4G网关" :value="1" />
         <el-option label="5G网关" :value="2" />
       </el-select>
+      <AreaSelect v-model="areaFilter" class="area-select" placeholder="按安装区域筛选" />
       <el-button type="primary" @click="load">搜索</el-button>
       <el-button @click="reset">重置</el-button>
     </div>
@@ -105,7 +117,7 @@ onMounted(load);
           <template #default="{ row }">{{ typeName(row.gatewayType) }}</template>
         </el-table-column>
         <el-table-column label="安装区域" min-width="170" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.address || '--' }}</template>
+          <template #default="{ row }">{{ areaName(row.areaId) }}</template>
         </el-table-column>
         <el-table-column label="最后上报时间" width="180" align="center">
           <template #default="{ row }">{{ formatTime(row.lastSeen) }}</template>

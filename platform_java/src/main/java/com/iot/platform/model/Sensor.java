@@ -19,6 +19,8 @@ public class Sensor {
     private String sensorName;
     /** 节点编码 */
     private String nodeCode;
+    /** 关联区域ID（iot_area.id） */
+    private String areaId;
     /** 传感器大类编码 */
     private String sensorClass;
     /** 传感器类型编码 */
@@ -62,6 +64,8 @@ public class Sensor {
     public void setSensorName(String sensorName) { this.sensorName = sensorName; }
     public String getNodeCode() { return nodeCode; }
     public void setNodeCode(String nodeCode) { this.nodeCode = nodeCode; }
+    public String getAreaId() { return areaId; }
+    public void setAreaId(String areaId) { this.areaId = areaId; }
     public String getSensorClass() { return sensorClass; }
     public void setSensorClass(String sensorClass) { this.sensorClass = sensorClass; }
     public String getSensorClassType() { return sensorClassType; }

@@ -52,12 +52,14 @@ public class SensorServiceTest {
 
         Sensor patch = new Sensor();
         patch.setSensorName("新名称");
+        patch.setAreaId("area-1");
         patch.setWarnMin(10.0);
         patch.setWarnMax(40.0);
 
         Sensor updated = sensorService.update("s1", patch);
 
         assertEquals("新名称", updated.getSensorName());
+        assertEquals("area-1", updated.getAreaId());
         assertEquals(10.0, updated.getWarnMin());
         assertEquals(40.0, updated.getWarnMax());
         assertEquals("creator-1", updated.getUpdateBy());

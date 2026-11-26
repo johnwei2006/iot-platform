@@ -5,9 +5,10 @@ import { ElMessage } from 'element-plus';
 import { ArrowLeft, Edit } from '@element-plus/icons-vue';
 import { getDevice, updateDevice } from '@/api/iot/gateway';
 import { fetchOrgList } from '@/api/system/org';
+import AreaSelect from '@/components/AreaSelect.vue';
 import type { Device, OrgRecord } from '@/types';
 
-type Field = 'name' | 'orgCode' | 'longitude' | 'latitude' | 'address' | 'gatewayType' | 'firmwareVersion' | 'pic';
+type Field = 'name' | 'orgCode' | 'longitude' | 'latitude' | 'address' | 'areaId' | 'gatewayType' | 'firmwareVersion' | 'pic';
 
 const route = useRoute();
 const router = useRouter();
@@ -61,6 +62,16 @@ async function applyPatch(patch: Partial<Device>, message = '已保存') {
   } catch (error) {
     ElMessage.error((error as Error).message || '保存失败');
     activeField.value = null;
+  }
+}
+
+async function saveArea(areaId?: string) {
+  try {
+    const res = await updateDevice(id, { areaId: areaId || '' });
+    device.value = res.data ?? device.value;
+    ElMessage.success('安装区域已更新');
+  } catch (error) {
+    ElMessage.error((error as Error).message || '保存失败');
   }
 }
 
@@ -224,11 +235,22 @@ onMounted(load);
       <div class="info-cell">
         <span class="info-label">安装区域</span>
         <div class="info-value">
+          <AreaSelect
+            :model-value="device.areaId"
+            placeholder="选择安装区域"
+            @change="(area) => saveArea(area?.id)"
+          />
+        </div>
+      </div>
+
+      <div class="info-cell">
+        <span class="info-label">详细地址</span>
+        <div class="info-value">
           <el-input v-if="activeField === 'address'" ref="editInputRef" v-model="draftValue" size="small"
                     @blur="save('address')" @keyup.enter="save('address')" />
           <template v-else>
             <span>{{ device.address || '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑安装区域" @click="startEdit('address')" />
+            <el-button link :icon="Edit" aria-label="编辑详细地址" @click="startEdit('address')" />
           </template>
         </div>
       </div>

@@ -33,8 +33,18 @@ public class GatewayService {
 
     /** 按数据权限条件过滤列表；scope 为 null 表示不过滤（ALL）。 */
     public List<Gateway> listByCriteria(DataScopeQuery scope) {
+        return listByCriteria(scope, null);
+    }
+
+    /** 按数据权限与安装区域过滤列表；areaId 为空时不限制区域。 */
+    public List<Gateway> listByCriteria(DataScopeQuery scope, String areaId) {
+        boolean hasArea = areaId != null && !areaId.trim().isEmpty();
         if (scope == null || scope.getType() == DataScopeQuery.Type.ALL) {
-            return deviceRepository.findAll();
+            if (!hasArea) {
+                return deviceRepository.findAll();
+            }
+            return deviceRepository.findAll(Wrappers.<Gateway>lambdaQuery()
+                    .eq(Gateway::getAreaId, areaId.trim()));
         }
         if (scope.getType() == DataScopeQuery.Type.DENY_ALL) {
             return List.of();
@@ -47,6 +57,9 @@ public class GatewayService {
             default -> {
                 return List.of();
             }
+        }
+        if (hasArea) {
+            wrapper.eq(Gateway::getAreaId, areaId.trim());
         }
         return deviceRepository.findAll(wrapper);
     }
@@ -97,6 +110,9 @@ public class GatewayService {
         }
         if (src.getAddress() != null) {
             d.setAddress(src.getAddress());
+        }
+        if (src.getAreaId() != null) {
+            d.setAreaId(src.getAreaId());
         }
         if (src.getLongitude() != null) {
             d.setLongitude(src.getLongitude());

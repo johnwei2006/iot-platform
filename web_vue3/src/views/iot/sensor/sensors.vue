@@ -8,6 +8,8 @@ import {
   listSensorClass, listSensorClassType, listSensors,
   type SensorClassDict, type SensorClassTypeDict, type SensorEntity,
 } from '@/api/iot/sensor';
+import AreaSelect from '@/components/AreaSelect.vue';
+import { listAreas } from '@/api/iot/area';
 
 const router = useRouter();
 const loading = ref(false);
@@ -28,7 +30,11 @@ const unitFilter = ref('');
 const statusFilter = ref('');
 
 const nodeByCode = computed(() => new Map(nodes.value.map((n) => [n.nodeCode, n])));
-const areaOptions = computed(() => [...new Set(nodes.value.map((n) => n.address).filter(Boolean))] as string[]);
+const areaNames = ref(new Map<string, string>());
+
+function areaName(id?: string) {
+  return (id && areaNames.value.get(id)) || '--';
+}
 
 function nodeOf(code?: string) {
   return code ? nodeByCode.value.get(code) : undefined;
@@ -49,10 +55,9 @@ function normalRange(row: SensorEntity) {
 const filtered = computed(() => sensors.value.filter((s) => {
   const code = codeKey.value.trim().toLowerCase();
   const name = nameKey.value.trim().toLowerCase();
-  const area = nodeOf(s.nodeCode)?.address;
   return (!code || (s.sensorCode ?? '').toLowerCase().includes(code))
     && (!name || (s.sensorName ?? '').toLowerCase().includes(name))
-    && (!areaFilter.value || area === areaFilter.value)
+    && (!areaFilter.value || s.areaId === areaFilter.value)
     && (!classFilter.value || s.sensorClass === classFilter.value)
     && (!typeFilter.value || s.sensorClassType === typeFilter.value)
     && (!channelFilter.value || (s.channel ?? '').includes(channelFilter.value.trim()))
@@ -74,13 +79,14 @@ function reset() {
 async function load() {
   loading.value = true;
   try {
-    const [sensorRes, nodeRes, classRes, typeRes] = await Promise.all([
-      listSensors(), listNodes(), listSensorClass(), listSensorClassType(),
+    const [sensorRes, nodeRes, classRes, typeRes, areaRes] = await Promise.all([
+      listSensors(), listNodes(), listSensorClass(), listSensorClassType(), listAreas(),
     ]);
     sensors.value = sensorRes.data ?? [];
     nodes.value = nodeRes.data ?? [];
     classes.value = classRes.data ?? [];
     classTypes.value = typeRes.data ?? [];
+    areaNames.value = new Map((areaRes.data ?? []).map((a) => [a.id, a.areaName]));
   } catch (error) {
     ElMessage.error((error as Error).message || '传感器列表加载失败');
   } finally {
@@ -116,9 +122,7 @@ onMounted(load);
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
-      <el-select v-model="areaFilter" class="area-select" clearable placeholder="该传感器所在区域" aria-label="所在区域">
-        <el-option v-for="area in areaOptions" :key="area" :label="area" :value="area" />
-      </el-select>
+      <AreaSelect v-model="areaFilter" class="area-select" placeholder="按关联区域筛选" />
       <el-button type="primary" @click="load">搜索</el-button>
       <el-button @click="reset">重置</el-button>
       <el-button link type="primary" @click="moreVisible = !moreVisible">
@@ -163,7 +167,7 @@ onMounted(load);
           </template>
         </el-table-column>
         <el-table-column label="关联区域" min-width="130">
-          <template #default="{ row }">{{ nodeOf(row.nodeCode)?.address || '--' }}</template>
+          <template #default="{ row }">{{ areaName(row.areaId) }}</template>
         </el-table-column>
         <el-table-column label="正常范围" min-width="130">
           <template #default="{ row }">{{ normalRange(row) }}</template>

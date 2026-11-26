@@ -8,6 +8,7 @@ import {
   getSensor, listSensorClass, listSensorClassType, updateSensor,
   type SensorClassDict, type SensorClassTypeDict, type SensorEntity,
 } from '@/api/iot/sensor';
+import AreaSelect from '@/components/AreaSelect.vue';
 import SensorHistoryChart from './components/sensor-history-chart.vue';
 
 const route = useRoute();
@@ -87,6 +88,16 @@ async function submitAlarm() {
   }
 }
 
+async function saveArea(areaId?: string) {
+  try {
+    const res = await updateSensor(id, { areaId: areaId || '' });
+    sensor.value = res.data ?? sensor.value;
+    ElMessage.success('关联区域已更新');
+  } catch (error) {
+    ElMessage.error((error as Error).message || '保存失败');
+  }
+}
+
 function placeholder(feature: string) {
   ElMessage.info(`${feature}功能暂未开放`);
 }
@@ -149,8 +160,17 @@ onMounted(load);
       <div class="info-cell"><span class="info-label">最小值</span><div class="info-value"><span>{{ sensor.warnMin ?? '--' }}</span></div></div>
       <div class="info-cell"><span class="info-label">最大值</span><div class="info-value"><span>{{ sensor.warnMax ?? '--' }}</span></div></div>
       <div class="info-cell"><span class="info-label">单位</span><div class="info-value"><span>{{ sensor.unit || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">安装区域</span><div class="info-value"><span>{{ node?.address || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">关联区域</span><div class="info-value"><span>--</span></div></div>
+      <div class="info-cell"><span class="info-label">节点位置</span><div class="info-value"><span>{{ node?.address || '--' }}</span></div></div>
+      <div class="info-cell">
+        <span class="info-label">关联区域</span>
+        <div class="info-value">
+          <AreaSelect
+            :model-value="sensor.areaId"
+            placeholder="选择关联区域"
+            @change="(area) => saveArea(area?.id)"
+          />
+        </div>
+      </div>
       <div class="info-cell"><span class="info-label">创建时间</span><div class="info-value"><span>{{ formatTime(sensor.createTime) }}</span></div></div>
     </div>
 

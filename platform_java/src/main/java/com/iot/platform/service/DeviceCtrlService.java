@@ -30,8 +30,18 @@ public class DeviceCtrlService {
     }
 
     public List<DeviceCtrl> listByCriteria(DataScopeQuery scope) {
+        return listByCriteria(scope, null);
+    }
+
+    /** 按数据权限与关联区域过滤列表；areaId 为空时不限制区域。 */
+    public List<DeviceCtrl> listByCriteria(DataScopeQuery scope, String areaId) {
+        boolean hasArea = areaId != null && !areaId.trim().isEmpty();
         if (scope == null || scope.getType() == DataScopeQuery.Type.ALL) {
-            return deviceCtrlRepository.findAll();
+            if (!hasArea) {
+                return deviceCtrlRepository.findAll();
+            }
+            return deviceCtrlRepository.findAll(Wrappers.<DeviceCtrl>lambdaQuery()
+                    .eq(DeviceCtrl::getIsDeleted, 0).eq(DeviceCtrl::getAreaId, areaId.trim()));
         }
         if (scope.getType() == DataScopeQuery.Type.DENY_ALL) {
             return List.of();
@@ -44,6 +54,9 @@ public class DeviceCtrlService {
             default -> {
                 return List.of();
             }
+        }
+        if (hasArea) {
+            wrapper.eq(DeviceCtrl::getAreaId, areaId.trim());
         }
         return deviceCtrlRepository.findAll(wrapper);
     }
@@ -93,6 +106,7 @@ public class DeviceCtrlService {
         if (src.getOnline() != null) d.setOnline(src.getOnline());
         if (src.getAuto() != null) d.setAuto(src.getAuto());
         if (src.getAddress() != null) d.setAddress(src.getAddress());
+        if (src.getAreaId() != null) d.setAreaId(src.getAreaId());
         if (src.getLongitude() != null) d.setLongitude(src.getLongitude());
         if (src.getLatitude() != null) d.setLatitude(src.getLatitude());
         if (src.getPic() != null) d.setPic(src.getPic());

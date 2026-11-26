@@ -2,8 +2,8 @@ import request from '../request';
 import type { ApiResponse, DataRecord, Device, DownlinkPayload } from '@/types';
 import type { MetricThreshold, RealtimeStatus } from '@/types/kb';
 
-export function listDevices(): Promise<ApiResponse<Device[]>> {
-  return request<Device[]>({ url: '/api/devices', method: 'GET' });
+export function listDevices(areaId?: string): Promise<ApiResponse<Device[]>> {
+  return request<Device[]>({ url: '/api/devices', method: 'GET', params: areaId ? { areaId } : undefined });
 }
 
 export function getDevice(id: string): Promise<ApiResponse<Device>> {

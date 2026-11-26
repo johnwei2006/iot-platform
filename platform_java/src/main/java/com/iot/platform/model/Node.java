@@ -22,6 +22,8 @@ public class Node {
     private String gatewayCode;
     /** 状态（无用） */
     private Integer status;
+    /** 安装区域ID（iot_area.id） */
+    private String areaId;
     /** 安装地点 */
     private String address;
     /** 经度 */
@@ -69,6 +71,8 @@ public class Node {
     public void setGatewayCode(String gatewayCode) { this.gatewayCode = gatewayCode; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
+    public String getAreaId() { return areaId; }
+    public void setAreaId(String areaId) { this.areaId = areaId; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
     public String getLongitude() { return longitude; }

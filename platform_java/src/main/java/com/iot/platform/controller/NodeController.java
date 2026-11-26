@@ -33,13 +33,14 @@ public class NodeController {
     @Autowired
     private DataScopeRegistry dataScopeRegistry;
 
-    /** 节点列表：按 JWT 数据权限（ds.node）过滤；可选 gatewayCode 过滤。 */
+    /** 节点列表：按 JWT 数据权限（ds.node）过滤；可选 gatewayCode、areaId 过滤。 */
     @GetMapping
     public ApiResponse<?> list(@RequestParam(required = false) String gatewayCode,
+                               @RequestParam(required = false) String areaId,
                                HttpServletRequest request) {
         ScopeContext ctx = scopeContext(request);
         List<Node> nodes = nodeService.listByCriteria(
-                dataScopeRegistry.criteriaFor("node", ctx.subject, ctx.orgCode, ctx.dataScopes));
+                dataScopeRegistry.criteriaFor("node", ctx.subject, ctx.orgCode, ctx.dataScopes), areaId);
         if (gatewayCode != null && !gatewayCode.isEmpty()) {
             nodes = nodes.stream().filter(n -> gatewayCode.equals(n.getGatewayCode())).toList();
         }

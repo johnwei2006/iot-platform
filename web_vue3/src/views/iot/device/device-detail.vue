@@ -8,6 +8,7 @@ import {
   getControlDevice, getControlDeviceEntry, listDeviceClass, listDeviceClassType,
   updateControlDevice, type DeviceClassDict, type DeviceClassTypeDict, type DeviceCtrlEntity,
 } from '@/api/iot/device';
+import AreaSelect from '@/components/AreaSelect.vue';
 
 type Field = 'deviceName' | 'longitude' | 'latitude';
 
@@ -77,6 +78,16 @@ async function applyPatch(patch: Partial<DeviceCtrlEntity>) {
   } catch (error) {
     ElMessage.error((error as Error).message || '保存失败');
     activeField.value = null;
+  }
+}
+
+async function saveArea(areaId?: string) {
+  try {
+    const res = await updateControlDevice(id, { areaId: areaId || '' });
+    device.value = res.data ?? device.value;
+    ElMessage.success('关联区域已更新');
+  } catch (error) {
+    ElMessage.error((error as Error).message || '保存失败');
   }
 }
 
@@ -233,8 +244,17 @@ onMounted(load);
       <div class="info-cell"><span class="info-label">开关模式</span><div class="info-value"><span>{{ switchMode }}</span></div></div>
       <div class="info-cell"><span class="info-label">状态</span><div class="info-value"><span>{{ statusLabel(device.status) }}</span></div></div>
       <div class="info-cell"><span class="info-label">最后上报时间</span><div class="info-value"><span>--</span></div></div>
-      <div class="info-cell"><span class="info-label">安装区域</span><div class="info-value"><span>{{ device.address || node?.address || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">关联区域</span><div class="info-value"><span>{{ node?.address || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">安装位置</span><div class="info-value"><span>{{ device.address || node?.address || '--' }}</span></div></div>
+      <div class="info-cell">
+        <span class="info-label">关联区域</span>
+        <div class="info-value">
+          <AreaSelect
+            :model-value="device.areaId"
+            placeholder="选择关联区域"
+            @change="(area) => saveArea(area?.id)"
+          />
+        </div>
+      </div>
       <div class="info-cell">
         <span class="info-label">设备图片</span>
         <div class="info-value">

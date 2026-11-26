@@ -13,6 +13,8 @@ export interface DeviceCtrlEntity {
   status?: string;
   online?: number;
   auto?: number;
+  /** 关联区域ID（iot_area.id） */
+  areaId?: string;
   address?: string;
   longitude?: string;
   latitude?: string;
@@ -53,11 +55,11 @@ export interface GatewayEntryVO {
   action?: string;
 }
 
-export function listControlDevices(nodeCode?: string): Promise<ApiResponse<DeviceCtrlEntity[]>> {
+export function listControlDevices(nodeCode?: string, areaId?: string): Promise<ApiResponse<DeviceCtrlEntity[]>> {
   return request<DeviceCtrlEntity[]>({
     url: '/api/control-devices',
     method: 'GET',
-    params: nodeCode ? { nodeCode } : undefined,
+    params: { ...(nodeCode ? { nodeCode } : {}), ...(areaId ? { areaId } : {}) },
   });
 }
 

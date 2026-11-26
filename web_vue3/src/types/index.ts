@@ -138,6 +138,8 @@ export interface Device {
   nodeId?: string;
   name?: string;
   identifierType?: string;
+  /** 安装区域ID（iot_area.id） */
+  areaId?: string;
   /** 网关认证预共享密钥（查询返回为掩码 ******，仅录入/更新时传明文） */
   authSecret?: string;
   status?: string;

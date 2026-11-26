@@ -100,3 +100,23 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261126-10-create-area-table
+      author: iot-platform
+      comment: 区域管理：卫星地图多边形边界、绘制面积与标注面积
+      changes:
+        - sqlFile:
+            path: sql/010-create-area-table.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261126-11-add-area-id-to-entities
+      author: iot-platform
+      comment: 区域关联：网关/节点/传感器/控制设备增加 area_id 与索引
+      changes:
+        - sqlFile:
+            path: sql/011-add-area-id-to-entities.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true

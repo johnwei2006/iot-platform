@@ -26,8 +26,18 @@ public class NodeService {
 
     /** 按数据权限条件过滤列表；scope 为 null 表示不过滤（ALL）。 */
     public List<Node> listByCriteria(DataScopeQuery scope) {
+        return listByCriteria(scope, null);
+    }
+
+    /** 按数据权限与安装区域过滤列表；areaId 为空时不限制区域。 */
+    public List<Node> listByCriteria(DataScopeQuery scope, String areaId) {
+        boolean hasArea = areaId != null && !areaId.trim().isEmpty();
         if (scope == null || scope.getType() == DataScopeQuery.Type.ALL) {
-            return nodeRepository.findAll();
+            if (!hasArea) {
+                return nodeRepository.findAll();
+            }
+            return nodeRepository.findAll(Wrappers.<Node>lambdaQuery()
+                    .eq(Node::getIsDeleted, 0).eq(Node::getAreaId, areaId.trim()));
         }
         if (scope.getType() == DataScopeQuery.Type.DENY_ALL) {
             return List.of();
@@ -40,6 +50,9 @@ public class NodeService {
             default -> {
                 return List.of();
             }
+        }
+        if (hasArea) {
+            wrapper.eq(Node::getAreaId, areaId.trim());
         }
         return nodeRepository.findAll(wrapper);
     }
@@ -84,6 +97,7 @@ public class NodeService {
         if (src.getNodeName() != null) n.setNodeName(src.getNodeName());
         if (src.getGatewayCode() != null) n.setGatewayCode(src.getGatewayCode());
         if (src.getAddress() != null) n.setAddress(src.getAddress());
+        if (src.getAreaId() != null) n.setAreaId(src.getAreaId());
         if (src.getLongitude() != null) n.setLongitude(src.getLongitude());
         if (src.getLatitude() != null) n.setLatitude(src.getLatitude());
         if (src.getNodeType() != null) n.setNodeType(src.getNodeType());

@@ -42,8 +42,18 @@ public class SensorService {
     }
 
     public List<Sensor> listByCriteria(DataScopeQuery scope) {
+        return listByCriteria(scope, null);
+    }
+
+    /** 按数据权限与关联区域过滤列表；areaId 为空时不限制区域。 */
+    public List<Sensor> listByCriteria(DataScopeQuery scope, String areaId) {
+        boolean hasArea = areaId != null && !areaId.trim().isEmpty();
         if (scope == null || scope.getType() == DataScopeQuery.Type.ALL) {
-            return sensorRepository.findAll();
+            if (!hasArea) {
+                return sensorRepository.findAll();
+            }
+            return sensorRepository.findAll(Wrappers.<Sensor>lambdaQuery()
+                    .eq(Sensor::getIsDeleted, 0).eq(Sensor::getAreaId, areaId.trim()));
         }
         if (scope.getType() == DataScopeQuery.Type.DENY_ALL) {
             return List.of();
@@ -56,6 +66,9 @@ public class SensorService {
             default -> {
                 return List.of();
             }
+        }
+        if (hasArea) {
+            wrapper.eq(Sensor::getAreaId, areaId.trim());
         }
         return sensorRepository.findAll(wrapper);
     }
@@ -99,6 +112,7 @@ public class SensorService {
                 .orElseThrow(() -> new RuntimeException("sensor not found: " + id));
         if (src.getSensorName() != null) s.setSensorName(src.getSensorName());
         if (src.getNodeCode() != null) s.setNodeCode(src.getNodeCode());
+        if (src.getAreaId() != null) s.setAreaId(src.getAreaId());
         if (src.getSensorClass() != null) s.setSensorClass(src.getSensorClass());
         if (src.getSensorClassType() != null) s.setSensorClassType(src.getSensorClassType());
         if (src.getStatus() != null) s.setStatus(src.getStatus());

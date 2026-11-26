@@ -9,6 +9,8 @@ export interface NodeEntity {
   nodeName?: string;
   gatewayCode?: string;
   status?: number;
+  /** 安装区域ID（iot_area.id） */
+  areaId?: string;
   address?: string;
   longitude?: string;
   latitude?: string;
@@ -27,8 +29,12 @@ export interface NodeEntity {
   isDeleted?: number;
 }
 
-export function listNodes(gatewayCode?: string): Promise<ApiResponse<NodeEntity[]>> {
-  return request<NodeEntity[]>({ url: '/api/nodes', method: 'GET', params: gatewayCode ? { gatewayCode } : undefined });
+export function listNodes(gatewayCode?: string, areaId?: string): Promise<ApiResponse<NodeEntity[]>> {
+  return request<NodeEntity[]>({
+    url: '/api/nodes',
+    method: 'GET',
+    params: { ...(gatewayCode ? { gatewayCode } : {}), ...(areaId ? { areaId } : {}) },
+  });
 }
 
 export function getNode(id: string): Promise<ApiResponse<NodeEntity>> {

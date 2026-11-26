@@ -68,6 +68,7 @@ public class DataInitializer implements ApplicationRunner {
             ensureStaticMenus();
             initGatewayMenu();
             initSensorDataMenu();
+            initAreaMenu();
             initProductCatalog();
             ensureMenuIcons();
             initSuperAdminRole();
@@ -169,6 +170,21 @@ public class DataInitializer implements ApplicationRunner {
         buttonOnce(dataMenu.getId(), "导出数据", "iot:sensor_data:export");
         buttonOnce(dataMenu.getId(), "组合管理", "iot:sensor_data:group");
         log.info("Bootstrap sensor-data menu created");
+    }
+
+    /** 区域管理菜单：卫星地图多边形地块（新增/编辑/删除），幂等。 */
+    private void initAreaMenu() {
+        java.util.Optional<Menu> iotDir = menuRepository.findByPath("/iot");
+        if (!iotDir.isPresent()) {
+            return;
+        }
+        Menu areaMenu = menuRepository.findByPath("/iot/area").orElseGet(() ->
+                menu("区域管理", Menu.TYPE_MENU, iotDir.get().getId(), "/iot/area",
+                        "iot/area/index", "iot:area:page", "76"));
+        buttonOnce(areaMenu.getId(), "新增区域", "iot:area:create");
+        buttonOnce(areaMenu.getId(), "编辑区域", "iot:area:edit");
+        buttonOnce(areaMenu.getId(), "删除区域", "iot:area:delete");
+        log.info("Bootstrap area menu created");
     }
 
     /** 兼容旧数据：顶级 DIR 仍作为产品菜单树根节点保留。 */
@@ -277,6 +293,7 @@ public class DataInitializer implements ApplicationRunner {
         icons.put("/iot/conflict-check", "MagicStick");
         icons.put("/iot/gateways", "Connection");
         icons.put("/iot/sensor-data", "DataLine");
+        icons.put("/iot/area", "Location");
         icons.put("/farm", "Sunny");
         icons.put("/home", "House");
         icons.put("/alarms", "WarningFilled");

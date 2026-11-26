@@ -38,6 +38,7 @@ public class DeviceCtrlServiceTest {
 
         DeviceCtrl patch = new DeviceCtrl();
         patch.setDeviceName("新名称");
+        patch.setAreaId("area-1");
         patch.setStatus("0");
         patch.setLongitude("120.15");
         patch.setLatitude("30.28");
@@ -45,6 +46,7 @@ public class DeviceCtrlServiceTest {
         DeviceCtrl updated = deviceCtrlService.update("d1", patch);
 
         assertEquals("新名称", updated.getDeviceName());
+        assertEquals("area-1", updated.getAreaId());
         assertEquals("0", updated.getStatus());
         assertEquals("120.15", updated.getLongitude());
         assertEquals("30.28", updated.getLatitude());

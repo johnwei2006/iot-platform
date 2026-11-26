@@ -33,13 +33,14 @@ public class SensorController {
     @Autowired
     private DataScopeRegistry dataScopeRegistry;
 
-    /** 传感器列表：按 JWT 数据权限（ds.sensor）过滤；可选 nodeCode 过滤。 */
+    /** 传感器列表：按 JWT 数据权限（ds.sensor）过滤；可选 nodeCode、areaId 过滤。 */
     @GetMapping
     public ApiResponse<?> list(@RequestParam(required = false) String nodeCode,
+                               @RequestParam(required = false) String areaId,
                                HttpServletRequest request) {
         ScopeContext ctx = scopeContext(request);
         List<Sensor> sensors = sensorService.listByCriteria(
-                dataScopeRegistry.criteriaFor("sensor", ctx.subject, ctx.orgCode, ctx.dataScopes));
+                dataScopeRegistry.criteriaFor("sensor", ctx.subject, ctx.orgCode, ctx.dataScopes), areaId);
         if (nodeCode != null && !nodeCode.isEmpty()) {
             sensors = sensors.stream().filter(s -> nodeCode.equals(s.getNodeCode())).toList();
         }

@@ -13,6 +13,7 @@ import {
   type DeviceClassDict, type DeviceClassTypeDict, type DeviceCtrlEntity,
 } from '@/api/iot/device';
 import { fetchOrgList } from '@/api/system/org';
+import AreaSelect from '@/components/AreaSelect.vue';
 import type { OrgRecord } from '@/types';
 import NodeSensorTable from './components/node-sensor-table.vue';
 import NodeDeviceTable from './components/node-device-table.vue';
@@ -70,6 +71,16 @@ async function applyPatch(patch: Partial<NodeEntity>) {
   } catch (error) {
     ElMessage.error((error as Error).message || '保存失败');
     activeField.value = null;
+  }
+}
+
+async function saveArea(areaId?: string) {
+  try {
+    const res = await updateNode(id, { areaId: areaId || '' });
+    node.value = res.data ?? node.value;
+    ElMessage.success('安装区域已更新');
+  } catch (error) {
+    ElMessage.error((error as Error).message || '保存失败');
   }
 }
 
@@ -185,6 +196,16 @@ onMounted(load);
       <div class="info-cell"><span class="info-label">电池电压</span><div class="info-value"><span>{{ node.batteryVoltage ?? '--' }}</span></div></div>
       <div class="info-cell">
         <span class="info-label">安装区域</span>
+        <div class="info-value">
+          <AreaSelect
+            :model-value="node.areaId"
+            placeholder="选择安装区域"
+            @change="(area) => saveArea(area?.id)"
+          />
+        </div>
+      </div>
+      <div class="info-cell">
+        <span class="info-label">详细地址</span>
         <div class="info-value">
           <el-input v-if="activeField === 'address'" ref="editInputRef" v-model="draftValue" size="small"
                     @blur="save('address')" @keyup.enter="save('address')" />

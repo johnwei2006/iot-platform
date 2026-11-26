@@ -8,6 +8,8 @@ export interface SensorEntity {
   sensorCode: string;
   sensorName?: string;
   nodeCode?: string;
+  /** 关联区域ID（iot_area.id） */
+  areaId?: string;
   sensorClass?: string;
   sensorClassType?: string;
   status?: number;
@@ -88,8 +90,12 @@ export interface SensorClassTypeDict {
   description?: string;
 }
 
-export function listSensors(nodeCode?: string): Promise<ApiResponse<SensorEntity[]>> {
-  return request<SensorEntity[]>({ url: '/api/sensors', method: 'GET', params: nodeCode ? { nodeCode } : undefined });
+export function listSensors(nodeCode?: string, areaId?: string): Promise<ApiResponse<SensorEntity[]>> {
+  return request<SensorEntity[]>({
+    url: '/api/sensors',
+    method: 'GET',
+    params: { ...(nodeCode ? { nodeCode } : {}), ...(areaId ? { areaId } : {}) },
+  });
 }
 
 export function getSensor(id: string): Promise<ApiResponse<SensorEntity>> {

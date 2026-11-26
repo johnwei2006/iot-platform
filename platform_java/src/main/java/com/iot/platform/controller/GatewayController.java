@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,12 +32,12 @@ public class GatewayController {
     @Autowired
     private DataScopeRegistry dataScopeRegistry;
 
-    /** 设备列表：按 JWT 数据权限（ds.device）过滤。 */
+    /** 设备列表：按 JWT 数据权限（ds.device）过滤；可选 areaId 按安装区域过滤。 */
     @GetMapping
-    public ApiResponse<?> list(HttpServletRequest request) {
+    public ApiResponse<?> list(@RequestParam(required = false) String areaId, HttpServletRequest request) {
         ScopeContext ctx = scopeContext(request);
         List<Gateway> devices = deviceService.listByCriteria(
-                dataScopeRegistry.criteriaFor("device", ctx.subject, ctx.orgCode, ctx.dataScopes));
+                dataScopeRegistry.criteriaFor("device", ctx.subject, ctx.orgCode, ctx.dataScopes), areaId);
         devices.forEach(this::maskSecret);
         return ApiResponse.success(devices);
     }

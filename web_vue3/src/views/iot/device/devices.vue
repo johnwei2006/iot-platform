@@ -8,6 +8,8 @@ import {
   listControlDevices, listDeviceClass, listDeviceClassType,
   type DeviceClassDict, type DeviceClassTypeDict, type DeviceCtrlEntity,
 } from '@/api/iot/device';
+import AreaSelect from '@/components/AreaSelect.vue';
+import { listAreas } from '@/api/iot/area';
 
 const router = useRouter();
 const loading = ref(false);
@@ -28,10 +30,11 @@ const onlineFilter = ref('');
 
 const SWITCH_MODES: Record<number, string> = { 1: '开度', 2: '二开', 3: '三开' };
 const nodeByCode = computed(() => new Map(nodes.value.map((n) => [n.nodeCode, n])));
-const areaOptions = computed(() => [...new Set([
-  ...nodes.value.map((n) => n.address),
-  ...devices.value.map((d) => d.address),
-].filter(Boolean))] as string[]);
+const areaNameMap = ref(new Map<string, string>());
+
+function areaOf(row: DeviceCtrlEntity) {
+  return (row.areaId && areaNameMap.value.get(row.areaId)) || nodeOf(row.nodeCode)?.address || row.address || '--';
+}
 
 function nodeOf(code?: string) {
   return code ? nodeByCode.value.get(code) : undefined;
@@ -49,16 +52,12 @@ function switchMode(row: DeviceCtrlEntity) {
   return mode ? (SWITCH_MODES[mode] ?? String(mode)) : '--';
 }
 
-function areaOf(row: DeviceCtrlEntity) {
-  return nodeOf(row.nodeCode)?.address || row.address || '--';
-}
-
 const filtered = computed(() => devices.value.filter((d) => {
   const code = codeKey.value.trim().toLowerCase();
   const name = nameKey.value.trim().toLowerCase();
   return (!code || (d.deviceCode ?? '').toLowerCase().includes(code))
     && (!name || (d.deviceName ?? '').toLowerCase().includes(name))
-    && (!areaFilter.value || areaOf(d) === areaFilter.value)
+    && (!areaFilter.value || d.areaId === areaFilter.value)
     && (!classFilter.value || d.deviceClass === classFilter.value)
     && (!typeFilter.value || d.deviceClassType === typeFilter.value)
     && (connectFilter.value === '' || d.connectType === connectFilter.value)
@@ -78,13 +77,14 @@ function reset() {
 async function load() {
   loading.value = true;
   try {
-    const [deviceRes, nodeRes, classRes, typeRes] = await Promise.all([
-      listControlDevices(), listNodes(), listDeviceClass(), listDeviceClassType(),
+    const [deviceRes, nodeRes, classRes, typeRes, areaRes] = await Promise.all([
+      listControlDevices(), listNodes(), listDeviceClass(), listDeviceClassType(), listAreas(),
     ]);
     devices.value = deviceRes.data ?? [];
     nodes.value = nodeRes.data ?? [];
     classes.value = classRes.data ?? [];
     classTypes.value = typeRes.data ?? [];
+    areaNameMap.value = new Map((areaRes.data ?? []).map((a) => [a.id, a.areaName]));
   } catch (error) {
     ElMessage.error((error as Error).message || '控制设备列表加载失败');
   } finally {
@@ -120,9 +120,7 @@ onMounted(load);
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
-      <el-select v-model="areaFilter" class="area-select" clearable placeholder="设备所在区域" aria-label="所在区域">
-        <el-option v-for="area in areaOptions" :key="area" :label="area" :value="area" />
-      </el-select>
+      <AreaSelect v-model="areaFilter" class="area-select" placeholder="按关联区域筛选" />
       <el-button type="primary" @click="load">搜索</el-button>
       <el-button @click="reset">重置</el-button>
       <el-button link type="primary" @click="moreVisible = !moreVisible">

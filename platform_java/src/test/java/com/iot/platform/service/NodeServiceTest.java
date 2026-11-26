@@ -41,6 +41,7 @@ public class NodeServiceTest {
         patch.setNodeName("新名称");
         patch.setLongitude("120.15");
         patch.setLatitude("30.28");
+        patch.setAreaId("area-1");
         patch.setAddress("小日光温室配电柜");
 
         Node updated = nodeService.update("node-1", patch);
@@ -49,6 +50,7 @@ public class NodeServiceTest {
         assertEquals("120.15", updated.getLongitude());
         assertEquals("30.28", updated.getLatitude());
         assertEquals("小日光温室配电柜", updated.getAddress());
+        assertEquals("area-1", updated.getAreaId());
         assertEquals("creator-1", updated.getUpdateBy());
         assertNotNull(updated.getUpdateTime());
     }
