@@ -12,8 +12,6 @@ export interface ProductView {
 // 图标不在前端写死：由 sys_menu.icon 中同路径的菜单节点提供
 const IOT_STATIC: MenuNode[] = [
   { id: 'static-home', parentId: null, name: '首页', type: 'MENU', path: '/home' },
-  { id: 'static-devices', parentId: null, name: '设备管理', type: 'MENU', path: '/devices' },
-  { id: 'static-data', parentId: null, name: '数据查询', type: 'MENU', path: '/data' },
 ];
 
 const PRODUCT_PATHS: Record<string, string> = {
@@ -39,16 +37,11 @@ function menuIconByPath(nodes: MenuNode[], path: string): string | undefined {
   return undefined;
 }
 
-/** 静态入口只在动态菜单没有语义等价项时补充，图标取自 sys_menu.icon。 */
+/** 静态入口只在动态菜单未覆盖时补充，图标取自 sys_menu.icon。 */
 function mergeIotStatic(product: ProductView, menus: MenuNode[]): ProductView {
   const paths = new Set(product.menus.map((m) => m.path));
-  const names = product.menus.map((m) => m.name).join('|');
-  const equivalent: Record<string, string> = {
-    '/devices': '设备', '/data': '数据',
-  };
   const added = IOT_STATIC
-    .filter((m) => !paths.has(m.path || '')
-      && !(m.path && equivalent[m.path] && names.includes(equivalent[m.path])))
+    .filter((m) => !paths.has(m.path || ''))
     .map((m) => ({ ...m, icon: menuIconByPath(menus, m.path || '') }));
   return { ...product, menus: [...product.menus, ...added] };
 }

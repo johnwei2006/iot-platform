@@ -6,7 +6,7 @@ import { Search } from '@element-plus/icons-vue';
 import { listDevices } from '@/api/iot/gateway';
 import { listAreas } from '@/api/iot/area';
 import AreaSelect from '@/components/AreaSelect.vue';
-import GatewayRecords from '@/views/gateway/records.vue';
+import GatewayRecords from './records.vue';
 import type { Device } from '@/types';
 
 const router = useRouter();

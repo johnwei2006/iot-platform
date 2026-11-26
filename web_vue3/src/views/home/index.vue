@@ -30,10 +30,14 @@ onMounted(async () => {
 });
 
 const cards = [
-  { label: '设备总数', value: deviceCount, icon: Monitor, color: '#409eff' },
-  { label: '在线设备', value: onlineCount, icon: Connection, color: '#67c23a' },
+  { label: '设备总数', value: deviceCount, icon: Monitor, color: '#409eff', to: '/iot/gateways' },
+  { label: '在线设备', value: onlineCount, icon: Connection, color: '#67c23a', to: '/iot/gateways' },
   { label: '未处理告警', value: alarmOpen, icon: Warning, color: '#e6a23c' },
 ];
+
+function openCard(to?: string) {
+  if (to) router.push(to);
+}
 </script>
 
 <template>
@@ -41,7 +45,7 @@ const cards = [
     <h2>欢迎使用，{{ userStore.userInfo?.name || '用户' }}</h2>
     <el-row :gutter="16" class="stats">
       <el-col v-for="c in cards" :key="c.label" :span="8">
-        <el-card shadow="hover" @click="router.push('/devices')">
+        <el-card shadow="hover" :class="{ 'is-clickable': !!c.to }" @click="openCard(c.to)">
           <div class="stat">
             <el-icon :size="36" :color="c.color"><component :is="c.icon" /></el-icon>
             <div>
@@ -62,11 +66,11 @@ const cards = [
 .stats {
   margin-top: 16px;
 }
+.is-clickable :deep(.el-card__body) { cursor: pointer; }
 .stat {
   display: flex;
   align-items: center;
   gap: 16px;
-  cursor: pointer;
 }
 .stat-value {
   font-size: 28px;
