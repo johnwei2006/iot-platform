@@ -59,6 +59,12 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '控制设备详情', requiresAuth: true, roles: ['admin', 'user'] },
       },
       {
+        path: 'iot/sensor-data/groups',
+        name: 'SensorGroupManage',
+        component: () => import('@/views/iot/sensor-data/groups.vue'),
+        meta: { title: '传感器组合管理', requiresAuth: true, roles: ['admin', 'user'] },
+      },
+      {
         path: 'alarms',
         name: 'Alarms',
         component: () => import('@/views/alarms/index.vue'),

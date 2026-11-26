@@ -90,3 +90,13 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261126-09-create-sensor-group-table
+      author: iot-platform
+      comment: 传感器组合：图表/表格数据页的测点分组
+      changes:
+        - sqlFile:
+            path: sql/009-create-sensor-group-table.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true

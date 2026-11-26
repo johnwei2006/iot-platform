@@ -29,9 +29,47 @@ export interface SensorEntity {
 
 export interface SensorHistoryPoint {
   ts: number;
+  sensortype?: string;
+  stationcode?: string;
+  nodecode?: string;
   sensorcode?: string;
   senval: number;
   unit?: string;
+}
+
+/** 传感器组合：sensorCodes 为 JSON 数组字符串 */
+export interface SensorGroupEntity {
+  id: string;
+  orgCode?: string;
+  groupName: string;
+  sensorCodes?: string;
+  description?: string;
+  createBy?: string;
+  createTime?: string;
+  updateBy?: string;
+  updateTime?: string;
+  isDeleted?: number;
+  ownerUserId?: string;
+}
+
+export function listSensorGroups(): Promise<ApiResponse<SensorGroupEntity[]>> {
+  return request<SensorGroupEntity[]>({ url: '/api/sensor-groups', method: 'GET' });
+}
+
+export function getSensorGroup(id: string): Promise<ApiResponse<SensorGroupEntity>> {
+  return request<SensorGroupEntity>({ url: `/api/sensor-groups/${id}`, method: 'GET' });
+}
+
+export function createSensorGroup(data: Partial<SensorGroupEntity>): Promise<ApiResponse<SensorGroupEntity>> {
+  return request<SensorGroupEntity>({ url: '/api/sensor-groups', method: 'POST', data });
+}
+
+export function updateSensorGroup(id: string, data: Partial<SensorGroupEntity>): Promise<ApiResponse<SensorGroupEntity>> {
+  return request<SensorGroupEntity>({ url: `/api/sensor-groups/${id}`, method: 'PUT', data });
+}
+
+export function deleteSensorGroup(id: string): Promise<ApiResponse<null>> {
+  return request<null>({ url: `/api/sensor-groups/${id}`, method: 'DELETE' });
 }
 
 export interface SensorClassDict {

@@ -67,6 +67,7 @@ public class DataInitializer implements ApplicationRunner {
             initThreeLayerMenus();
             ensureStaticMenus();
             initGatewayMenu();
+            initSensorDataMenu();
             initProductCatalog();
             ensureMenuIcons();
             initSuperAdminRole();
@@ -154,6 +155,20 @@ public class DataInitializer implements ApplicationRunner {
         buttonOnce(gatewayMenu.getId(), "查看详情", "iot:gateway:view");
         buttonOnce(gatewayMenu.getId(), "编辑网关", "iot:gateway:edit");
         log.info("Bootstrap gateway menu created");
+    }
+
+    /** 传感器数据菜单：图表/表格两个 Tab，组合管理为页面内隐藏路由。 */
+    private void initSensorDataMenu() {
+        java.util.Optional<Menu> iotDir = menuRepository.findByPath("/iot");
+        if (!iotDir.isPresent()) {
+            return;
+        }
+        Menu dataMenu = menuRepository.findByPath("/iot/sensor-data").orElseGet(() ->
+                menu("传感器数据", Menu.TYPE_MENU, iotDir.get().getId(), "/iot/sensor-data",
+                        "iot/sensor-data/index", "iot:sensor_data:page", "75"));
+        buttonOnce(dataMenu.getId(), "导出数据", "iot:sensor_data:export");
+        buttonOnce(dataMenu.getId(), "组合管理", "iot:sensor_data:group");
+        log.info("Bootstrap sensor-data menu created");
     }
 
     /** 兼容旧数据：顶级 DIR 仍作为产品菜单树根节点保留。 */
@@ -261,6 +276,7 @@ public class DataInitializer implements ApplicationRunner {
         icons.put("/iot/messages", "ChatDotRound");
         icons.put("/iot/conflict-check", "MagicStick");
         icons.put("/iot/gateways", "Connection");
+        icons.put("/iot/sensor-data", "DataLine");
         icons.put("/farm", "Sunny");
         icons.put("/home", "House");
         icons.put("/alarms", "WarningFilled");
