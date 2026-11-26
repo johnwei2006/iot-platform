@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import { assignOrgProducts, fetchOrgProducts, fetchProducts } from '@/api/admin';
+import { assignOrgProducts, fetchOrgProducts } from '@/api/system/org';
+import { fetchProducts } from '@/api/system/product';
 import type { ProductRecord } from '@/types';
 
 const props = defineProps<{ modelValue: boolean; orgId: string; orgName: string }>();

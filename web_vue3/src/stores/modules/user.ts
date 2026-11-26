@@ -4,8 +4,8 @@ import {
   logout as logoutApi,
   ssoCentralLogout,
   exchangeSsoTicket as exchangeSsoTicketApi,
-} from '@/api/auth';
-import { fetchMe } from '@/api/admin';
+} from '@/api/system/auth';
+import { fetchMe } from '@/api/system/me';
 import type { LoginPayload, MeResponse, MenuNode, ProductRecord, TokenResponse, UserInfo } from '@/types';
 import { tokens } from '@/utils/token';
 import { storage } from '@/utils/storage';

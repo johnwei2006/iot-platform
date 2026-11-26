@@ -3,9 +3,10 @@ import { onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import {
-  bindProductMenus, createProduct, deleteProduct, fetchMenuTree,
+  bindProductMenus, createProduct, deleteProduct,
   fetchProductMenus, fetchProducts, updateProduct,
-} from '@/api/admin';
+} from '@/api/system/product';
+import { fetchMenuTree } from '@/api/system/menu';
 import type { MenuNode, ProductRecord } from '@/types';
 
 const products = ref<ProductRecord[]>([]);

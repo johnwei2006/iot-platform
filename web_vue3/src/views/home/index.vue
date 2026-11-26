@@ -2,8 +2,8 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/modules/user';
-import { listDevices } from '@/api/devices';
-import { listAlarms } from '@/api/alarms';
+import { listDevices } from '@/api/iot/gateway';
+import { listAlarms } from '@/api/iot/alarms';
 import { Monitor, Warning, Connection } from '@element-plus/icons-vue';
 
 const userStore = useUserStore();

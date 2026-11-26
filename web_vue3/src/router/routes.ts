@@ -35,6 +35,30 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '设备详情', requiresAuth: true, roles: ['admin', 'user'] },
       },
       {
+        path: 'iot/gateways/:id',
+        name: 'GatewayDetail',
+        component: () => import('@/views/iot/gateway/gateway-detail.vue'),
+        meta: { title: '网关详情', requiresAuth: true, roles: ['admin', 'user'] },
+      },
+      {
+        path: 'iot/nodes/:id',
+        name: 'NodeDetail',
+        component: () => import('@/views/iot/node/node-detail.vue'),
+        meta: { title: '节点详情', requiresAuth: true, roles: ['admin', 'user'] },
+      },
+      {
+        path: 'iot/sensors/:id',
+        name: 'SensorDetail',
+        component: () => import('@/views/iot/sensor/sensor-detail.vue'),
+        meta: { title: '传感器详情', requiresAuth: true, roles: ['admin', 'user'] },
+      },
+      {
+        path: 'iot/control-devices/:id',
+        name: 'ControlDeviceDetail',
+        component: () => import('@/views/iot/device/device-detail.vue'),
+        meta: { title: '控制设备详情', requiresAuth: true, roles: ['admin', 'user'] },
+      },
+      {
         path: 'alarms',
         name: 'Alarms',
         component: () => import('@/views/alarms/index.vue'),

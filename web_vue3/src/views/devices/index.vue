@@ -2,7 +2,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { listDevices, createDevice, updateDevice, deleteDevice, sendDownlink, updateDeviceSecret } from '@/api/devices';
+import { listDevices, createDevice, updateDevice, deleteDevice, sendDownlink, updateDeviceSecret } from '@/api/iot/gateway';
 import type { Device, DownlinkPayload } from '@/types';
 
 const router = useRouter();

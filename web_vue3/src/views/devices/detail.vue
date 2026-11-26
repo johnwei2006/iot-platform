@@ -2,8 +2,8 @@
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { getDevice, updateDevice } from '@/api/devices';
-import { latestData, queryData } from '@/api/data';
+import { getDevice, updateDevice } from '@/api/iot/gateway';
+import { latestData, queryData } from '@/api/iot/gateway';
 import type { Device, DataRecord } from '@/types';
 
 const route = useRoute();

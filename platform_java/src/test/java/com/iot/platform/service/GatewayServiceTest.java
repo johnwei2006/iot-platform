@@ -71,6 +71,44 @@ public class GatewayServiceTest {
     }
 
     @Test
+    public void updateCopiesManagementFieldsButKeepsImmutableFields() {
+        Gateway existing = new Gateway();
+        existing.setId("x");
+        existing.setDeviceId("D1");
+        existing.setAuthSecret("SECRET123456");
+        existing.setOwnerUserId("creator-1");
+        existing.setStatus("OFFLINE");
+        when(deviceRepository.findById("x")).thenReturn(Optional.of(existing));
+        when(deviceRepository.save(any(Gateway.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Gateway patch = new Gateway();
+        patch.setDeviceId("HACKED");
+        patch.setAuthSecret(GatewayService.SECRET_MASK);
+        patch.setOwnerUserId("other-user");
+        patch.setOrgCode("0001");
+        patch.setAddress("小日光温室配电柜");
+        patch.setLongitude("120.15");
+        patch.setLatitude("30.28");
+        patch.setGatewayType(2);
+        patch.setFirmwareVersion("1.2.3");
+        patch.setPic("/image/gateway.png");
+
+        Gateway updated = deviceService.update("x", patch);
+
+        assertEquals("0001", updated.getOrgCode());
+        assertEquals("小日光温室配电柜", updated.getAddress());
+        assertEquals("120.15", updated.getLongitude());
+        assertEquals("30.28", updated.getLatitude());
+        assertEquals(2, updated.getGatewayType());
+        assertEquals("1.2.3", updated.getFirmwareVersion());
+        assertEquals("/image/gateway.png", updated.getPic());
+        assertEquals("D1", updated.getDeviceId());
+        assertEquals("SECRET123456", updated.getAuthSecret());
+        assertEquals("creator-1", updated.getOwnerUserId());
+        assertNotNull(updated.getUpdatedAt());
+    }
+
+    @Test
     public void markOnlineCreatesWhenAbsent() {
         when(deviceRepository.findByDeviceId("D9")).thenReturn(Optional.empty());
         when(deviceRepository.save(any(Gateway.class))).thenAnswer(inv -> inv.getArgument(0));

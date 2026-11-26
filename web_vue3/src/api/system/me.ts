@@ -1,6 +1,12 @@
-import request from './request';
-import type { ApiResponse } from '@/types';
+import request from '../request';
+import type { ApiResponse, MeResponse } from '@/types';
 import type { KbMessage, KbTask, NotifyPref } from '@/types/kb';
+import { adminHttp, unwrap } from './client';
+
+/** 当前管理员上下文：动态菜单/按钮权限/数据权限 */
+export function fetchMe(): Promise<MeResponse> {
+  return unwrap<MeResponse>(adminHttp.get('/api/admin/me'));
+}
 
 /* ---------- 站内消息 ---------- */
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listDevices } from '@/api/devices';
-import { checkRule, createRule, deleteRule, listRules, toggleRule, updateRule } from '@/api/control';
+import { listDevices } from '@/api/iot/gateway';
+import { checkRule, createRule, deleteRule, listRules, toggleRule, updateRule } from '@/api/iot/control';
 import type { ConflictResult, ControlRule, DeviceEntry } from '@/types/kb';
 import type { Device } from '@/types';
 

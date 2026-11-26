@@ -7,7 +7,7 @@ import axios, {
 import { ElMessage } from 'element-plus';
 import type { ApiResponse } from '@/types';
 import { tokens } from '@/utils/token';
-import { refresh as refreshTokenApi } from '@/api/auth';
+import { refresh as refreshTokenApi } from '@/api/system/auth';
 
 /** 带重试标记的请求配置：避免刷新失败后无限重试。 */
 interface RetryableConfig extends InternalAxiosRequestConfig {

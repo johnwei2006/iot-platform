@@ -92,6 +92,27 @@ public class GatewayService {
         if (src.getStatus() != null) {
             d.setStatus(src.getStatus());
         }
+        if (src.getOrgCode() != null) {
+            d.setOrgCode(src.getOrgCode());
+        }
+        if (src.getAddress() != null) {
+            d.setAddress(src.getAddress());
+        }
+        if (src.getLongitude() != null) {
+            d.setLongitude(src.getLongitude());
+        }
+        if (src.getLatitude() != null) {
+            d.setLatitude(src.getLatitude());
+        }
+        if (src.getGatewayType() != null) {
+            d.setGatewayType(src.getGatewayType());
+        }
+        if (src.getFirmwareVersion() != null) {
+            d.setFirmwareVersion(src.getFirmwareVersion());
+        }
+        if (src.getPic() != null) {
+            d.setPic(src.getPic());
+        }
         // 掩码值或空值不覆盖已有密钥；显式传入新密钥时校验后更新
         if (src.getAuthSecret() != null && !SECRET_MASK.equals(src.getAuthSecret())) {
             validateSecret(src.getAuthSecret());

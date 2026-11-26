@@ -66,6 +66,7 @@ public class DataInitializer implements ApplicationRunner {
             initIotMenus();
             initThreeLayerMenus();
             ensureStaticMenus();
+            initGatewayMenu();
             initProductCatalog();
             ensureMenuIcons();
             initSuperAdminRole();
@@ -76,17 +77,12 @@ public class DataInitializer implements ApplicationRunner {
         }
     }
 
-    /** 科百云田业务菜单（看数据/设备控制/消息中心/冲突校验），幂等：存在 /iot 即跳过。 */
+    /** 科百云田业务菜单（告警中心/设备控制/消息中心/冲突校验），幂等：存在 /iot 即跳过。 */
     private void initIotMenus() {
         if (menuRepository.findByPath("/iot").isPresent()) {
             return;
         }
         Menu iotDir = menu("物联网", Menu.TYPE_DIR, null, "/iot", null, null, "10");
-        // 看数据
-        Menu dataMenu = menu("看数据", Menu.TYPE_MENU, iotDir.getId(), "/iot/data",
-                "iot/data/overview", "iot:data:page", "10");
-        button(dataMenu.getId(), "历史曲线", "iot:data:history");
-        button(dataMenu.getId(), "阈值设置", "iot:threshold:set");
         // 告警中心
         Menu alarmMenu = menu("告警中心", Menu.TYPE_MENU, iotDir.getId(), "/iot/alarm",
                 "iot/alarm/index", "iot:alarm:page", "20");
@@ -128,22 +124,36 @@ public class DataInitializer implements ApplicationRunner {
             return;
         }
         Menu nodeMenu = menu("节点管理", Menu.TYPE_MENU, parentId, "/iot/nodes",
-                "iot/three/nodes", "iot:node:page", "72");
+                "iot/node/nodes", "iot:node:page", "72");
         buttonOnce(nodeMenu.getId(), "节点新增", "iot:node:create");
         buttonOnce(nodeMenu.getId(), "节点编辑", "iot:node:edit");
         buttonOnce(nodeMenu.getId(), "节点删除", "iot:node:delete");
         Menu sensorMenu = menu("传感器管理", Menu.TYPE_MENU, parentId, "/iot/sensors",
-                "iot/three/sensors", "iot:sensor:page", "73");
+                "iot/sensor/sensors", "iot:sensor:page", "73");
         buttonOnce(sensorMenu.getId(), "传感器新增", "iot:sensor:create");
         buttonOnce(sensorMenu.getId(), "传感器编辑", "iot:sensor:edit");
         buttonOnce(sensorMenu.getId(), "传感器删除", "iot:sensor:delete");
         Menu deviceMenu = menu("控制设备管理", Menu.TYPE_MENU, parentId, "/iot/control-devices",
-                "iot/three/devices", "iot:device_ctrl:page", "74");
+                "iot/device/devices", "iot:device_ctrl:page", "74");
         buttonOnce(deviceMenu.getId(), "设备新增", "iot:device_ctrl:create");
         buttonOnce(deviceMenu.getId(), "设备编辑", "iot:device_ctrl:edit");
         buttonOnce(deviceMenu.getId(), "设备删除", "iot:device_ctrl:delete");
         buttonOnce(deviceMenu.getId(), "设备下发", "iot:device_ctrl:issue");
         log.info("Bootstrap three-layer menus created");
+    }
+
+    /** 网关管理菜单（列表 + 详情静态路由），幂等：按 path 存在即跳过菜单，按钮按 perm 补建。 */
+    private void initGatewayMenu() {
+        java.util.Optional<Menu> iotDir = menuRepository.findByPath("/iot");
+        if (!iotDir.isPresent()) {
+            return;
+        }
+        Menu gatewayMenu = menuRepository.findByPath("/iot/gateways").orElseGet(() ->
+                menu("网关管理", Menu.TYPE_MENU, iotDir.get().getId(), "/iot/gateways",
+                        "iot/gateway/gateways", "iot:gateway:page", "71"));
+        buttonOnce(gatewayMenu.getId(), "查看详情", "iot:gateway:view");
+        buttonOnce(gatewayMenu.getId(), "编辑网关", "iot:gateway:edit");
+        log.info("Bootstrap gateway menu created");
     }
 
     /** 兼容旧数据：顶级 DIR 仍作为产品菜单树根节点保留。 */
@@ -214,7 +224,6 @@ public class DataInitializer implements ApplicationRunner {
             return;
         }
         staticMenu(iot.get().getId(), "首页", "/home", "House", "5");
-        staticMenu(iot.get().getId(), "设备管理", "/devices", "Monitor", "15");
         staticMenu(iot.get().getId(), "告警看板", "/alarms", "WarningFilled", "25");
         staticMenu(iot.get().getId(), "网关认证记录", "/gateway-records", "Key", "80");
         staticMenu(iot.get().getId(), "数据查询", "/data", "DataLine", "90");
@@ -245,16 +254,15 @@ public class DataInitializer implements ApplicationRunner {
         icons.put("/system/product", "Grid");
         icons.put("/screen", "Monitor");
         icons.put("/iot", "Monitor");
-        icons.put("/iot/data", "DataLine");
         icons.put("/iot/alarm", "WarningFilled");
         icons.put("/iot/control", "Cpu");
         icons.put("/iot/control/rules", "Timer");
         icons.put("/iot/control/logs", "Document");
         icons.put("/iot/messages", "ChatDotRound");
         icons.put("/iot/conflict-check", "MagicStick");
+        icons.put("/iot/gateways", "Connection");
         icons.put("/farm", "Sunny");
         icons.put("/home", "House");
-        icons.put("/devices", "Monitor");
         icons.put("/alarms", "WarningFilled");
         icons.put("/gateway-records", "Key");
         icons.put("/data", "DataLine");

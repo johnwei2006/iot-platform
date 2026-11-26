@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { queryData } from '@/api/data';
+import { queryData } from '@/api/iot/gateway';
 import type { DataRecord } from '@/types';
 
 const deviceId = ref('');

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { fetchReconnectRecords, fetchTokenRequests } from '@/api/gatewayRecords';
+import { fetchReconnectRecords, fetchTokenRequests } from '@/api/iot/gatewayRecords';
 import type { GatewayReconnectRecord, GatewayTokenRequestRecord } from '@/types';
 
 const activeTab = ref<'reconnect' | 'token'>('reconnect');

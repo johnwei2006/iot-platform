@@ -98,7 +98,9 @@ public class DeviceCtrlService {
         if (src.getPic() != null) d.setPic(src.getPic());
         if (src.getChannel() != null) d.setChannel(src.getChannel());
         if (src.getConnectType() != null) d.setConnectType(src.getConnectType());
-        d.setUpdateBy(src.getUpdateBy());
+        if (src.getUpdateBy() != null && !src.getUpdateBy().trim().isEmpty()) {
+            d.setUpdateBy(src.getUpdateBy());
+        }
         d.setUpdateTime(new Date());
         return deviceCtrlRepository.save(d);
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listAlarms, resolveAlarm } from '@/api/alarms';
+import { listAlarms, resolveAlarm } from '@/api/iot/alarms';
 import type { Alarm } from '@/types';
 
 const loading = ref(false);

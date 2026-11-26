@@ -2,12 +2,20 @@ package com.iot.platform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.iot.platform.config.TdEngineConfig;
+import com.iot.platform.config.TdEngineProperties;
 import com.iot.platform.model.Sensor;
+import com.iot.platform.model.SensorReading;
 import com.iot.platform.repository.SensorRepository;
 import com.iot.platform.security.datascope.DataScopeQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -16,8 +24,18 @@ import java.util.Optional;
 @Service
 public class SensorService {
 
+    private static final Logger log = LoggerFactory.getLogger(SensorService.class);
+    private static final int HISTORY_LIMIT = 2000;
+
     @Autowired
     private SensorRepository sensorRepository;
+
+    @Autowired(required = false)
+    @Qualifier("tdEngineJdbcTemplate")
+    private JdbcTemplate tdEngineJdbcTemplate;
+
+    @Autowired(required = false)
+    private TdEngineProperties tdEngineProperties;
 
     public List<Sensor> list() {
         return sensorRepository.findAll();
@@ -92,9 +110,34 @@ public class SensorService {
         if (src.getPic() != null) s.setPic(src.getPic());
         if (src.getChannel() != null) s.setChannel(src.getChannel());
         if (src.getCommandRead() != null) s.setCommandRead(src.getCommandRead());
-        s.setUpdateBy(src.getUpdateBy());
+        if (src.getUpdateBy() != null && !src.getUpdateBy().trim().isEmpty()) {
+            s.setUpdateBy(src.getUpdateBy());
+        }
         s.setUpdateTime(new Date());
         return sensorRepository.save(s);
+    }
+
+    /**
+     * 按传感器编码查询时序曲线。TDengine 不可用时返回空列表，避免影响业务页面。
+     */
+    public List<SensorReading> history(String sensorCode, long from, long to) {
+        if (tdEngineJdbcTemplate == null || tdEngineProperties == null
+                || sensorCode == null || sensorCode.trim().isEmpty() || from > to) {
+            return List.of();
+        }
+        String table = TdEngineConfig.sanitizeIdentifier(tdEngineProperties.getDatabase())
+                + "." + TdEngineConfig.sanitizeIdentifier(tdEngineProperties.getStable());
+        String sql = "SELECT ts, sensorvalue FROM " + table
+                + " WHERE sensorcode = ? AND ts >= ? AND ts <= ? ORDER BY ts ASC LIMIT " + HISTORY_LIMIT;
+        try {
+            return tdEngineJdbcTemplate.query(sql,
+                    (rs, rowNum) -> new SensorReading(rs.getLong(1), null, null, null,
+                            sensorCode, null, rs.getDouble(2)),
+                    sensorCode, new Timestamp(from), new Timestamp(to));
+        } catch (RuntimeException e) {
+            log.warn("TDengine history query failed: sensorCode={} message={}", sensorCode, e.getMessage());
+            return List.of();
+        }
     }
 
     /** 上报状态维护：最后上报时间 + 状态。 */

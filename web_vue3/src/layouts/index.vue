@@ -6,7 +6,7 @@ import {
 } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/modules/user';
 import { useThemeStore, type FontSize, type ThemeMode } from '@/stores/modules/theme';
-import { unreadCount } from '@/api/kb';
+import { unreadCount } from '@/api/system/me';
 import { buildProducts, productOfPath, type ProductView } from '@/utils/productMenus';
 import type { MenuNode } from '@/types';
 

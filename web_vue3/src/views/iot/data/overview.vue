@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listDevices } from '@/api/devices';
-import { listRealtime, listThresholds } from '@/api/realtime';
-import { queryData } from '@/api/data';
-import { listAlarms } from '@/api/alarms';
+import { listDevices } from '@/api/iot/gateway';
+import { listRealtime, listThresholds, queryData } from '@/api/iot/gateway';
+import { listAlarms } from '@/api/iot/alarms';
 import KbLineChart from '@/components/KbLineChart.vue';
 import type { Device } from '@/types';
 

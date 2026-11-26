@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listDevices } from '@/api/devices';
-import { sendCommand } from '@/api/control';
+import { listDevices } from '@/api/iot/gateway';
+import { sendCommand } from '@/api/iot/control';
 import type { Device } from '@/types';
 import type { DeviceEntry } from '@/types/kb';
 

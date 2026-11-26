@@ -1,4 +1,4 @@
-import request from './request';
+import request from '../request';
 import type { ApiResponse, Alarm } from '@/types';
 
 /** 告警列表，可选按状态过滤（OPEN/RESOLVED） */

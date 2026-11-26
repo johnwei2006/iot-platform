@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listControlLogs } from '@/api/control';
+import { listControlLogs } from '@/api/iot/control';
 import type { ControlLog } from '@/types/kb';
 
 const loading = ref(false);

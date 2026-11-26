@@ -59,6 +59,25 @@ public class SensorController {
         return ApiResponse.fail(ResultCode.NOT_FOUND);
     }
 
+    /** 传感器历史曲线：按 id 查库并做数据权限校验，时间范围缺省为最近 24 小时。 */
+    @GetMapping("/{id}/history")
+    public ApiResponse<?> history(@PathVariable String id,
+                                  @RequestParam(required = false) Long from,
+                                  @RequestParam(required = false) Long to,
+                                  HttpServletRequest request) {
+        Optional<Sensor> sensor = sensorService.get(id);
+        if (!sensor.isPresent()) {
+            return ApiResponse.fail(ResultCode.NOT_FOUND);
+        }
+        ScopeContext ctx = scopeContext(request);
+        if (!dataScopeRegistry.canRead("sensor", sensor.get(), ctx.subject, ctx.orgCode, ctx.dataScopes)) {
+            return ApiResponse.fail(ResultCode.NOT_FOUND);
+        }
+        long end = to == null ? System.currentTimeMillis() : to;
+        long start = from == null ? end - 24L * 60 * 60 * 1000 : from;
+        return ApiResponse.success(sensorService.history(sensor.get().getSensorCode(), start, end));
+    }
+
     /** 新建传感器，仅 ADMIN。 */
     @RequireRoles({"ADMIN"})
     @PostMapping

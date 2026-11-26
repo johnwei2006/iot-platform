@@ -2,7 +2,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import { createOrg, createOrgWithAdmin, deleteOrg, fetchOrgList, fetchOrgTree, updateOrg } from '@/api/admin';
+import { createOrg, createOrgWithAdmin, deleteOrg, fetchOrgList, fetchOrgTree, updateOrg } from '@/api/system/org';
 import type { OrgNode, OrgRecord } from '@/types';
 import ProductAssignDialog from './ProductAssignDialog.vue';
 

@@ -131,7 +131,7 @@ export interface MeResponse {
   dataScopes: Record<string, string>;
 }
 
-/** 设备 */
+/** 设备 / 网关（对应 iot_gateway） */
 export interface Device {
   id?: string;
   deviceId: string;
@@ -141,6 +141,15 @@ export interface Device {
   /** 网关认证预共享密钥（查询返回为掩码 ******，仅录入/更新时传明文） */
   authSecret?: string;
   status?: string;
+  orgCode?: string;
+  ownerUserId?: string;
+  address?: string;
+  longitude?: string;
+  latitude?: string;
+  /** 网关类型：1-4G网关，2-5G网关 */
+  gatewayType?: number;
+  firmwareVersion?: string;
+  pic?: string;
   lastSeen?: string;
   createdAt?: string;
   updatedAt?: string;

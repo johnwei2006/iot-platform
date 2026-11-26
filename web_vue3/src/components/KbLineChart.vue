@@ -9,6 +9,7 @@ const props = defineProps<{
   points: { label: string; value: number }[];
   unit?: string;
   height?: number;
+  area?: boolean;
 }>();
 
 const W = 640;
@@ -33,6 +34,19 @@ const x = (i: number) => PAD_L + (i * (W - PAD_L - PAD_R)) / Math.max(props.poin
 const path = computed(() =>
   props.points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')
 );
+
+const areaPath = computed(() => {
+  if (!props.points.length) return '';
+  const last = props.points.length - 1;
+  return `${path.value} L${x(last).toFixed(1)},${H.value - PAD_B} L${x(0).toFixed(1)},${H.value - PAD_B} Z`;
+});
+
+const tickIndexes = computed(() => {
+  const n = props.points.length;
+  if (!n) return [];
+  const indexes = new Set([0, Math.round(n / 4), Math.round(n / 2), Math.round(n * 3 / 4), n - 1]);
+  return [...indexes].filter((i) => i >= 0 && i < n);
+});
 
 const gridLines = computed(() => {
   const lines: { v: number; yy: number }[] = [];
@@ -63,6 +77,7 @@ function onClick(evt: MouseEvent) {
       <text :x="4" :y="g.yy + 4" class="kb-chart__tick">{{ Number(g.v.toFixed(1)) }}</text>
       <line :x1="PAD_L" :x2="W - PAD_R" :y1="g.yy" :y2="g.yy" class="kb-chart__grid" />
     </g>
+    <path v-if="area" :d="areaPath" class="kb-chart__area" />
     <path :d="path" class="kb-chart__line" />
     <circle
       v-for="(p, i) in points"
@@ -72,9 +87,8 @@ function onClick(evt: MouseEvent) {
       r="4"
       class="kb-chart__dot"
     />
-    <text :x="PAD_L" :y="H - 6" class="kb-chart__tick">{{ points[0]?.label }}</text>
-    <text :x="W - PAD_R" :y="H - 6" text-anchor="end" class="kb-chart__tick">
-      {{ points[points.length - 1]?.label }}
+    <text v-for="i in tickIndexes" :key="i" :x="x(i)" :y="H - 6" text-anchor="middle" class="kb-chart__tick">
+      {{ points[i].label }}
     </text>
     <text v-if="unit" :x="W - PAD_R" :y="14" text-anchor="end" class="kb-chart__tick">{{ unit }}</text>
   </svg>
@@ -90,9 +104,13 @@ function onClick(evt: MouseEvent) {
   stroke: var(--kb-line, #d8e2d9);
   stroke-width: 1;
 }
+.kb-chart__area {
+  fill: rgba(64, 158, 255, 0.18);
+  stroke: none;
+}
 .kb-chart__line {
   fill: none;
-  stroke: var(--kb-brand-bright, #35a476);
+  stroke: #409eff;
   stroke-width: 2.4;
   stroke-linejoin: round;
   stroke-linecap: round;

@@ -94,7 +94,9 @@ public class NodeService {
         if (src.getBatteryVoltage() != null) n.setBatteryVoltage(src.getBatteryVoltage());
         if (src.getReportInterval() != null) n.setReportInterval(src.getReportInterval());
         if (src.getPic() != null) n.setPic(src.getPic());
-        n.setUpdateBy(src.getUpdateBy());
+        if (src.getUpdateBy() != null && !src.getUpdateBy().trim().isEmpty()) {
+            n.setUpdateBy(src.getUpdateBy());
+        }
         n.setUpdateTime(new Date());
         return nodeRepository.save(n);
     }

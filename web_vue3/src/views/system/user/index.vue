@@ -6,11 +6,11 @@ import {
   assignAdminUser,
   createAdminUser,
   fetchAdminUsers,
-  fetchOrgTree,
-  fetchRoles,
   resetAdminUserPassword,
   updateAdminUser,
-} from '@/api/admin';
+} from '@/api/system/user';
+import { fetchOrgTree } from '@/api/system/org';
+import { fetchRoles } from '@/api/system/role';
 import type { AdminUser, OrgNode, RoleView } from '@/types';
 
 const users = ref<AdminUser[]>([]);

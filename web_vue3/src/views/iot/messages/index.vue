@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { completeTask, listMessages, listTasks, markRead, unreadCount, getNotifyPref, updateNotifyPref } from '@/api/kb';
+import { completeTask, listMessages, listTasks, markRead, unreadCount, getNotifyPref, updateNotifyPref } from '@/api/system/me';
 import type { KbMessage, KbTask } from '@/types/kb';
 
 const loading = ref(false);

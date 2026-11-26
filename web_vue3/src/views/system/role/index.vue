@@ -2,7 +2,8 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import { createRole, deleteRole, fetchMenuTree, fetchRoles, fetchScopeEntities, updateRole } from '@/api/admin';
+import { createRole, deleteRole, fetchRoles, fetchScopeEntities, updateRole } from '@/api/system/role';
+import { fetchMenuTree } from '@/api/system/menu';
 import { useUserStore } from '@/stores/modules/user';
 import type { MenuNode, RoleView, ScopeEntity } from '@/types';
 

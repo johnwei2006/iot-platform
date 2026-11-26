@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listAlarms } from '@/api/alarms';
-import { listControlLogs } from '@/api/control';
+import { listAlarms } from '@/api/iot/alarms';
+import { listControlLogs } from '@/api/iot/control';
 import type { ControlLog } from '@/types/kb';
 
 interface AlarmRow {
