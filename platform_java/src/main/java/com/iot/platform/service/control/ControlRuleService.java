@@ -93,7 +93,7 @@ public class ControlRuleService {
         }
         String action = rule.getAction() == null ? "ON" : rule.getAction();
         List<ControlLog> logs = new ArrayList<>();
-        for (DeviceEntry entry : parseDevicesJson(rule.getDevices())) {
+        for (GatewayEntry entry : parseDevicesJson(rule.getDevices())) {
             logs.add(executionService.executeDevice(entry, action, null, rule.getId(), rule.getName(),
                     source, rule.getPlotId(), rule.getOrgCode()));
         }
@@ -109,9 +109,9 @@ public class ControlRuleService {
         ruleRepository.deleteById(id);
     }
 
-    public List<DeviceEntry> parseDevicesJson(String json) {
+    public List<GatewayEntry> parseDevicesJson(String json) {
         try {
-            return objectMapper.readValue(json, new TypeReference<List<DeviceEntry>>() { });
+            return objectMapper.readValue(json, new TypeReference<List<GatewayEntry>>() { });
         } catch (Exception e) {
             return List.of();
         }

@@ -1,7 +1,7 @@
 package com.iot.platform.service.uplink;
 
 import com.iot.platform.mq.UplinkMessage;
-import com.iot.platform.realtime.DeviceRealtimeStatusService;
+import com.iot.platform.realtime.GatewayRealtimeStatusService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
@@ -17,10 +17,10 @@ import org.springframework.stereotype.Component;
 @Order(5)
 public class RealtimeStatusHandler implements UplinkHandler {
 
-    private final DeviceRealtimeStatusService statusService;
+    private final GatewayRealtimeStatusService statusService;
 
     @Autowired
-    public RealtimeStatusHandler(ObjectProvider<DeviceRealtimeStatusService> provider) {
+    public RealtimeStatusHandler(ObjectProvider<GatewayRealtimeStatusService> provider) {
         this.statusService = provider == null ? null : provider.getIfAvailable();
     }
 

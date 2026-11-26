@@ -1,7 +1,7 @@
 package com.iot.platform.service;
 
-import com.iot.platform.model.Device;
-import com.iot.platform.repository.DeviceRepository;
+import com.iot.platform.model.Gateway;
+import com.iot.platform.repository.GatewayRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
@@ -23,21 +23,21 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class DeviceServiceTest {
+public class GatewayServiceTest {
 
     @Mock
-    private DeviceRepository deviceRepository;
+    private GatewayRepository deviceRepository;
 
     @InjectMocks
-    private DeviceService deviceService;
+    private GatewayService deviceService;
 
     @Test
     public void createSetsDefaultStatusAndTimestamps() {
-        Device d = new Device();
+        Gateway d = new Gateway();
         d.setDeviceId("D1");
-        when(deviceRepository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(deviceRepository.save(any(Gateway.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Device saved = deviceService.create(d, "admin-1", "0001");
+        Gateway saved = deviceService.create(d, "admin-1", "0001");
 
         assertEquals("OFFLINE", saved.getStatus());
         assertEquals("admin-1", saved.getOwnerUserId());
@@ -49,22 +49,22 @@ public class DeviceServiceTest {
     @Test
     public void updateThrowsWhenNotFound() {
         when(deviceRepository.findById("missing")).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> deviceService.update("missing", new Device()));
+        assertThrows(RuntimeException.class, () -> deviceService.update("missing", new Gateway()));
     }
 
     @Test
     public void updateCopiesProvidedFields() {
-        Device existing = new Device();
+        Gateway existing = new Gateway();
         existing.setId("x");
         existing.setDeviceId("D1");
         existing.setStatus("OFFLINE");
         when(deviceRepository.findById("x")).thenReturn(Optional.of(existing));
-        when(deviceRepository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(deviceRepository.save(any(Gateway.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Device patch = new Device();
+        Gateway patch = new Gateway();
         patch.setName("冷链车A");
         patch.setStatus("ONLINE");
-        Device updated = deviceService.update("x", patch);
+        Gateway updated = deviceService.update("x", patch);
 
         assertEquals("冷链车A", updated.getName());
         assertEquals("ONLINE", updated.getStatus());
@@ -73,7 +73,7 @@ public class DeviceServiceTest {
     @Test
     public void markOnlineCreatesWhenAbsent() {
         when(deviceRepository.findByDeviceId("D9")).thenReturn(Optional.empty());
-        when(deviceRepository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(deviceRepository.save(any(Gateway.class))).thenAnswer(inv -> inv.getArgument(0));
 
         deviceService.markOnline("D9");
 
@@ -83,11 +83,11 @@ public class DeviceServiceTest {
 
     @Test
     public void markOnlineUpdatesWhenPresent() {
-        Device d = new Device();
+        Gateway d = new Gateway();
         d.setDeviceId("D9");
         d.setStatus("OFFLINE");
         when(deviceRepository.findByDeviceId("D9")).thenReturn(Optional.of(d));
-        when(deviceRepository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(deviceRepository.save(any(Gateway.class))).thenAnswer(inv -> inv.getArgument(0));
 
         deviceService.markOnline("D9");
 

@@ -1,6 +1,6 @@
 package com.iot.platform.security.datascope;
 
-import com.iot.platform.model.Device;
+import com.iot.platform.model.Gateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,11 +17,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class DataScopeTest {
 
     private DataScopeRegistry registry;
-    private DeviceDataScopeRule deviceRule;
+    private GatewayDataScopeRule deviceRule;
 
     @BeforeEach
     public void setUp() {
-        deviceRule = new DeviceDataScopeRule();
+        deviceRule = new GatewayDataScopeRule();
         registry = new DataScopeRegistry(Collections.<DataScopeRule>singletonList(deviceRule));
     }
 
@@ -86,8 +86,8 @@ public class DataScopeTest {
         }
     }
 
-    private Device device(String orgCode, String owner) {
-        Device device = new Device();
+    private Gateway device(String orgCode, String owner) {
+        Gateway device = new Gateway();
         device.setOrgCode(orgCode);
         device.setOwnerUserId(owner);
         return device;

@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.iot.platform.model.Alarm;
 import com.iot.platform.model.DataRecord;
-import com.iot.platform.model.Device;
+import com.iot.platform.model.Gateway;
 import com.iot.platform.mq.UplinkMessage;
 import com.iot.platform.repository.AlarmRepository;
 import com.iot.platform.repository.DataRecordRepository;
-import com.iot.platform.repository.DeviceRepository;
+import com.iot.platform.repository.GatewayRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
@@ -62,13 +62,13 @@ public class PrimaryHandlersTest {
 
     @Test
     public void deviceOnlineCreatesNewDevice() {
-        DeviceRepository repository = mock(DeviceRepository.class);
-        when(repository.findByDeviceId("D2")).thenReturn(Optional.<Device>empty());
-        when(repository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+        GatewayRepository repository = mock(GatewayRepository.class);
+        when(repository.findByDeviceId("D2")).thenReturn(Optional.<Gateway>empty());
+        when(repository.save(any(Gateway.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        new DeviceOnlineHandler(repository).handle(uplink("D2", 1));
+        new GatewayOnlineHandler(repository).handle(uplink("D2", 1));
 
-        verify(repository).save(ArgumentMatchers.argThat((Device d) ->
+        verify(repository).save(ArgumentMatchers.argThat((Gateway d) ->
                 "D2".equals(d.getDeviceId()) && "ONLINE".equals(d.getStatus())
                         && d.getCreatedAt() != null && d.getLastSeen() != null
                         && d.getUpdatedAt() != null));
@@ -76,16 +76,16 @@ public class PrimaryHandlersTest {
 
     @Test
     public void deviceOnlineUpdatesExistingDevice() {
-        DeviceRepository repository = mock(DeviceRepository.class);
-        Device existing = new Device();
+        GatewayRepository repository = mock(GatewayRepository.class);
+        Gateway existing = new Gateway();
         existing.setDeviceId("D3");
         existing.setStatus("OFFLINE");
         when(repository.findByDeviceId("D3")).thenReturn(Optional.of(existing));
-        when(repository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.save(any(Gateway.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        new DeviceOnlineHandler(repository).handle(uplink("D3", 1));
+        new GatewayOnlineHandler(repository).handle(uplink("D3", 1));
 
-        verify(repository).save(ArgumentMatchers.argThat((Device d) ->
+        verify(repository).save(ArgumentMatchers.argThat((Gateway d) ->
                 d == existing && "ONLINE".equals(d.getStatus()) && d.getLastSeen() != null));
     }
 
@@ -115,7 +115,7 @@ public class PrimaryHandlersTest {
     public void primaryHandlersAreCriticalAndNamed() {
         ObjectMapper mapper = new ObjectMapper();
         UplinkHandler record = new DataRecordPersistHandler(mapper, mock(DataRecordRepository.class));
-        UplinkHandler device = new DeviceOnlineHandler(mock(DeviceRepository.class));
+        UplinkHandler device = new GatewayOnlineHandler(mock(GatewayRepository.class));
         UplinkHandler alarm = new AlarmRuleHandler(mock(AlarmRepository.class));
 
         assertEquals("dataRecordPersist", record.name());

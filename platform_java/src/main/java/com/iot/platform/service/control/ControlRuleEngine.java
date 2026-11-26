@@ -69,7 +69,7 @@ public class ControlRuleEngine {
             return;
         }
         log.info("timed rule fired: rule={} action={} time={}", rule.getName(), action, hhmm);
-        for (DeviceEntry entry : executionService.parseDevices(rule.getDevices())) {
+        for (GatewayEntry entry : executionService.parseDevices(rule.getDevices())) {
             executionService.executeDevice(entry, action, null, rule.getId(), rule.getName(),
                     ControlExecutionService.SOURCE_RULE, rule.getPlotId(), rule.getOrgCode());
         }
@@ -142,7 +142,7 @@ public class ControlRuleEngine {
 
     private void fireCondition(ControlRule rule, String action, String reading) {
         log.info("condition rule fired: rule={} action={} reading={}", rule.getName(), action, reading);
-        for (DeviceEntry entry : executionService.parseDevices(rule.getDevices())) {
+        for (GatewayEntry entry : executionService.parseDevices(rule.getDevices())) {
             executionService.executeDevice(entry, action, null, rule.getId(), rule.getName(),
                     ControlExecutionService.SOURCE_RULE, rule.getPlotId(), rule.getOrgCode());
         }

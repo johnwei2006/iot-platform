@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-/** 控制规则数据权限规则，模式与 DeviceDataScopeRule 相同（entityCode=control_rule）。 */
+/** 控制规则数据权限规则，模式与 GatewayDataScopeRule 相同（entityCode=control_rule）。 */
 @Component
 public class ControlRuleDataScopeRule implements DataScopeRule {
 

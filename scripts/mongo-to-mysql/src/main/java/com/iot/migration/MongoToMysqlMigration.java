@@ -66,10 +66,10 @@ public final class MongoToMysqlMigration {
                     + "`last_login_at`=VALUES(`last_login_at`)";
 
     private static final String DEVICE_UPSERT =
-            "INSERT INTO `iot_device` (`id`,`device_id`,`node_id`,`name`,`identifier_type`,`auth_secret`,"
+            "INSERT INTO `iot_gateway` (`id`,`gateway_code`,`node_id`,`name`,`identifier_type`,`auth_secret`,"
                     + "`status`,`org_code`,`owner_user_id`,`last_seen`,`created_at`,`updated_at`) "
                     + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE "
-                    + "`device_id`=VALUES(`device_id`),`node_id`=VALUES(`node_id`),`name`=VALUES(`name`),"
+                    + "`gateway_code`=VALUES(`gateway_code`),`node_id`=VALUES(`node_id`),`name`=VALUES(`name`),"
                     + "`identifier_type`=VALUES(`identifier_type`),`auth_secret`=VALUES(`auth_secret`),"
                     + "`status`=VALUES(`status`),`org_code`=VALUES(`org_code`),"
                     + "`owner_user_id`=VALUES(`owner_user_id`),`last_seen`=VALUES(`last_seen`),"
@@ -222,7 +222,7 @@ public final class MongoToMysqlMigration {
 
             System.out.println("Migration done: sys_org=" + orgs + " sys_role=" + roles
                     + " sys_menu=" + menus + " sys_user=" + users
-                    + " iot_device=" + devices + " iot_data_record=" + records
+                    + " iot_gateway=" + devices + " iot_data_record=" + records
                     + " iot_alarm=" + alarms
                     + " elapsed=" + (System.currentTimeMillis() - started) + "ms");
         }

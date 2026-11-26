@@ -3,7 +3,7 @@ package com.iot.platform.realtime;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.config.RealtimeProperties;
-import com.iot.platform.model.DeviceRealtimeStatus;
+import com.iot.platform.model.GatewayRealtimeStatus;
 import com.iot.platform.mq.UplinkMessage;
 import com.iot.platform.service.converter.JsonNodeUtils;
 import org.slf4j.Logger;
@@ -23,19 +23,19 @@ import java.util.concurrent.atomic.AtomicLong;
  * 缓存不可用时只限频告警，绝不触发 RabbitMQ 重试或死信。
  */
 @Service
-public class DeviceRealtimeStatusService {
+public class GatewayRealtimeStatusService {
 
-    private static final Logger log = LoggerFactory.getLogger(DeviceRealtimeStatusService.class);
+    private static final Logger log = LoggerFactory.getLogger(GatewayRealtimeStatusService.class);
     private static final long WARN_INTERVAL_MS = 60000L;
     private static final String ONLINE = "ONLINE";
 
-    private final RedisDeviceStatusStore store;
+    private final RedisGatewayStatusStore store;
     private final RealtimeProperties properties;
     private final ObjectMapper objectMapper;
     private final AtomicLong lastWarnAt = new AtomicLong(0L);
 
     @Autowired
-    public DeviceRealtimeStatusService(RedisDeviceStatusStore store,
+    public GatewayRealtimeStatusService(RedisGatewayStatusStore store,
                                        RealtimeProperties properties,
                                        ObjectMapper objectMapper) {
         this.store = store;
@@ -65,8 +65,8 @@ public class DeviceRealtimeStatusService {
 
     /** 从上行信封构造缓存快照；包级可见以便单测直接断言字段映射。 */
     @SuppressWarnings("unchecked")
-    DeviceRealtimeStatus build(UplinkMessage message, String deviceId) {
-        DeviceRealtimeStatus status = new DeviceRealtimeStatus();
+    GatewayRealtimeStatus build(UplinkMessage message, String deviceId) {
+        GatewayRealtimeStatus status = new GatewayRealtimeStatus();
         long now = System.currentTimeMillis();
         status.setDeviceId(deviceId);
         status.setStatus(ONLINE);
@@ -92,7 +92,7 @@ public class DeviceRealtimeStatusService {
         if (!decodedNodeId.isEmpty()) {
             status.setNodeId(decodedNodeId);
         }
-        List<DeviceRealtimeStatus.SensorSnapshot> sensors = extractSensors(decoded.get("sensors"));
+        List<GatewayRealtimeStatus.SensorSnapshot> sensors = extractSensors(decoded.get("sensors"));
         if (!sensors.isEmpty()) {
             status.setSensors(sensors);
         }
@@ -100,9 +100,9 @@ public class DeviceRealtimeStatusService {
     }
 
     /** 只保留有效通道读数，规则与时序归档一致：channel 有效、channelResult==0、数值有限。 */
-    private List<DeviceRealtimeStatus.SensorSnapshot> extractSensors(JsonNode array) {
-        List<DeviceRealtimeStatus.SensorSnapshot> result =
-                new ArrayList<DeviceRealtimeStatus.SensorSnapshot>();
+    private List<GatewayRealtimeStatus.SensorSnapshot> extractSensors(JsonNode array) {
+        List<GatewayRealtimeStatus.SensorSnapshot> result =
+                new ArrayList<GatewayRealtimeStatus.SensorSnapshot>();
         if (array == null || !array.isArray()) {
             return result;
         }
@@ -118,8 +118,8 @@ public class DeviceRealtimeStatusService {
             if (Double.isNaN(value) || Double.isInfinite(value)) {
                 continue;
             }
-            DeviceRealtimeStatus.SensorSnapshot snapshot =
-                    new DeviceRealtimeStatus.SensorSnapshot();
+            GatewayRealtimeStatus.SensorSnapshot snapshot =
+                    new GatewayRealtimeStatus.SensorSnapshot();
             snapshot.setChannel(channel);
             snapshot.setSensorValue(value);
             snapshot.setSensorCode(JsonNodeUtils.text(sensor.get("sensorCode")));

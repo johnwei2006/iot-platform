@@ -2,8 +2,8 @@ package com.iot.platform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.iot.platform.model.Device;
-import com.iot.platform.repository.DeviceRepository;
+import com.iot.platform.model.Gateway;
+import com.iot.platform.repository.GatewayRepository;
 import com.iot.platform.security.datascope.DataScopeQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class DeviceService {
+public class GatewayService {
 
     /** 预共享密钥占位掩码，更新接口收到该值视为"未修改" */
     public static final String SECRET_MASK = "******";
@@ -22,28 +22,28 @@ public class DeviceService {
     private static final int SECRET_MAX_LENGTH = 64;
 
     @Autowired
-    private DeviceRepository deviceRepository;
+    private GatewayRepository deviceRepository;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
     /** 全量列表（内部/网关路径使用）。 */
-    public List<Device> list() {
+    public List<Gateway> list() {
         return deviceRepository.findAll();
     }
 
     /** 按数据权限条件过滤列表；scope 为 null 表示不过滤（ALL）。 */
-    public List<Device> listByCriteria(DataScopeQuery scope) {
+    public List<Gateway> listByCriteria(DataScopeQuery scope) {
         if (scope == null || scope.getType() == DataScopeQuery.Type.ALL) {
             return deviceRepository.findAll();
         }
         if (scope.getType() == DataScopeQuery.Type.DENY_ALL) {
             return List.of();
         }
-        LambdaQueryWrapper<Device> wrapper = Wrappers.<Device>lambdaQuery();
+        LambdaQueryWrapper<Gateway> wrapper = Wrappers.<Gateway>lambdaQuery();
         switch (scope.getType()) {
-            case ORG_AND_CHILDREN -> wrapper.likeRight(Device::getOrgCode, scope.getValue());
-            case ORG_ONLY -> wrapper.eq(Device::getOrgCode, scope.getValue());
-            case SELF -> wrapper.eq(Device::getOwnerUserId, scope.getValue());
+            case ORG_AND_CHILDREN -> wrapper.likeRight(Gateway::getOrgCode, scope.getValue());
+            case ORG_ONLY -> wrapper.eq(Gateway::getOrgCode, scope.getValue());
+            case SELF -> wrapper.eq(Gateway::getOwnerUserId, scope.getValue());
             default -> {
                 return List.of();
             }
@@ -51,16 +51,16 @@ public class DeviceService {
         return deviceRepository.findAll(wrapper);
     }
 
-    public Optional<Device> get(String id) {
+    public Optional<Gateway> get(String id) {
         return deviceRepository.findById(id);
     }
 
-    public Optional<Device> getByDeviceId(String deviceId) {
+    public Optional<Gateway> getByDeviceId(String deviceId) {
         return deviceRepository.findByDeviceId(deviceId);
     }
 
     /** 创建设备并绑定归属（ownerUserId=创建者；orgCode 未指定时回落创建者机构）。 */
-    public Device create(Device d, String subject, String creatorOrgCode) {
+    public Gateway create(Gateway d, String subject, String creatorOrgCode) {
         Date now = new Date();
         d.setCreatedAt(now);
         d.setUpdatedAt(now);
@@ -77,8 +77,8 @@ public class DeviceService {
         return deviceRepository.save(d);
     }
 
-    public Device update(String id, Device src) {
-        Device d = deviceRepository.findById(id)
+    public Gateway update(String id, Gateway src) {
+        Gateway d = deviceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("device not found: " + id));
         if (src.getName() != null) {
             d.setName(src.getName());
@@ -105,8 +105,8 @@ public class DeviceService {
      * 更新预共享密钥；secret 为空时自动生成 32 位十六进制随机密钥。
      * @return 更新后的设备（authSecret 为掩码）
      */
-    public Device updateSecret(String id, String secret) {
-        Device d = deviceRepository.findById(id)
+    public Gateway updateSecret(String id, String secret) {
+        Gateway d = deviceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("device not found: " + id));
         String newSecret = (secret == null || secret.trim().isEmpty())
                 ? generateSecret() : secret.trim();
@@ -142,8 +142,8 @@ public class DeviceService {
     }
 
     public void markOnline(String deviceId) {
-        Device d = deviceRepository.findByDeviceId(deviceId).orElseGet(() -> {
-            Device n = new Device();
+        Gateway d = deviceRepository.findByDeviceId(deviceId).orElseGet(() -> {
+            Gateway n = new Gateway();
             n.setDeviceId(deviceId);
             n.setCreatedAt(new Date());
             return n;

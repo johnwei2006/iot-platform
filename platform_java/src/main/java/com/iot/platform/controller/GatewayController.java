@@ -2,10 +2,10 @@ package com.iot.platform.controller;
 
 import com.iot.platform.common.ApiResponse;
 import com.iot.platform.common.ResultCode;
-import com.iot.platform.model.Device;
+import com.iot.platform.model.Gateway;
 import com.iot.platform.security.RequireRoles;
 import com.iot.platform.security.datascope.DataScopeRegistry;
-import com.iot.platform.service.DeviceService;
+import com.iot.platform.service.GatewayService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,10 +23,10 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/devices")
-public class DeviceController {
+public class GatewayController {
 
     @Autowired
-    private DeviceService deviceService;
+    private GatewayService deviceService;
 
     @Autowired
     private DataScopeRegistry dataScopeRegistry;
@@ -35,7 +35,7 @@ public class DeviceController {
     @GetMapping
     public ApiResponse<?> list(HttpServletRequest request) {
         ScopeContext ctx = scopeContext(request);
-        List<Device> devices = deviceService.listByCriteria(
+        List<Gateway> devices = deviceService.listByCriteria(
                 dataScopeRegistry.criteriaFor("device", ctx.subject, ctx.orgCode, ctx.dataScopes));
         devices.forEach(this::maskSecret);
         return ApiResponse.success(devices);
@@ -43,7 +43,7 @@ public class DeviceController {
 
     @GetMapping("/{id}")
     public ApiResponse<?> get(@PathVariable String id, HttpServletRequest request) {
-        Optional<Device> d = deviceService.get(id);
+        Optional<Gateway> d = deviceService.get(id);
         if (d.isPresent()) {
             ScopeContext ctx = scopeContext(request);
             if (!dataScopeRegistry.canRead("device", d.get(), ctx.subject, ctx.orgCode, ctx.dataScopes)) {
@@ -68,9 +68,9 @@ public class DeviceController {
         }
     }
 
-    private void maskSecret(Device d) {
+    private void maskSecret(Gateway d) {
         if (d.getAuthSecret() != null && !d.getAuthSecret().isEmpty()) {
-            d.setAuthSecret(DeviceService.SECRET_MASK);
+            d.setAuthSecret(GatewayService.SECRET_MASK);
         }
     }
 
@@ -93,7 +93,7 @@ public class DeviceController {
     /** 新建设备，仅 ADMIN；归属绑定创建者与机构。 */
     @RequireRoles({"ADMIN"})
     @PostMapping
-    public ApiResponse<?> create(@RequestBody Device d, HttpServletRequest request) {
+    public ApiResponse<?> create(@RequestBody Gateway d, HttpServletRequest request) {
         ScopeContext ctx = scopeContext(request);
         return ApiResponse.success(deviceService.create(d, ctx.subject, ctx.orgCode));
     }
@@ -101,7 +101,7 @@ public class DeviceController {
     /** 更新设备，仅 ADMIN。 */
     @RequireRoles({"ADMIN"})
     @PutMapping("/{id}")
-    public ApiResponse<?> update(@PathVariable String id, @RequestBody Device d) {
+    public ApiResponse<?> update(@PathVariable String id, @RequestBody Gateway d) {
         try {
             return ApiResponse.success(deviceService.update(id, d));
         } catch (RuntimeException e) {

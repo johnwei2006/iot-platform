@@ -1,26 +1,26 @@
 package com.iot.platform.repository;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.iot.platform.model.Device;
+import com.iot.platform.model.Gateway;
 
 import java.util.List;
 import java.util.Optional;
 
 /** 设备数据访问接口（MyBatis-Plus 适配器实现）。 */
-public interface DeviceRepository {
+public interface GatewayRepository {
 
-    Optional<Device> findByDeviceId(String deviceId);
+    Optional<Gateway> findByDeviceId(String deviceId);
 
-    List<Device> findByStatus(String status);
+    List<Gateway> findByStatus(String status);
 
-    List<Device> findAll();
+    List<Gateway> findAll();
 
     /** 按数据权限条件查询（null 或空 wrapper 表示不过滤）。 */
-    List<Device> findAll(Wrapper<Device> wrapper);
+    List<Gateway> findAll(Wrapper<Gateway> wrapper);
 
-    Optional<Device> findById(String id);
+    Optional<Gateway> findById(String id);
 
-    Device save(Device device);
+    Gateway save(Gateway device);
 
     void deleteById(String id);
 }

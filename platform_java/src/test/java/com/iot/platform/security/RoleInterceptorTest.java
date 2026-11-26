@@ -1,6 +1,6 @@
 package com.iot.platform.security;
 
-import com.iot.platform.controller.DeviceController;
+import com.iot.platform.controller.GatewayController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -24,8 +24,8 @@ public class RoleInterceptorTest {
     }
 
     private HandlerMethod handler(String method) throws Exception {
-        return new HandlerMethod(new DeviceController(),
-                DeviceController.class.getMethod(method, String.class));
+        return new HandlerMethod(new GatewayController(),
+                GatewayController.class.getMethod(method, String.class));
     }
 
     @Test
@@ -64,8 +64,8 @@ public class RoleInterceptorTest {
 
     @Test
     public void unannotatedHandlerPasses() throws Exception {
-        HandlerMethod listHandler = new HandlerMethod(new DeviceController(),
-                DeviceController.class.getMethod("list", jakarta.servlet.http.HttpServletRequest.class));
+        HandlerMethod listHandler = new HandlerMethod(new GatewayController(),
+                GatewayController.class.getMethod("list", jakarta.servlet.http.HttpServletRequest.class));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/devices");
         request.setAttribute("roles", Collections.emptyList());
 

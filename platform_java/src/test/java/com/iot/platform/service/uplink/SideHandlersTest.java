@@ -1,7 +1,7 @@
 package com.iot.platform.service.uplink;
 
 import com.iot.platform.mq.UplinkMessage;
-import com.iot.platform.realtime.DeviceRealtimeStatusService;
+import com.iot.platform.realtime.GatewayRealtimeStatusService;
 import com.iot.platform.service.converter.UplinkBusinessDispatcher;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -44,7 +44,7 @@ public class SideHandlersTest {
 
     @Test
     public void realtimeStatusDelegatesToService() {
-        DeviceRealtimeStatusService service = mock(DeviceRealtimeStatusService.class);
+        GatewayRealtimeStatusService service = mock(GatewayRealtimeStatusService.class);
         UplinkMessage up = new UplinkMessage();
 
         new RealtimeStatusHandler(provider(service)).handle(up);

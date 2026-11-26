@@ -2,7 +2,7 @@ package com.iot.platform.controller;
 
 import com.iot.platform.security.JwtFilter;
 import com.iot.platform.security.datascope.DataScopeRegistry;
-import com.iot.platform.service.DeviceService;
+import com.iot.platform.service.GatewayService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,17 +22,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(
-        controllers = DeviceController.class,
+        controllers = GatewayController.class,
         excludeFilters = @ComponentScan.Filter(
                 type = FilterType.ASSIGNABLE_TYPE,
                 classes = JwtFilter.class))
-public class DeviceControllerTest {
+public class GatewayControllerTest {
 
     @Autowired
     private MockMvc mvc;
 
     @MockBean
-    private DeviceService deviceService;
+    private GatewayService deviceService;
     @MockBean
     private DataScopeRegistry dataScopeRegistry;
 

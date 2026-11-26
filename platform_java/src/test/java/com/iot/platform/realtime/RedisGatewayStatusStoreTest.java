@@ -2,7 +2,7 @@ package com.iot.platform.realtime;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.config.RealtimeProperties;
-import com.iot.platform.model.DeviceRealtimeStatus;
+import com.iot.platform.model.GatewayRealtimeStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class RedisDeviceStatusStoreTest {
+public class RedisGatewayStatusStoreTest {
 
     @Mock
     private StringRedisTemplate template;
@@ -47,12 +47,12 @@ public class RedisDeviceStatusStoreTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private RealtimeProperties properties;
-    private RedisDeviceStatusStore store;
+    private RedisGatewayStatusStore store;
 
     @BeforeEach
     public void setUp() {
         properties = new RealtimeProperties();
-        store = new RedisDeviceStatusStore(template, mapper, properties);
+        store = new RedisGatewayStatusStore(template, mapper, properties);
     }
 
     @Test
@@ -63,7 +63,7 @@ public class RedisDeviceStatusStoreTest {
 
         ArgumentCaptor<String> json = ArgumentCaptor.forClass(String.class);
         verify(valueOps).set(eq("device:status:D1"), json.capture(), eq(120L), eq(TimeUnit.SECONDS));
-        DeviceRealtimeStatus parsed = mapper.readValue(json.getValue(), DeviceRealtimeStatus.class);
+        GatewayRealtimeStatus parsed = mapper.readValue(json.getValue(), GatewayRealtimeStatus.class);
         assertEquals("D1", parsed.getDeviceId());
         assertEquals("ONLINE", parsed.getStatus());
     }
@@ -72,7 +72,7 @@ public class RedisDeviceStatusStoreTest {
     public void trimsOversizedBusinessDataAndMarksTruncated() throws Exception {
         properties.setMaxJsonBytes(400);
         when(template.opsForValue()).thenReturn(valueOps);
-        DeviceRealtimeStatus status = status("D2");
+        GatewayRealtimeStatus status = status("D2");
         Map<String, Object> big = new HashMap<String, Object>();
         StringBuilder blob = new StringBuilder();
         for (int i = 0; i < 2000; i++) {
@@ -86,7 +86,7 @@ public class RedisDeviceStatusStoreTest {
         ArgumentCaptor<String> json = ArgumentCaptor.forClass(String.class);
         verify(valueOps).set(eq("device:status:D2"), json.capture(), eq(120L), eq(TimeUnit.SECONDS));
         assertTrue(json.getValue().getBytes("UTF-8").length <= 400);
-        DeviceRealtimeStatus parsed = mapper.readValue(json.getValue(), DeviceRealtimeStatus.class);
+        GatewayRealtimeStatus parsed = mapper.readValue(json.getValue(), GatewayRealtimeStatus.class);
         assertEquals("D2", parsed.getDeviceId());
         assertTrue(parsed.isTruncated());
         assertNull(parsed.getLatestBusinessData());
@@ -115,8 +115,8 @@ public class RedisDeviceStatusStoreTest {
 
     @Test
     public void missingTemplateDegradesGracefully() {
-        RedisDeviceStatusStore noTemplate =
-                new RedisDeviceStatusStore((StringRedisTemplate) null, mapper, properties);
+        RedisGatewayStatusStore noTemplate =
+                new RedisGatewayStatusStore((StringRedisTemplate) null, mapper, properties);
 
         assertFalse(noTemplate.write(status("D5")));
         assertFalse(noTemplate.find("D5").isPresent());
@@ -129,7 +129,7 @@ public class RedisDeviceStatusStoreTest {
         when(template.opsForValue()).thenReturn(valueOps);
         when(valueOps.get("device:status:D6")).thenReturn(json);
 
-        DeviceRealtimeStatus found = store.find("D6").get();
+        GatewayRealtimeStatus found = store.find("D6").get();
 
         assertEquals("D6", found.getDeviceId());
         assertEquals("ONLINE", found.getStatus());
@@ -160,7 +160,7 @@ public class RedisDeviceStatusStoreTest {
         when(valueOps.multiGet(ArgumentMatchers.<Collection<String>>any()))
                 .thenReturn(Arrays.asList(valid, "not-json"));
 
-        List<DeviceRealtimeStatus> result = store.list();
+        List<GatewayRealtimeStatus> result = store.list();
 
         assertEquals(1, result.size());
         assertEquals("D9", result.get(0).getDeviceId());
@@ -184,8 +184,8 @@ public class RedisDeviceStatusStoreTest {
         verifyNoInteractions(valueOps);
     }
 
-    private DeviceRealtimeStatus status(String deviceId) {
-        DeviceRealtimeStatus status = new DeviceRealtimeStatus();
+    private GatewayRealtimeStatus status(String deviceId) {
+        GatewayRealtimeStatus status = new GatewayRealtimeStatus();
         status.setDeviceId(deviceId);
         status.setStatus("ONLINE");
         status.setLastSeen(1700000000000L);

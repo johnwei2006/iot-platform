@@ -2,7 +2,7 @@ package com.iot.platform.realtime;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.config.RealtimeProperties;
-import com.iot.platform.model.DeviceRealtimeStatus;
+import com.iot.platform.model.GatewayRealtimeStatus;
 import com.iot.platform.mq.UplinkMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,19 +25,19 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class DeviceRealtimeStatusServiceTest {
+public class GatewayRealtimeStatusServiceTest {
 
     @Mock
-    private RedisDeviceStatusStore store;
+    private RedisGatewayStatusStore store;
 
     private final ObjectMapper mapper = new ObjectMapper();
     private RealtimeProperties properties;
-    private DeviceRealtimeStatusService service;
+    private GatewayRealtimeStatusService service;
 
     @BeforeEach
     public void setUp() {
         properties = new RealtimeProperties();
-        service = new DeviceRealtimeStatusService(store, properties, mapper);
+        service = new GatewayRealtimeStatusService(store, properties, mapper);
     }
 
     @Test
@@ -52,7 +52,7 @@ public class DeviceRealtimeStatusServiceTest {
 
         service.refresh(up);
 
-        DeviceRealtimeStatus status = captureWritten();
+        GatewayRealtimeStatus status = captureWritten();
         assertEquals("D1", status.getDeviceId());
         assertEquals("N1", status.getNodeId());
         assertEquals("ONLINE", status.getStatus());
@@ -77,7 +77,7 @@ public class DeviceRealtimeStatusServiceTest {
 
         service.refresh(up);
 
-        DeviceRealtimeStatus status = captureWritten();
+        GatewayRealtimeStatus status = captureWritten();
         assertEquals("ONLINE", status.getStatus());
         assertEquals("FAILED", status.getDecodeStatus());
         assertEquals("NODE-2", status.getNodeId());
@@ -91,7 +91,7 @@ public class DeviceRealtimeStatusServiceTest {
 
         service.refresh(uplink("D3"));
 
-        verify(store, never()).write(any(DeviceRealtimeStatus.class));
+        verify(store, never()).write(any(GatewayRealtimeStatus.class));
     }
 
     @Test
@@ -100,28 +100,28 @@ public class DeviceRealtimeStatusServiceTest {
 
         service.refresh(up);
 
-        verify(store, never()).write(any(DeviceRealtimeStatus.class));
+        verify(store, never()).write(any(GatewayRealtimeStatus.class));
     }
 
     @Test
     public void storeFailureNeverEscapesFromRefresh() {
-        when(store.write(any(DeviceRealtimeStatus.class)))
+        when(store.write(any(GatewayRealtimeStatus.class)))
                 .thenThrow(new RuntimeException("redis down"));
 
         service.refresh(uplink("D4"));
 
-        verify(store).write(any(DeviceRealtimeStatus.class));
+        verify(store).write(any(GatewayRealtimeStatus.class));
     }
 
     @Test
     public void nullMessageIsIgnored() {
         service.refresh(null);
-        verify(store, never()).write(any(DeviceRealtimeStatus.class));
+        verify(store, never()).write(any(GatewayRealtimeStatus.class));
     }
 
-    private DeviceRealtimeStatus captureWritten() {
-        ArgumentCaptor<DeviceRealtimeStatus> captor =
-                ArgumentCaptor.forClass(DeviceRealtimeStatus.class);
+    private GatewayRealtimeStatus captureWritten() {
+        ArgumentCaptor<GatewayRealtimeStatus> captor =
+                ArgumentCaptor.forClass(GatewayRealtimeStatus.class);
         verify(store).write(captor.capture());
         return captor.getValue();
     }

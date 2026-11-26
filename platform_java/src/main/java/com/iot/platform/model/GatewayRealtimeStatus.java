@@ -11,7 +11,7 @@ import java.util.Map;
  * <p>这是旁路缓存，不是持久化实体；TTL 到期后 key 自动消失，查询接口据此判定离线。
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DeviceRealtimeStatus {
+public class GatewayRealtimeStatus {
 
     private String deviceId;
     private String nodeId;

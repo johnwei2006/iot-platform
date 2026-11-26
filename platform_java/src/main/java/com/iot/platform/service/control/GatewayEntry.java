@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 /** 规则 devices JSON 数组元素：受控设备引用。 */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class DeviceEntry {
+public class GatewayEntry {
 
     /** 设备编号（station/gateway deviceId，下行指令的目标网关） */
     private String deviceId;
@@ -20,10 +20,10 @@ public class DeviceEntry {
     /** 默认动作（组合规则展示用）：ON / OFF */
     private String action;
 
-    public DeviceEntry() {
+    public GatewayEntry() {
     }
 
-    public DeviceEntry(String deviceId, String nodeId, Integer channel, String deviceName, String deviceType) {
+    public GatewayEntry(String deviceId, String nodeId, Integer channel, String deviceName, String deviceType) {
         this.deviceId = deviceId;
         this.nodeId = nodeId;
         this.channel = channel;

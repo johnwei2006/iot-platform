@@ -75,7 +75,7 @@ class ControlLogStateMachineTest {
     void manualDownlinkCreatesPendingLogAndFailureCreatesFailedLog() {
         when(logRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         ControlExecutionService svc = executionService();
-        DeviceEntry entry = new DeviceEntry("GW1", "NODE1", 1, "fan 1", "FAN");
+        GatewayEntry entry = new GatewayEntry("GW1", "NODE1", 1, "fan 1", "FAN");
 
         ControlLog ok = svc.executeDevice(entry, "ON", null, null, null,
                 ControlExecutionService.SOURCE_MANUAL, null, "ORG");

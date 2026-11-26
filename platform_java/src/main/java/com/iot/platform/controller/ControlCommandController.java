@@ -7,7 +7,7 @@ import com.iot.platform.security.RequireRoles;
 import com.iot.platform.service.control.ControlExecutionService;
 import com.iot.platform.service.control.ControlLogStateMachine;
 import com.iot.platform.service.control.ControlRuleService;
-import com.iot.platform.service.control.DeviceEntry;
+import com.iot.platform.service.control.GatewayEntry;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +29,7 @@ public class ControlCommandController {
     @Autowired
     private ControlRuleService ruleService;
 
-    /** 手动下发：body {"devices":[DeviceEntry...], "action":"ON|OFF|OPEN|CLOSE|STOP|LEVEL", "value":"开度或空"}。 */
+    /** 手动下发：body {"devices":[GatewayEntry...], "action":"ON|OFF|OPEN|CLOSE|STOP|LEVEL", "value":"开度或空"}。 */
     @RequireRoles({"ADMIN", "OPERATOR"})
     @PostMapping("/devices")
     public ApiResponse<?> manual(@RequestBody Map<String, Object> body, HttpServletRequest request) {
@@ -39,8 +39,8 @@ public class ControlCommandController {
             String action = String.valueOf(body.get("action"));
             String value = body.get("value") == null ? null : String.valueOf(body.get("value"));
             com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
-            List<DeviceEntry> devices = om.convertValue(rawDevices,
-                    om.getTypeFactory().constructCollectionType(List.class, DeviceEntry.class));
+            List<GatewayEntry> devices = om.convertValue(rawDevices,
+                    om.getTypeFactory().constructCollectionType(List.class, GatewayEntry.class));
             if (devices == null || devices.isEmpty()) {
                 return ApiResponse.fail(400, "请选择受控设备");
             }

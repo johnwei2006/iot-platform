@@ -2,8 +2,8 @@ package com.iot.platform.repository;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.iot.platform.mapper.DeviceMapper;
-import com.iot.platform.model.Device;
+import com.iot.platform.mapper.GatewayMapper;
+import com.iot.platform.model.Gateway;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,42 +11,42 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public class DeviceRepositoryImpl implements DeviceRepository {
+public class GatewayRepositoryImpl implements GatewayRepository {
 
-    private final DeviceMapper mapper;
+    private final GatewayMapper mapper;
 
-    public DeviceRepositoryImpl(DeviceMapper mapper) {
+    public GatewayRepositoryImpl(GatewayMapper mapper) {
         this.mapper = mapper;
     }
 
     @Override
-    public Optional<Device> findByDeviceId(String deviceId) {
+    public Optional<Gateway> findByDeviceId(String deviceId) {
         return Optional.ofNullable(mapper.selectOne(
-                Wrappers.<Device>lambdaQuery().eq(Device::getDeviceId, deviceId)));
+                Wrappers.<Gateway>lambdaQuery().eq(Gateway::getDeviceId, deviceId)));
     }
 
     @Override
-    public List<Device> findByStatus(String status) {
-        return mapper.selectList(Wrappers.<Device>lambdaQuery().eq(Device::getStatus, status));
+    public List<Gateway> findByStatus(String status) {
+        return mapper.selectList(Wrappers.<Gateway>lambdaQuery().eq(Gateway::getStatus, status));
     }
 
     @Override
-    public List<Device> findAll() {
+    public List<Gateway> findAll() {
         return mapper.selectList(Wrappers.emptyWrapper());
     }
 
     @Override
-    public List<Device> findAll(Wrapper<Device> wrapper) {
+    public List<Gateway> findAll(Wrapper<Gateway> wrapper) {
         return mapper.selectList(wrapper);
     }
 
     @Override
-    public Optional<Device> findById(String id) {
+    public Optional<Gateway> findById(String id) {
         return Optional.ofNullable(mapper.selectById(id));
     }
 
     @Override
-    public Device save(Device device) {
+    public Gateway save(Gateway device) {
         if (device.getId() == null || device.getId().isEmpty()) {
             device.setId(UUID.randomUUID().toString());
         }

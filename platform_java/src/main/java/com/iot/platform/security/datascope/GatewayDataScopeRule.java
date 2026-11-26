@@ -1,13 +1,13 @@
 package com.iot.platform.security.datascope;
 
-import com.iot.platform.model.Device;
+import com.iot.platform.model.Gateway;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 /** 设备数据权限规则：机构编码前缀匹配实现"本机构及以下"，无需查询机构树。 */
 @Component
-public class DeviceDataScopeRule implements DataScopeRule {
+public class GatewayDataScopeRule implements DataScopeRule {
 
     @Override
     public String entityCode() {
@@ -46,10 +46,10 @@ public class DeviceDataScopeRule implements DataScopeRule {
 
     @Override
     public boolean matches(Object entity, String subject, String orgCode, Map<String, String> dataScopes) {
-        if (!(entity instanceof Device)) {
+        if (!(entity instanceof Gateway)) {
             return false;
         }
-        Device device = (Device) entity;
+        Gateway device = (Gateway) entity;
         String scope = dataScopes == null ? null : dataScopes.get("device");
         if (scope == null) {
             return false;

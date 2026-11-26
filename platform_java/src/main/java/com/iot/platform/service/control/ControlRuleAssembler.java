@@ -13,13 +13,13 @@ public final class ControlRuleAssembler {
     private ControlRuleAssembler() {
     }
 
-    public static Candidate toCandidate(ControlRule rule, List<DeviceEntry> entries) {
+    public static Candidate toCandidate(ControlRule rule, List<GatewayEntry> entries) {
         Candidate c = new Candidate();
         c.id = rule.getId();
         c.name = rule.getName();
         c.kind = rule.getKind();
         c.trigger = rule.getTrigger();
-        for (DeviceEntry e : entries) {
+        for (GatewayEntry e : entries) {
             c.devices.add(e.getDeviceId());
             c.deviceTypes.add(e.getDeviceType());
         }
@@ -37,9 +37,9 @@ public final class ControlRuleAssembler {
         return c;
     }
 
-    public static ExistingRule toExisting(ControlRule rule, List<DeviceEntry> entries) {
+    public static ExistingRule toExisting(ControlRule rule, List<GatewayEntry> entries) {
         List<String> deviceIds = new ArrayList<>();
-        for (DeviceEntry e : entries) {
+        for (GatewayEntry e : entries) {
             deviceIds.add(e.getDeviceId());
         }
         String sensor = rule.getMetric() == null || rule.getMetric().isEmpty() ? null

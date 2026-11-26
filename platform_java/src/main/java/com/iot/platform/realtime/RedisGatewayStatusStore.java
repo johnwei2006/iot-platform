@@ -2,7 +2,7 @@ package com.iot.platform.realtime;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.config.RealtimeProperties;
-import com.iot.platform.model.DeviceRealtimeStatus;
+import com.iot.platform.model.GatewayRealtimeStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -28,9 +28,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * 不向调用方抛出，保证缓存故障不影响上行接入与 REST 接口。
  */
 @Component
-public class RedisDeviceStatusStore {
+public class RedisGatewayStatusStore {
 
-    private static final Logger log = LoggerFactory.getLogger(RedisDeviceStatusStore.class);
+    private static final Logger log = LoggerFactory.getLogger(RedisGatewayStatusStore.class);
     private static final long WARN_INTERVAL_MS = 60000L;
     private static final int DEFAULT_MAX_JSON_BYTES = 8192;
     private static final int DEFAULT_SCAN_COUNT = 200;
@@ -42,13 +42,13 @@ public class RedisDeviceStatusStore {
     private final AtomicLong lastWarnAt = new AtomicLong(0L);
 
     @Autowired
-    public RedisDeviceStatusStore(ObjectProvider<StringRedisTemplate> provider,
+    public RedisGatewayStatusStore(ObjectProvider<StringRedisTemplate> provider,
                                   ObjectMapper objectMapper,
                                   RealtimeProperties properties) {
         this(provider.getIfAvailable(), objectMapper, properties);
     }
 
-    public RedisDeviceStatusStore(StringRedisTemplate template,
+    public RedisGatewayStatusStore(StringRedisTemplate template,
                                   ObjectMapper objectMapper,
                                   RealtimeProperties properties) {
         this.template = template;
@@ -57,7 +57,7 @@ public class RedisDeviceStatusStore {
     }
 
     /** 写入状态并刷新 TTL；返回 false 表示缓存不可用或写入被降级。 */
-    public boolean write(DeviceRealtimeStatus status) {
+    public boolean write(GatewayRealtimeStatus status) {
         if (!available() || status == null) {
             return false;
         }
@@ -80,7 +80,7 @@ public class RedisDeviceStatusStore {
     }
 
     /** 读取单个设备状态；key 不存在（TTL 已过期）即视为离线。 */
-    public Optional<DeviceRealtimeStatus> find(String deviceId) {
+    public Optional<GatewayRealtimeStatus> find(String deviceId) {
         if (!available() || deviceId == null || deviceId.trim().isEmpty()) {
             return Optional.empty();
         }
@@ -89,7 +89,7 @@ public class RedisDeviceStatusStore {
             if (json == null || json.isEmpty()) {
                 return Optional.empty();
             }
-            return Optional.ofNullable(objectMapper.readValue(json, DeviceRealtimeStatus.class));
+            return Optional.ofNullable(objectMapper.readValue(json, GatewayRealtimeStatus.class));
         } catch (Exception e) {
             warnThrottled("read", e);
             return Optional.empty();
@@ -97,7 +97,7 @@ public class RedisDeviceStatusStore {
     }
 
     /** 枚举当前全部在线设备状态；单条坏数据跳过，不影响其余结果。 */
-    public List<DeviceRealtimeStatus> list() {
+    public List<GatewayRealtimeStatus> list() {
         if (!available()) {
             return Collections.emptyList();
         }
@@ -110,13 +110,13 @@ public class RedisDeviceStatusStore {
             if (values == null) {
                 return Collections.emptyList();
             }
-            List<DeviceRealtimeStatus> result = new ArrayList<DeviceRealtimeStatus>();
+            List<GatewayRealtimeStatus> result = new ArrayList<GatewayRealtimeStatus>();
             for (String json : values) {
                 if (json == null || json.isEmpty()) {
                     continue;
                 }
                 try {
-                    result.add(objectMapper.readValue(json, DeviceRealtimeStatus.class));
+                    result.add(objectMapper.readValue(json, GatewayRealtimeStatus.class));
                 } catch (Exception e) {
                     log.warn("skip malformed device status json: {}", e.getMessage());
                 }
@@ -155,7 +155,7 @@ public class RedisDeviceStatusStore {
      * 按字节预算逐级裁剪：完整业务数据 -> 传感器摘要 -> 最小在线骨架。
      * 裁剪只影响缓存中的快照，不影响 MongoDB 里的原始上行记录。
      */
-    private String toJson(DeviceRealtimeStatus status) throws Exception {
+    private String toJson(GatewayRealtimeStatus status) throws Exception {
         int limit = properties.getMaxJsonBytes() > 0
                 ? properties.getMaxJsonBytes() : DEFAULT_MAX_JSON_BYTES;
         String json = objectMapper.writeValueAsString(status);
@@ -173,7 +173,7 @@ public class RedisDeviceStatusStore {
         if (utf8Length(json) <= limit) {
             return json;
         }
-        DeviceRealtimeStatus minimal = new DeviceRealtimeStatus();
+        GatewayRealtimeStatus minimal = new GatewayRealtimeStatus();
         minimal.setDeviceId(status.getDeviceId());
         minimal.setStatus(status.getStatus());
         minimal.setLastSeen(status.getLastSeen());

@@ -1,10 +1,10 @@
 package com.iot.platform.controller;
 
-import com.iot.platform.model.DeviceRealtimeStatus;
-import com.iot.platform.realtime.RedisDeviceStatusStore;
+import com.iot.platform.model.GatewayRealtimeStatus;
+import com.iot.platform.realtime.RedisGatewayStatusStore;
 import com.iot.platform.security.JwtFilter;
 import com.iot.platform.security.datascope.DataScopeRegistry;
-import com.iot.platform.service.DeviceService;
+import com.iot.platform.service.GatewayService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,19 +27,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(
-        controllers = {DeviceRealtimeController.class, DeviceController.class},
+        controllers = {GatewayRealtimeController.class, GatewayController.class},
         excludeFilters = @ComponentScan.Filter(
                 type = FilterType.ASSIGNABLE_TYPE,
                 classes = JwtFilter.class))
-public class DeviceRealtimeControllerTest {
+public class GatewayRealtimeControllerTest {
 
     @Autowired
     private MockMvc mvc;
 
     @MockBean
-    private RedisDeviceStatusStore store;
+    private RedisGatewayStatusStore store;
     @MockBean
-    private DeviceService deviceService;
+    private GatewayService deviceService;
     @MockBean
     private DataScopeRegistry dataScopeRegistry;
 
@@ -75,8 +75,8 @@ public class DeviceRealtimeControllerTest {
                 .andExpect(jsonPath("$.code").value(404));
     }
 
-    private DeviceRealtimeStatus snapshot(String deviceId) {
-        DeviceRealtimeStatus status = new DeviceRealtimeStatus();
+    private GatewayRealtimeStatus snapshot(String deviceId) {
+        GatewayRealtimeStatus status = new GatewayRealtimeStatus();
         status.setDeviceId(deviceId);
         status.setStatus("ONLINE");
         status.setTtlSeconds(120);

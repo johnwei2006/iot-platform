@@ -24,11 +24,11 @@ public class RealtimeStartupTest {
         try {
             ctx.getBeanFactory().registerSingleton("objectMapper", new ObjectMapper());
             ctx.register(RedisAutoConfiguration.class, RealtimeConfig.class,
-                    RedisDeviceStatusStore.class);
+                    RedisGatewayStatusStore.class);
             ctx.refresh();
 
             assertNotNull(ctx.getBean(StringRedisTemplate.class));
-            assertNotNull(ctx.getBean(RedisDeviceStatusStore.class));
+            assertNotNull(ctx.getBean(RedisGatewayStatusStore.class));
             assertNotNull(ctx.getBean(com.iot.platform.config.RealtimeProperties.class));
         } finally {
             ctx.close();

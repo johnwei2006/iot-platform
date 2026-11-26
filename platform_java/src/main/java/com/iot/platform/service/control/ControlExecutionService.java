@@ -80,7 +80,7 @@ public class ControlExecutionService {
      *
      * @param action ON / OFF / OPEN / CLOSE / STOP / LEVEL
      */
-    public ControlLog executeDevice(DeviceEntry entry, String action, String actionValue,
+    public ControlLog executeDevice(GatewayEntry entry, String action, String actionValue,
                                     String ruleId, String ruleName, String source,
                                     String plotId, String orgCode) {
         ControlLog clog = new ControlLog();
@@ -112,7 +112,7 @@ public class ControlExecutionService {
     }
 
     /** 组装 0x19 网关设备控制 DownlinkMessage（serviceType=25，结构化 serviceDataDecoded）。 */
-    public DownlinkMessage buildControlMessage(DeviceEntry entry, String action, String actionValue) {
+    public DownlinkMessage buildControlMessage(GatewayEntry entry, String action, String actionValue) {
         int op;
         int value;
         switch (action) {
@@ -159,13 +159,13 @@ public class ControlExecutionService {
     }
 
     /** 解析设备列表 JSON；格式非法时返回空列表（不允许下发）。 */
-    public List<DeviceEntry> parseDevices(String devicesJson) {
+    public List<GatewayEntry> parseDevices(String devicesJson) {
         if (devicesJson == null || devicesJson.isEmpty()) {
             return List.of();
         }
         try {
             return objectMapper.readValue(devicesJson,
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, DeviceEntry.class));
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, GatewayEntry.class));
         } catch (Exception e) {
             log.warn("invalid control rule devices json: {}", e.getMessage());
             return List.of();

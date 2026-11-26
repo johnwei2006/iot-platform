@@ -1,8 +1,8 @@
 package com.iot.platform.service.uplink;
 
-import com.iot.platform.model.Device;
+import com.iot.platform.model.Gateway;
 import com.iot.platform.mq.UplinkMessage;
-import com.iot.platform.repository.DeviceRepository;
+import com.iot.platform.repository.GatewayRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -17,12 +17,12 @@ import java.util.Date;
  */
 @Component
 @Order(2)
-public class DeviceOnlineHandler implements UplinkHandler {
+public class GatewayOnlineHandler implements UplinkHandler {
 
-    private final DeviceRepository deviceRepository;
+    private final GatewayRepository deviceRepository;
 
     @Autowired
-    public DeviceOnlineHandler(DeviceRepository deviceRepository) {
+    public GatewayOnlineHandler(GatewayRepository deviceRepository) {
         this.deviceRepository = deviceRepository;
     }
 
@@ -38,8 +38,8 @@ public class DeviceOnlineHandler implements UplinkHandler {
 
     @Override
     public void handle(UplinkMessage message) {
-        Device device = deviceRepository.findByDeviceId(message.getDeviceId()).orElseGet(() -> {
-            Device created = new Device();
+        Gateway device = deviceRepository.findByDeviceId(message.getDeviceId()).orElseGet(() -> {
+            Gateway created = new Gateway();
             created.setDeviceId(message.getDeviceId());
             created.setCreatedAt(new Date());
             return created;
