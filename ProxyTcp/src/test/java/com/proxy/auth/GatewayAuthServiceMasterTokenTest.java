@@ -67,4 +67,14 @@ public class GatewayAuthServiceMasterTokenTest {
 		assertFalse(service.isMasterToken(MASTER));
 		assertFalse(service.validateToken("NOT_REGISTERED", MASTER, "10.0.0.1", 50001));
 	}
+
+	@Test
+	public void testTokenCheckDisabledAcceptsAnyToken() throws Exception {
+		setField("masterToken", null);
+		setField("tokenCheckEnabled", false);
+		assertFalse(service.isTokenCheckEnabled());
+		assertTrue(service.validateToken("NOT_REGISTERED", new byte[10], "10.0.0.1", 50001));
+		assertTrue(service.validateToken("NOT_REGISTERED", "ABCDEFGHIJ".getBytes(StandardCharsets.US_ASCII),
+				"10.0.0.1", 50001));
+	}
 }

@@ -41,6 +41,18 @@ public class GatewayAuthService {
 	private DeviceInfoService deviceInfoService;
 
 	/**
+	 * 上行 token 校验总开关（gateway.auth.token-check-enabled，默认 true）。
+	 * 关闭后所有上行跳过 token/会话/IP 校验，仅供本地联调；生产必须保持 true。
+	 */
+	@Value("${gateway.auth.token-check-enabled:true}")
+	private boolean tokenCheckEnabled = true;
+
+	/** 是否启用上行 token 校验 */
+	public boolean isTokenCheckEnabled() {
+		return tokenCheckEnabled;
+	}
+
+	/**
 	 * 测试用万能 token：配置 gateway.auth.master-token，支持 10 字符 ASCII 或 20 位十六进制；
 	 * 置空即关闭。该 token 绕过会话/IP/端口校验，仅用于联调测试，生产环境务必置空。
 	 */
@@ -180,6 +192,12 @@ public class GatewayAuthService {
 	 * 校验上行报文 token：会话存在、连接匹配且 token 与当前有效 token 一致。
 	 */
 	public boolean validateToken(String deviceId, byte[] token, String ip, int port) {
+		// 联调开关：关闭校验后一律放行（每次调用打一次 warn，便于发现误配置）
+		if (!tokenCheckEnabled) {
+			logger.warn("Gateway token check DISABLED (gateway.auth.token-check-enabled=false, TEST ONLY): deviceId="
+					+ deviceId + ", ip=" + ip + ":" + port);
+			return true;
+		}
 		// 测试万能 token：无需认证会话，也无需匹配来源 IP/端口
 		if (isMasterToken(token)) {
 			logger.debug("Gateway uplink accepted via master token (TEST ONLY): deviceId=" + deviceId

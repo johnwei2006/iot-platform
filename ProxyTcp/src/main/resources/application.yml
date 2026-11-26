@@ -24,6 +24,10 @@ spring:
 # ===== 网关认证配置 =====
 gateway:
   auth:
+    # 上行 token 校验总开关：默认 true（生产必须开启）。
+    # 关闭后所有上行报文跳过 token/会话/IP 校验，直接放行，仅用于本地联调；
+    # 可通过环境变量 GATEWAY_AUTH_TOKEN_CHECK_ENABLED=false 关闭。
+    token-check-enabled: ${GATEWAY_AUTH_TOKEN_CHECK_ENABLED:true}
     # 测试用万能 token：10 字符 ASCII 或 20 位十六进制；留空即关闭（默认关闭）。
     # 该 token 绕过密钥认证/会话/IP 校验，仅限联调测试；
     # 需要时通过环境变量 GATEWAY_AUTH_MASTER_TOKEN 注入，生产环境严禁设置！
