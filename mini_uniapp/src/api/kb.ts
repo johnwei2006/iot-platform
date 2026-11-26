@@ -5,7 +5,6 @@ import type {
   ControlLog,
   ControlRule,
   KbMessage,
-  KbTask,
   MetricThreshold,
   RealtimeStatus,
   DeviceEntry,
@@ -59,7 +58,7 @@ export function listControlLogs(params?: Record<string, unknown>): Promise<ApiRe
   return request<ControlLog[]>({ url: '/api/control/logs', data: params, method: 'GET' });
 }
 
-/* ---------- 消息与任务 ---------- */
+/* ---------- 消息 ---------- */
 
 export function listMessages(params?: Record<string, unknown>): Promise<ApiResponse<KbMessage[]>> {
   return request<KbMessage[]>({ url: '/api/messages', data: params, method: 'GET' });
@@ -71,14 +70,6 @@ export function unreadCount(): Promise<ApiResponse<{ count: number }>> {
 
 export function markMessageRead(id: string): Promise<ApiResponse<KbMessage>> {
   return request<KbMessage>({ url: `/api/messages/${id}/read`, method: 'POST' });
-}
-
-export function listTasks(params?: Record<string, unknown>): Promise<ApiResponse<{ task: KbTask; overdueMark: string }[]>> {
-  return request({ url: '/api/tasks', data: params, method: 'GET' });
-}
-
-export function completeTask(id: string, doneNote?: string): Promise<ApiResponse<{ task: KbTask; overdueMark: string }>> {
-  return request({ url: `/api/tasks/${id}/complete`, data: { doneNote } as unknown as object, method: 'POST' });
 }
 
 /* ---------- 通知偏好 ---------- */

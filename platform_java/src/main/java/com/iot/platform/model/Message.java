@@ -15,9 +15,9 @@ public class Message {
     private String id;
     @TableField("user_id")
     private String userId;
-    /** TASK / ALARM / SYSTEM */
+    /** ALARM / SYSTEM */
     private String type;
-    /** 关联对象 id（任务/告警/控制记录） */
+    /** 关联对象 id（告警/控制记录） */
     @TableField("ref_id")
     private String refId;
     private String title;

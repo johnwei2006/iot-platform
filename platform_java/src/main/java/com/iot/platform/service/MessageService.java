@@ -64,7 +64,7 @@ public class MessageService {
         NotifyPref pref = new NotifyPref();
         pref.setId(UUID.randomUUID().toString());
         pref.setUserId(userId);
-        pref.setReceiveKinds("[\"TASK\",\"ALARM\",\"SYSTEM\"]");
+        pref.setReceiveKinds("[\"ALARM\",\"SYSTEM\"]");
         pref.setChannels("[\"INAPP\"]");
         pref.setUpdatedAt(new Date());
         return prefRepository.save(pref);

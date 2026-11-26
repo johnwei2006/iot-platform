@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { fetchReconnectRecords, fetchTokenRequests } from '@/api/iot/gatewayRecords';
 import type { GatewayReconnectRecord, GatewayTokenRequestRecord } from '@/types';
+
+const props = defineProps<{ deviceId?: string }>();
 
 const activeTab = ref<'reconnect' | 'token'>('reconnect');
 const loading = ref(false);
 
 const filter = reactive({
-  deviceId: '',
+  deviceId: props.deviceId ?? '',
   page: 0,
   size: 20,
 });
@@ -88,6 +90,12 @@ function handleSizeChange(size: number) {
   filter.page = 0;
   load();
 }
+
+watch(() => props.deviceId, (value) => {
+  filter.deviceId = value ?? '';
+  filter.page = 0;
+  load();
+});
 
 onMounted(load);
 </script>

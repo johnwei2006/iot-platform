@@ -15,7 +15,7 @@ public class NotifyPref {
     private String id;
     @TableField("user_id")
     private String userId;
-    /** 接收类型开关 JSON：["TASK","ALARM","SYSTEM"] */
+    /** 接收类型开关 JSON：["ALARM","SYSTEM"] */
     @TableField("receive_kinds")
     private String receiveKinds;
     /** 渠道开关 JSON：["INAPP","WECHAT","SMS"]，本期仅存 */

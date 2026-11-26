@@ -1,6 +1,6 @@
 import request from '../request';
 import type { ApiResponse, MeResponse } from '@/types';
-import type { KbMessage, KbTask, NotifyPref } from '@/types/kb';
+import type { KbMessage, NotifyPref } from '@/types/kb';
 import { adminHttp, unwrap } from './client';
 
 /** 当前管理员上下文：动态菜单/按钮权限/数据权限 */
@@ -20,24 +20,6 @@ export function unreadCount(): Promise<ApiResponse<{ count: number }>> {
 
 export function markRead(id: string): Promise<ApiResponse<KbMessage>> {
   return request<KbMessage>({ url: `/api/messages/${id}/read`, method: 'POST' });
-}
-
-/* ---------- 任务 ---------- */
-
-export function listTasks(params?: { status?: string; assignee?: string }): Promise<ApiResponse<{ task: KbTask; overdueMark: string }[]>> {
-  return request({ url: '/api/tasks', params, method: 'GET' });
-}
-
-export function getTask(id: string): Promise<ApiResponse<{ task: KbTask; overdueMark: string }>> {
-  return request({ url: `/api/tasks/${id}`, method: 'GET' });
-}
-
-export function assignTask(task: Partial<KbTask>): Promise<ApiResponse<KbTask>> {
-  return request<KbTask>({ url: '/api/tasks', data: task, method: 'POST' });
-}
-
-export function completeTask(id: string, doneNote?: string): Promise<ApiResponse<{ task: KbTask; overdueMark: string }>> {
-  return request({ url: `/api/tasks/${id}/complete`, data: { doneNote }, method: 'POST' });
 }
 
 /* ---------- 通知偏好 ---------- */

@@ -6,6 +6,7 @@ import { Search } from '@element-plus/icons-vue';
 import { listDevices } from '@/api/iot/gateway';
 import { listAreas } from '@/api/iot/area';
 import AreaSelect from '@/components/AreaSelect.vue';
+import GatewayRecords from '@/views/gateway/records.vue';
 import type { Device } from '@/types';
 
 const router = useRouter();
@@ -17,6 +18,8 @@ const onlineFilter = ref('');
 const typeFilter = ref<number | ''>('');
 const areaFilter = ref('');
 const areaNameMap = ref(new Map<string, string>());
+const recordsVisible = ref(false);
+const recordsGateway = ref<Device | null>(null);
 
 const TYPE_NAMES: Record<number, string> = { 1: '4G网关', 2: '5G网关' };
 
@@ -73,6 +76,11 @@ function openDetail(row: Device) {
   if (row.id) router.push(`/iot/gateways/${row.id}`);
 }
 
+function openRecords(row: Device) {
+  recordsGateway.value = row;
+  recordsVisible.value = true;
+}
+
 onMounted(load);
 </script>
 
@@ -122,13 +130,23 @@ onMounted(load);
         <el-table-column label="最后上报时间" width="180" align="center">
           <template #default="{ row }">{{ formatTime(row.lastSeen) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center" fixed="right">
+        <el-table-column label="操作" width="170" align="center" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">查看详情</el-button>
+            <el-button link type="primary" @click="openRecords(row)">认证记录</el-button>
           </template>
         </el-table-column>
       </el-table>
     </div>
+
+    <el-dialog
+      v-model="recordsVisible"
+      :title="`认证记录 - ${recordsGateway?.name || recordsGateway?.deviceId || ''}`"
+      width="900px"
+      destroy-on-close
+    >
+      <GatewayRecords v-if="recordsGateway?.deviceId" :device-id="recordsGateway.deviceId" />
+    </el-dialog>
   </div>
 </template>
 

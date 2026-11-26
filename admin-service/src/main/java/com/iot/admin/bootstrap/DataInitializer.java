@@ -66,9 +66,16 @@ public class DataInitializer implements ApplicationRunner {
             initIotMenus();
             initThreeLayerMenus();
             ensureStaticMenus();
+            removeDataQueryMenu();
+            removeAlarmMenus();
+            removeGatewayRecordsMenu();
+            removeTaskAndConflictMenus();
             initGatewayMenu();
             initSensorDataMenu();
             initAreaMenu();
+            enforceControlMenuComponent();
+            consolidateControlMenus();
+            reorderIotMenus();
             initProductCatalog();
             ensureMenuIcons();
             initSuperAdminRole();
@@ -85,33 +92,19 @@ public class DataInitializer implements ApplicationRunner {
             return;
         }
         Menu iotDir = menu("物联网", Menu.TYPE_DIR, null, "/iot", null, null, "10");
-        // 告警中心
-        Menu alarmMenu = menu("告警中心", Menu.TYPE_MENU, iotDir.getId(), "/iot/alarm",
-                "iot/alarm/index", "iot:alarm:page", "20");
-        button(alarmMenu.getId(), "告警详情", "iot:alarm:detail");
         // 设备控制
         Menu controlMenu = menu("设备控制", Menu.TYPE_MENU, iotDir.getId(), "/iot/control",
-                "iot/control/devices", "iot:control:page", "30");
+                "iot/control/index", "iot:control:page", "76");
         button(controlMenu.getId(), "手动下发", "iot:control:issue");
         button(controlMenu.getId(), "组合执行", "iot:control:group");
-        // 自动控制规则
-        Menu ruleMenu = menu("自动控制", Menu.TYPE_MENU, iotDir.getId(), "/iot/control/rules",
-                "iot/control/rules", "iot:rule:page", "40");
-        button(ruleMenu.getId(), "规则新增", "iot:rule:create");
-        button(ruleMenu.getId(), "规则编辑", "iot:rule:edit");
-        button(ruleMenu.getId(), "规则启停", "iot:rule:toggle");
-        button(ruleMenu.getId(), "冲突校验", "iot:rule:check");
-        // 控制记录
-        Menu logMenu = menu("控制记录", Menu.TYPE_MENU, iotDir.getId(), "/iot/control/logs",
-                "iot/control/logs", "iot:controllog:page", "50");
+        button(controlMenu.getId(), "规则新增", "iot:rule:create");
+        button(controlMenu.getId(), "规则编辑", "iot:rule:edit");
+        button(controlMenu.getId(), "规则启停", "iot:rule:toggle");
+        button(controlMenu.getId(), "冲突校验", "iot:rule:check");
+        button(controlMenu.getId(), "查看记录", "iot:controllog:page");
         // 消息中心
-        Menu msgMenu = menu("消息中心", Menu.TYPE_MENU, iotDir.getId(), "/iot/messages",
-                "iot/messages/index", "iot:message:page", "60");
-        button(msgMenu.getId(), "任务分配", "iot:task:assign");
-        button(msgMenu.getId(), "任务完成", "iot:task:complete");
-        // 管理员冲突校验工具页
-        Menu conflictMenu = menu("冲突校验工具", Menu.TYPE_MENU, iotDir.getId(), "/iot/conflict-check",
-                "iot/admin/conflict-check", "iot:conflict:check", "70");
+        menu("消息中心", Menu.TYPE_MENU, iotDir.getId(), "/iot/messages",
+                "iot/messages/index", "iot:message:page", "90");
         log.info("Bootstrap iot menus created");
     }
 
@@ -154,6 +147,7 @@ public class DataInitializer implements ApplicationRunner {
                 menu("网关管理", Menu.TYPE_MENU, iotDir.get().getId(), "/iot/gateways",
                         "iot/gateway/gateways", "iot:gateway:page", "71"));
         buttonOnce(gatewayMenu.getId(), "查看详情", "iot:gateway:view");
+        buttonOnce(gatewayMenu.getId(), "认证记录", "iot:gateway:records");
         buttonOnce(gatewayMenu.getId(), "编辑网关", "iot:gateway:edit");
         log.info("Bootstrap gateway menu created");
     }
@@ -172,6 +166,53 @@ public class DataInitializer implements ApplicationRunner {
         log.info("Bootstrap sensor-data menu created");
     }
 
+    /** 兼容旧数据：设备控制菜单统一指向双 Tab 入口页。 */
+    private void enforceControlMenuComponent() {
+        menuRepository.findByPath("/iot/control").ifPresent(menu -> {
+            if (!"iot/control/index".equals(menu.getComponent())) {
+                menu.setComponent("iot/control/index");
+                menuRepository.save(menu);
+                log.info("Bootstrap control menu component migrated to iot/control/index");
+            }
+        });
+    }
+
+    /** 合并控制菜单：自动控制/控制记录并入设备控制，按钮权限迁移，幂等。 */
+    private void consolidateControlMenus() {
+        java.util.Optional<Menu> controlOpt = menuRepository.findByPath("/iot/control");
+        if (!controlOpt.isPresent()) {
+            return;
+        }
+        String controlId = controlOpt.get().getId();
+        java.util.List<String> removedIds = new java.util.ArrayList<String>();
+        for (String path : new String[] {"/iot/control/rules", "/iot/control/logs"}) {
+            java.util.Optional<Menu> old = menuRepository.findByPath(path);
+            if (!old.isPresent()) {
+                continue;
+            }
+            String oldId = old.get().getId();
+            removedIds.add(oldId);
+            for (Menu child : menuRepository.findByParentId(oldId)) {
+                child.setParentId(controlId);
+                menuRepository.save(child);
+            }
+            for (com.iot.admin.product.ProductMenu relation : productMenuRepository.findByMenuIds(java.util.List.of(oldId))) {
+                productMenuRepository.delete(relation);
+            }
+            menuRepository.delete(old.get());
+            log.info("Bootstrap merged control menu: {}", path);
+        }
+        // 清理所有角色 menu_ids 中对已删除菜单的引用
+        if (!removedIds.isEmpty()) {
+            for (com.iot.admin.role.Role role : roleRepository.findAll()) {
+                java.util.List<String> ids = role.getMenuIds();
+                if (ids != null && ids.removeAll(removedIds)) {
+                    roleRepository.save(role);
+                }
+            }
+        }
+    }
+
     /** 区域管理菜单：卫星地图多边形地块（新增/编辑/删除），幂等。 */
     private void initAreaMenu() {
         java.util.Optional<Menu> iotDir = menuRepository.findByPath("/iot");
@@ -180,7 +221,7 @@ public class DataInitializer implements ApplicationRunner {
         }
         Menu areaMenu = menuRepository.findByPath("/iot/area").orElseGet(() ->
                 menu("区域管理", Menu.TYPE_MENU, iotDir.get().getId(), "/iot/area",
-                        "iot/area/index", "iot:area:page", "76"));
+                        "iot/area/index", "iot:area:page", "77"));
         buttonOnce(areaMenu.getId(), "新增区域", "iot:area:create");
         buttonOnce(areaMenu.getId(), "编辑区域", "iot:area:edit");
         buttonOnce(areaMenu.getId(), "删除区域", "iot:area:delete");
@@ -255,9 +296,115 @@ public class DataInitializer implements ApplicationRunner {
             return;
         }
         staticMenu(iot.get().getId(), "首页", "/home", "House", "5");
-        staticMenu(iot.get().getId(), "告警看板", "/alarms", "WarningFilled", "25");
-        staticMenu(iot.get().getId(), "网关认证记录", "/gateway-records", "Key", "80");
-        staticMenu(iot.get().getId(), "数据查询", "/data", "DataLine", "90");
+    }
+
+    /** 兼容旧数据：移除已下线的数据查询菜单及其授权，幂等。 */
+    private void removeDataQueryMenu() {
+        java.util.Optional<Menu> old = menuRepository.findByPath("/data");
+        if (!old.isPresent()) {
+            return;
+        }
+        String oldId = old.get().getId();
+        for (Menu child : menuRepository.findByParentId(oldId)) {
+            menuRepository.delete(child);
+        }
+        for (com.iot.admin.product.ProductMenu relation : productMenuRepository.findByMenuIds(java.util.List.of(oldId))) {
+            productMenuRepository.delete(relation);
+        }
+        for (com.iot.admin.role.Role role : roleRepository.findAll()) {
+            if (role.getMenuIds() != null && role.getMenuIds().remove(oldId)) {
+                roleRepository.save(role);
+            }
+        }
+        menuRepository.delete(old.get());
+        log.info("Bootstrap removed data query menu");
+    }
+
+    /** 兼容旧数据：移除告警中心与告警看板菜单及其授权，幂等。 */
+    private void removeAlarmMenus() {
+        for (String path : new String[] {"/iot/alarm", "/alarms"}) {
+            java.util.Optional<Menu> old = menuRepository.findByPath(path);
+            if (!old.isPresent()) {
+                continue;
+            }
+            String oldId = old.get().getId();
+            for (Menu child : menuRepository.findByParentId(oldId)) {
+                menuRepository.delete(child);
+            }
+            for (com.iot.admin.product.ProductMenu relation : productMenuRepository.findByMenuIds(java.util.List.of(oldId))) {
+                productMenuRepository.delete(relation);
+            }
+            for (com.iot.admin.role.Role role : roleRepository.findAll()) {
+                if (role.getMenuIds() != null && role.getMenuIds().remove(oldId)) {
+                    roleRepository.save(role);
+                }
+            }
+            menuRepository.delete(old.get());
+            log.info("Bootstrap removed alarm menu: {}", path);
+        }
+    }
+
+    /** 兼容旧数据：网关认证记录并入网关管理，移除独立菜单及其授权，幂等。 */
+    private void removeGatewayRecordsMenu() {
+        java.util.Optional<Menu> old = menuRepository.findByPath("/gateway-records");
+        if (!old.isPresent()) {
+            return;
+        }
+        String oldId = old.get().getId();
+        for (Menu child : menuRepository.findByParentId(oldId)) {
+            menuRepository.delete(child);
+        }
+        for (com.iot.admin.product.ProductMenu relation : productMenuRepository.findByMenuIds(java.util.List.of(oldId))) {
+            productMenuRepository.delete(relation);
+        }
+        for (com.iot.admin.role.Role role : roleRepository.findAll()) {
+            if (role.getMenuIds() != null && role.getMenuIds().remove(oldId)) {
+                roleRepository.save(role);
+            }
+        }
+        menuRepository.delete(old.get());
+        log.info("Bootstrap removed gateway records menu");
+    }
+
+    /** 兼容旧数据：移除任务按钮与冲突校验工具菜单及其授权，幂等。 */
+    private void removeTaskAndConflictMenus() {
+        java.util.List<String> targets = new java.util.ArrayList<String>();
+        for (String perm : new String[] {"iot:task:assign", "iot:task:complete", "iot:conflict:check"}) {
+            menuRepository.findByPerm(perm).ifPresent(m -> targets.add(m.getId()));
+        }
+        if (targets.isEmpty()) {
+            return;
+        }
+        for (String id : targets) {
+            for (com.iot.admin.product.ProductMenu relation : productMenuRepository.findByMenuIds(java.util.List.of(id))) {
+                productMenuRepository.delete(relation);
+            }
+        }
+        for (com.iot.admin.role.Role role : roleRepository.findAll()) {
+            if (role.getMenuIds() != null && role.getMenuIds().removeAll(targets)) {
+                roleRepository.save(role);
+            }
+        }
+        for (String id : targets) {
+            menuRepository.findById(id).ifPresent(menuRepository::delete);
+        }
+        log.info("Bootstrap removed task buttons and conflict-check menu: {}", targets.size());
+    }
+
+    /** 兼容旧数据：设备控制紧跟传感器数据，区域管理顺延，消息中心置底，幂等。 */
+    private void reorderIotMenus() {
+        setMenuSort("/iot/control", "76");
+        setMenuSort("/iot/area", "77");
+        setMenuSort("/iot/messages", "90");
+    }
+
+    private void setMenuSort(String path, String sort) {
+        menuRepository.findByPath(path).ifPresent(menu -> {
+            if (!sort.equals(menu.getSort())) {
+                menu.setSort(sort);
+                menuRepository.save(menu);
+            }
+        });
     }
 
     private void staticMenu(String parentId, String name, String path, String icon, String sort) {
@@ -285,20 +432,15 @@ public class DataInitializer implements ApplicationRunner {
         icons.put("/system/product", "Grid");
         icons.put("/screen", "Monitor");
         icons.put("/iot", "Monitor");
-        icons.put("/iot/alarm", "WarningFilled");
         icons.put("/iot/control", "Cpu");
         icons.put("/iot/control/rules", "Timer");
         icons.put("/iot/control/logs", "Document");
         icons.put("/iot/messages", "ChatDotRound");
-        icons.put("/iot/conflict-check", "MagicStick");
         icons.put("/iot/gateways", "Connection");
         icons.put("/iot/sensor-data", "DataLine");
         icons.put("/iot/area", "Location");
         icons.put("/farm", "Sunny");
         icons.put("/home", "House");
-        icons.put("/alarms", "WarningFilled");
-        icons.put("/gateway-records", "Key");
-        icons.put("/data", "DataLine");
         for (java.util.Map.Entry<String, String> entry : icons.entrySet()) {
             menuRepository.findByPath(entry.getKey()).ifPresent(menu -> {
                 if (menu.getIcon() == null || menu.getIcon().trim().isEmpty()) {
@@ -417,7 +559,7 @@ public class DataInitializer implements ApplicationRunner {
         role.setMenuIds(allMenuIds);
         Map<String, String> scopes = new HashMap<String, String>();
         for (String entity : new String[] {
-                "device", "control_rule", "control_log", "task", "message", "metric_threshold", "alarm"}) {
+                "device", "control_rule", "control_log", "message", "metric_threshold", "alarm"}) {
             scopes.put(entity, com.iot.admin.role.RoleService.SCOPE_ORG_AND_CHILDREN);
         }
         role.setDataScopes(scopes);
@@ -428,7 +570,7 @@ public class DataInitializer implements ApplicationRunner {
     private Map<String, String> allBusinessScopes() {
         Map<String, String> ds = new HashMap<String, String>();
         for (String entity : new String[] {
-                "device", "control_rule", "control_log", "task", "message", "metric_threshold", "alarm"}) {
+                "device", "control_rule", "control_log", "message", "metric_threshold", "alarm"}) {
             ds.put(entity, com.iot.admin.role.RoleService.SCOPE_ALL);
         }
         return ds;

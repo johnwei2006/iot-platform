@@ -9,7 +9,6 @@ const userStore = useUserStore();
 const large = ref(storage.get<boolean>('largeFont') || false);
 
 const KIND_OPTIONS = [
-  { key: 'TASK', label: '任务提醒' },
   { key: 'ALARM', label: '告警通知' },
   { key: 'SYSTEM', label: '系统消息' },
 ];
@@ -19,7 +18,7 @@ const CHANNEL_OPTIONS = [
   { key: 'SMS', label: '短信' },
 ];
 
-const receiveKinds = ref<string[]>(['TASK', 'ALARM']);
+const receiveKinds = ref<string[]>(['ALARM']);
 const channels = ref<string[]>(['INAPP']);
 const prefSaving = ref(false);
 
@@ -32,7 +31,7 @@ async function loadPref() {
     const res = await getNotifyPref();
     receiveKinds.value = parseList(res.data?.receiveKinds);
     channels.value = parseList(res.data?.channels);
-    if (!receiveKinds.value.length) receiveKinds.value = ['TASK', 'ALARM'];
+    if (!receiveKinds.value.length) receiveKinds.value = ['ALARM'];
     if (!channels.value.length) channels.value = ['INAPP'];
   } catch { /* request 已 toast */ }
 }

@@ -13,8 +13,6 @@ export interface ProductView {
 const IOT_STATIC: MenuNode[] = [
   { id: 'static-home', parentId: null, name: '首页', type: 'MENU', path: '/home' },
   { id: 'static-devices', parentId: null, name: '设备管理', type: 'MENU', path: '/devices' },
-  { id: 'static-alarms', parentId: null, name: '告警看板', type: 'MENU', path: '/alarms' },
-  { id: 'static-gateway', parentId: null, name: '网关认证记录', type: 'MENU', path: '/gateway-records' },
   { id: 'static-data', parentId: null, name: '数据查询', type: 'MENU', path: '/data' },
 ];
 
@@ -46,7 +44,7 @@ function mergeIotStatic(product: ProductView, menus: MenuNode[]): ProductView {
   const paths = new Set(product.menus.map((m) => m.path));
   const names = product.menus.map((m) => m.name).join('|');
   const equivalent: Record<string, string> = {
-    '/devices': '设备', '/alarms': '告警', '/data': '数据',
+    '/devices': '设备', '/data': '数据',
   };
   const added = IOT_STATIC
     .filter((m) => !paths.has(m.path || '')

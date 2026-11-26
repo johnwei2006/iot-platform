@@ -120,3 +120,13 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261127-12-drop-task-feature
+      author: iot-platform
+      comment: 移除任务功能：清理 TASK 消息与通知偏好，删除 iot_task 表
+      changes:
+        - sqlFile:
+            path: sql/012-drop-task-feature.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true

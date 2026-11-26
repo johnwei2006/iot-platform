@@ -53,10 +53,6 @@ function goMessages(): void {
   void router.push('/iot/messages');
 }
 
-function goConflictCheck(): void {
-  void router.push('/iot/conflict-check');
-}
-
 async function handleLogout(): Promise<void> {
   await userStore.logout();
   await router.push({ name: 'Login' });
@@ -77,7 +73,7 @@ onMounted(() => {
     <header class="kb-topbar">
       <div class="kb-brand">
         <span class="kb-brand__mark" aria-hidden="true">科</span>
-        <span class="kb-brand__name">科百云田</span>
+        <span class="kb-brand__name">百觅物联网平台</span>
       </div>
 
       <nav class="kb-products" aria-label="产品导航">
@@ -102,8 +98,7 @@ onMounted(() => {
             </button>
           </template>
           <div class="kb-popover-title">帮助与支持</div>
-          <p class="kb-popover-text">可按产品切换左侧菜单；消息角标显示未读任务与告警。</p>
-          <el-button link type="primary" @click="goConflictCheck">打开冲突校验工具</el-button>
+          <p class="kb-popover-text">可按产品切换左侧菜单；消息角标显示未读消息。</p>
         </el-popover>
 
         <el-popover placement="bottom-end" :width="254" trigger="click">

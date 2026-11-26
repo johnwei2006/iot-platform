@@ -1,60 +1,53 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { listMessages, listTasks, markMessageRead, unreadCount } from '@/api/kb';
+import { listMessages, markMessageRead, unreadCount } from '@/api/kb';
 import { storage } from '@/utils/storage';
-import type { KbMessage, KbTask } from '@/types/kb';
+import type { KbMessage } from '@/types/kb';
 
-type Tab = 'TODO' | 'DONE' | 'UNREAD' | 'ALL';
+type Tab = 'UNREAD' | 'READ' | 'ALL';
 
 const large = ref(storage.get<boolean>('largeFont') || false);
-const tab = ref<Tab>('TODO');
-const tasks = ref<{ task: KbTask; overdueMark: string }[]>([]);
+const tab = ref<Tab>('UNREAD');
 const messages = ref<KbMessage[]>([]);
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'TODO', label: '待办' },
-  { key: 'DONE', label: '已完成' },
   { key: 'UNREAD', label: '未读' },
+  { key: 'READ', label: '已读' },
   { key: 'ALL', label: '全部' },
 ];
 
-const TYPE_LABELS: Record<string, string> = { TASK: '任务', ALARM: '告警', SYSTEM: '系统' };
-
-const showTasks = computed(() => tab.value === 'TODO' || tab.value === 'DONE');
+const TYPE_LABELS: Record<string, string> = { ALARM: '告警', SYSTEM: '系统' };
 const unreadCountValue = ref(0);
 
-function overdueText(mark: string) {
-  if (mark === 'OVERDUE') return '超时未完成';
-  if (mark === 'LATE_DONE') return '超时完成';
-  return '';
-}
+const visibleMessages = computed(() => {
+  if (tab.value === 'UNREAD') return messages.value.filter((m) => !m.readAt);
+  if (tab.value === 'READ') return messages.value.filter((m) => m.readAt);
+  return messages.value;
+});
 
 function fmtTime(s?: string) {
   return (s || '').slice(0, 16).replace('T', ' ');
 }
 
-async function loadTasks() {
-  const status = tab.value === 'DONE' ? 'DONE' : 'TODO';
-  const res = await listTasks({ status });
-  tasks.value = res.data || [];
-}
-
-async function loadMessages() {
-  const res = await listMessages(tab.value === 'UNREAD' ? { unread: true } : {});
-  messages.value = res.data || [];
-}
-
 function switchTab(t: Tab) {
   tab.value = t;
-  load();
+}
+
+async function openMessage(m: KbMessage) {
+  if (!m.readAt) {
+    markMessageRead(m.id).catch(() => {});
+    m.readAt = new Date().toISOString();
+    unreadCountValue.value = Math.max(0, unreadCountValue.value - 1);
+  }
+  uni.showToast({ title: m.content || m.title, icon: 'none' });
 }
 
 async function load() {
   if (!storage.get<string>('token')) return;
   try {
-    if (showTasks.value) await loadTasks();
-    else await loadMessages();
+    const res = await listMessages();
+    messages.value = res.data || [];
     const c = await unreadCount();
     unreadCountValue.value = c.data?.count || 0;
     if (unreadCountValue.value > 0) {
@@ -63,20 +56,6 @@ async function load() {
       uni.removeTabBarBadge({ index: 2 });
     }
   } catch { /* request 已 toast */ }
-}
-
-function openTask(t: KbTask) {
-  storage.set('kb.taskDraft', t);
-  uni.navigateTo({ url: '/pages/task-detail/task-detail?id=' + t.id });
-}
-
-function openMessage(m: KbMessage) {
-  if (!m.readAt) markMessageRead(m.id).catch(() => {});
-  if (m.type === 'TASK' && m.refId) {
-    openTask({ id: m.refId, title: m.title, content: m.content, assigneeUserId: m.userId, status: 'TODO' } as KbTask);
-    return;
-  }
-  uni.showToast({ title: m.content || m.title, icon: 'none' });
 }
 
 onShow(load);
@@ -96,31 +75,16 @@ onShow(load);
       </view>
     </view>
 
-    <template v-if="showTasks">
-      <view v-if="!tasks.length" class="kb-card empty">{{ tab === 'DONE' ? '暂无已完成任务' : '暂无待办任务' }}</view>
-      <view v-for="item in tasks" :key="item.task.id" class="kb-card row kb-press" @tap="openTask(item.task)">
-        <view class="row-main">
-          <text class="row-title">{{ item.task.title }}</text>
-          <text class="row-sub">{{ fmtTime(item.task.dueTime) }} 截止 · {{ item.task.content || '无补充说明' }}</text>
-        </view>
-        <text class="tag" :class="item.task.status === 'DONE' ? 'ok' : item.overdueMark === 'OVERDUE' ? 'bad' : 'warn'">
-          {{ item.task.status === 'DONE' ? overdueText(item.overdueMark) || '已完成' : overdueText(item.overdueMark) || '待完成' }}
-        </text>
+    <view v-if="!visibleMessages.length" class="kb-card empty">暂无消息</view>
+    <view v-for="m in visibleMessages" :key="m.id" class="kb-card row kb-press" @tap="openMessage(m)">
+      <view class="row-main">
+        <text class="row-title" :class="{ bold: !m.readAt }">{{ m.title }}</text>
+        <text class="row-sub">{{ m.content || '' }} · {{ fmtTime(m.createdAt) }}</text>
       </view>
-    </template>
-
-    <template v-else>
-      <view v-if="!messages.length" class="kb-card empty">暂无消息</view>
-      <view v-for="m in messages" :key="m.id" class="kb-card row kb-press" @tap="openMessage(m)">
-        <view class="row-main">
-          <text class="row-title" :class="{ bold: !m.readAt }">{{ m.title }}</text>
-          <text class="row-sub">{{ m.content || '' }} · {{ fmtTime(m.createdAt) }}</text>
-        </view>
-        <text class="tag" :class="m.type === 'ALARM' ? 'bad' : m.type === 'TASK' ? 'warn' : 'plain'">
-          {{ TYPE_LABELS[m.type] || '消息' }}
-        </text>
-      </view>
-    </template>
+      <text class="tag" :class="m.type === 'ALARM' ? 'bad' : 'plain'">
+        {{ TYPE_LABELS[m.type] || '消息' }}
+      </text>
+    </view>
   </scroll-view>
 </template>
 <style scoped lang="scss">
@@ -136,8 +100,6 @@ onShow(load);
 .row-title.bold { font-weight: 700; }
 .row-sub { font-size: 24rpx; color: $kb-text-muted; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tag { flex-shrink: 0; font-size: 22rpx; padding: 6rpx 14rpx; border-radius: 8rpx; }
-.tag.ok { color: $kb-success; background: $kb-success-bg; }
-.tag.warn { color: $kb-warning; background: $kb-warning-bg; }
 .tag.bad { color: $kb-danger; background: $kb-danger-bg; }
 .tag.plain { color: $kb-text-muted; background: $kb-bg-sunken; }
 .kb-large .row-title, .kb-large .row-sub { font-size: 31rpx; }

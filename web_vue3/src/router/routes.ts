@@ -65,18 +65,6 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '传感器组合管理', requiresAuth: true, roles: ['admin', 'user'] },
       },
       {
-        path: 'alarms',
-        name: 'Alarms',
-        component: () => import('@/views/alarms/index.vue'),
-        meta: { title: '告警看板', requiresAuth: true, roles: ['admin', 'user'] },
-      },
-      {
-        path: 'gateway-records',
-        name: 'GatewayRecords',
-        component: () => import('@/views/gateway/records.vue'),
-        meta: { title: '网关认证记录', requiresAuth: true, roles: ['admin', 'user'] },
-      },
-      {
         path: 'data',
         name: 'Data',
         component: () => import('@/views/data/index.vue'),

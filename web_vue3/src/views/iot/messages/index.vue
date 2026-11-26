@@ -1,36 +1,29 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { completeTask, listMessages, listTasks, markRead, unreadCount, getNotifyPref, updateNotifyPref } from '@/api/system/me';
-import type { KbMessage, KbTask } from '@/types/kb';
+import { listMessages, markRead, unreadCount, getNotifyPref, updateNotifyPref } from '@/api/system/me';
+import type { KbMessage } from '@/types/kb';
 
 const loading = ref(false);
-const tab = ref('待办');
-const tasks = ref<{ task: KbTask; overdueMark: string }[]>([]);
+const tab = ref('未读');
 const messages = ref<KbMessage[]>([]);
 const unread = ref(0);
 
-const taskVisible = ref(false);
-const currentTask = ref<KbTask | null>(null);
-const currentMark = ref('');
-const doneNote = ref('');
-
 const prefVisible = ref(false);
-const prefForm = reactive({ TASK: true, ALARM: true, SYSTEM: false, INAPP: true, WECHAT: false, SMS: false });
+const prefForm = reactive({ ALARM: true, SYSTEM: false, INAPP: true, WECHAT: false, SMS: false });
 
+const TYPE_LABELS: Record<string, string> = { ALARM: '告警', SYSTEM: '系统' };
 
-const visibleTasks = computed(() => {
-  if (tab.value === '待办') return tasks.value.filter((t) => t.task.status === 'TODO');
-  if (tab.value === '已完成') return tasks.value.filter((t) => t.task.status === 'DONE');
-  if (tab.value === '未读') return messages.value.filter((m) => !m.readAt).map((m) => ({ task: { id: m.refId, title: m.title, content: m.content, status: 'TODO' } as KbTask, overdueMark: '', msg: m }));
-  return tasks.value;
+const visibleMessages = computed(() => {
+  if (tab.value === '未读') return messages.value.filter((m) => !m.readAt);
+  if (tab.value === '已读') return messages.value.filter((m) => m.readAt);
+  return messages.value;
 });
 
 async function refresh() {
   loading.value = true;
   try {
-    const [taskRes, msgRes, unreadRes] = await Promise.all([listTasks(), listMessages(), unreadCount()]);
-    tasks.value = taskRes.data || [];
+    const [msgRes, unreadRes] = await Promise.all([listMessages(), unreadCount()]);
     messages.value = msgRes.data || [];
     unread.value = unreadRes.data?.count ?? 0;
   } catch (error) {
@@ -40,32 +33,15 @@ async function refresh() {
   }
 }
 
-function openTask(t: KbTask, mark: string) {
-  currentTask.value = t;
-  currentMark.value = mark;
-  doneNote.value = t.doneNote || '';
-  taskVisible.value = true;
-  const msg = messages.value.find((m) => m.refId === t.id && !m.readAt);
-  if (msg) {
-    markRead(msg.id).catch(() => undefined);
+async function openMessage(m: KbMessage) {
+  if (!m.readAt) {
+    try {
+      await markRead(m.id);
+      await refresh();
+    } catch (error) {
+      ElMessage.error((error as Error).message || '标记已读失败');
+    }
   }
-}
-
-async function submitComplete() {
-  if (!currentTask.value?.id) return;
-  try {
-    await completeTask(currentTask.value.id, doneNote.value);
-    ElMessage.success('已提交完成');
-    taskVisible.value = false;
-    await refresh();
-  } catch (error) {
-    ElMessage.error((error as Error).message || '提交失败');
-  }
-}
-
-function statusText(t: { task: KbTask; overdueMark: string }) {
-  if (t.task.status === 'DONE') return t.overdueMark === 'LATE_DONE' ? '已完成 · 曾超时' : '已完成';
-  return t.overdueMark === 'OVERDUE' ? '任务已超时' : '任务已分配';
 }
 
 async function openPrefs() {
@@ -73,7 +49,6 @@ async function openPrefs() {
     const res = await getNotifyPref();
     const kinds = JSON.parse(res.data?.receiveKinds || '[]') as string[];
     const channels = JSON.parse(res.data?.channels || '[]') as string[];
-    prefForm.TASK = kinds.includes('TASK');
     prefForm.ALARM = kinds.includes('ALARM');
     prefForm.SYSTEM = kinds.includes('SYSTEM');
     prefForm.INAPP = channels.includes('INAPP');
@@ -86,7 +61,7 @@ async function openPrefs() {
 }
 
 async function savePrefs() {
-  const kinds = ['TASK', 'ALARM', 'SYSTEM'].filter((k) => (prefForm as Record<string, boolean>)[k]);
+  const kinds = ['ALARM', 'SYSTEM'].filter((k) => (prefForm as Record<string, boolean>)[k]);
   const channels = ['INAPP', 'WECHAT', 'SMS'].filter((c) => (prefForm as Record<string, boolean>)[c]);
   try {
     await updateNotifyPref({ receiveKinds: JSON.stringify(kinds), channels: JSON.stringify(channels) });
@@ -99,58 +74,34 @@ async function savePrefs() {
 
 onMounted(refresh);
 </script>
+
 <template>
   <div v-loading="loading">
     <el-card shadow="never">
       <template #header>
         <div class="head-bar">
-          <el-segmented v-model="tab" :options="['待办', '已完成', '未读', '全部']" />
+          <el-segmented v-model="tab" :options="['未读', '已读', '全部']" />
           <el-badge :value="unread" :hidden="!unread" type="danger">
             <el-button @click="openPrefs">通知偏好</el-button>
           </el-badge>
         </div>
       </template>
 
-      <el-empty v-if="!visibleTasks.length" :description="`暂无${tab}消息`" />
+      <el-empty v-if="!visibleMessages.length" :description="`暂无${tab}消息`" />
       <div v-else class="msg-list">
-        <button v-for="(t, i) in visibleTasks" :key="i" class="kb-tile msg-item kb-press"
-          :class="t.task.status === 'DONE' ? 'is-ok' : t.overdueMark === 'OVERDUE' ? 'kb-tile--warn' : ''"
-          @click="openTask(t.task, t.overdueMark)">
+        <button v-for="m in visibleMessages" :key="m.id" class="kb-tile msg-item kb-press"
+          :class="{ 'is-ok': !!m.readAt }" @click="openMessage(m)">
           <div class="msg-item__main">
-            <span class="msg-item__title">{{ statusText(t) }} · {{ t.task.title }}</span>
-            <span class="msg-item__sub">
-              {{ t.task.status === 'DONE' ? '完成时间 ' + (t.task.doneTime || '') : '截止 ' + (t.task.dueTime || '未设置') }}
-            </span>
+            <span class="msg-item__title">{{ TYPE_LABELS[m.type] || m.type }} · {{ m.title }}</span>
+            <span class="msg-item__sub">{{ m.content || '—' }}</span>
           </div>
-          <el-tag v-if="t.task.status === 'DONE'" type="success" size="small">已完成</el-tag>
-          <el-tag v-else-if="t.overdueMark === 'OVERDUE'" type="warning" size="small">已超时</el-tag>
+          <span class="msg-item__time">{{ (m.createdAt || '').replace('T', ' ').slice(0, 16) }}</span>
         </button>
       </div>
     </el-card>
 
-    <el-dialog v-model="taskVisible" title="任务详情" width="520px">
-      <template v-if="currentTask">
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="任务">{{ currentTask.title }}</el-descriptions-item>
-          <el-descriptions-item label="要求">{{ currentTask.content || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="截止时间">{{ currentTask.dueTime || '未设置' }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            {{ currentMark === 'OVERDUE' && currentTask.status === 'TODO' ? '已超时（仍可提交）' : statusText({ task: currentTask, overdueMark: currentMark }) }}
-          </el-descriptions-item>
-        </el-descriptions>
-        <el-input v-if="currentTask.status === 'TODO'" v-model="doneNote" type="textarea" :rows="3" maxlength="300" placeholder="完成说明（选填）" style="margin-top: 12px" />
-        <el-descriptions v-else :column="1" border style="margin-top: 12px">
-          <el-descriptions-item label="完成说明">{{ currentTask.doneNote || '—' }}</el-descriptions-item>
-        </el-descriptions>
-      </template>
-      <template #footer>
-        <el-button v-if="currentTask && currentTask.status === 'TODO'" type="primary" v-permission="'iot:task:complete'" @click="submitComplete">提交完成</el-button>
-      </template>
-    </el-dialog>
-
     <el-dialog v-model="prefVisible" title="通知偏好（本期仅存配置，不实际推送）" width="460px">
       <h4>接收类型</h4>
-      <el-checkbox v-model="prefForm.TASK">任务</el-checkbox>
       <el-checkbox v-model="prefForm.ALARM">告警</el-checkbox>
       <el-checkbox v-model="prefForm.SYSTEM">系统</el-checkbox>
       <h4>接收渠道</h4>
@@ -173,5 +124,6 @@ onMounted(refresh);
 .msg-item__main { display: flex; flex-direction: column; gap: 4px; }
 .msg-item__title { font-weight: 600; }
 .msg-item__sub { font-size: var(--kb-fs-caption); color: var(--kb-text-muted); }
+.msg-item__time { font-size: var(--kb-fs-caption); color: var(--kb-text-muted); }
 h4 { margin: 12px 0 6px; color: var(--kb-text-muted); }
 </style>

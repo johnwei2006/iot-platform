@@ -52,7 +52,7 @@ public class MessageController {
         return ApiResponse.success(messageService.prefOf(userId));
     }
 
-    /** 更新通知偏好：body {"receiveKinds":"[\"TASK\"]","channels":"[\"INAPP\"]"}（JSON 字符串）。 */
+    /** 更新通知偏好：body {"receiveKinds":"[\"ALARM\"]","channels":"[\"INAPP\"]"}（JSON 字符串）。 */
     @PostMapping("/notify-prefs")
     public ApiResponse<?> updatePref(@RequestBody Map<String, String> body, HttpServletRequest request) {
         String userId = (String) request.getAttribute("subject");

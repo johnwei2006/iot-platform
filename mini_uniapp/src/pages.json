@@ -11,7 +11,6 @@
     { "path": "pages/control-rules/control-rules", "style": { "navigationBarTitleText": "自动控制" } },
     { "path": "pages/rule-form/rule-form", "style": { "navigationBarTitleText": "规则表单" } },
     { "path": "pages/control-logs/control-logs", "style": { "navigationBarTitleText": "控制记录" } },
-    { "path": "pages/task-detail/task-detail", "style": { "navigationBarTitleText": "任务详情" } },
     { "path": "pages/login/login", "style": { "navigationBarTitleText": "登录" } }
   ],
   "globalStyle": {

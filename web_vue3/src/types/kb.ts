@@ -69,25 +69,11 @@ export interface ControlLog {
 export interface KbMessage {
   id: string;
   userId: string;
-  type: 'TASK' | 'ALARM' | 'SYSTEM';
+  type: 'ALARM' | 'SYSTEM';
   refId?: string;
   title: string;
   content?: string;
   readAt?: string;
-  createdAt?: string;
-}
-
-export interface KbTask {
-  id?: string;
-  title: string;
-  content?: string;
-  assigneeUserId: string;
-  dueTime?: string;
-  status: 'TODO' | 'DONE';
-  doneTime?: string;
-  doneNote?: string;
-  orgCode?: string;
-  createdBy?: string;
   createdAt?: string;
 }
 
