@@ -30,20 +30,30 @@ public class ThresholdAlarmHandler implements UplinkHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ThresholdAlarmHandler.class);
     private static final String METRIC_ALARM_PREFIX = "threshold:";
+    private static final String SENSOR_ALARM_PREFIX = "sensor:";
 
     private final MetricThresholdRepository thresholdRepository;
     private final AlarmRepository alarmRepository;
     private final SensorMetadataRegistry registry;
     private final com.iot.platform.repository.MessageRepository messageRepository;
+    /** 传感器级阈值后备来源（iot_sensor.warn_min/warn_max，优先于网关级阈值） */
+    private final com.iot.platform.repository.SensorRepository sensorRepository;
+    private final com.iot.platform.repository.NodeRepository nodeRepository;
 
     public ThresholdAlarmHandler(MetricThresholdRepository thresholdRepository,
                                  AlarmRepository alarmRepository,
                                  SensorMetadataRegistry registry,
-                                 com.iot.platform.repository.MessageRepository messageRepository) {
+                                 com.iot.platform.repository.MessageRepository messageRepository,
+                                 @org.springframework.beans.factory.annotation.Autowired(required = false)
+                                 com.iot.platform.repository.SensorRepository sensorRepository,
+                                 @org.springframework.beans.factory.annotation.Autowired(required = false)
+                                 com.iot.platform.repository.NodeRepository nodeRepository) {
         this.thresholdRepository = thresholdRepository;
         this.alarmRepository = alarmRepository;
         this.registry = registry;
         this.messageRepository = messageRepository;
+        this.sensorRepository = sensorRepository;
+        this.nodeRepository = nodeRepository;
     }
 
     @Override
@@ -83,6 +93,11 @@ public class ThresholdAlarmHandler implements UplinkHandler {
             }
             double value = sensor.path("sensorValue").asDouble(Double.NaN);
             if (Double.isNaN(value)) {
+                continue;
+            }
+            // 传感器级阈值优先：iot_sensor 配置了 warn_min/warn_max 时不再走网关级 MetricThreshold
+            if (raiseSensorAlarmIfExceeds(message.getDeviceId(),
+                    decoded.path("nodeId").asText(""), channel, meta.getSensorCode(), value)) {
                 continue;
             }
             evaluate(message.getDeviceId(), metric, value);
@@ -133,5 +148,67 @@ public class ThresholdAlarmHandler implements UplinkHandler {
         m.setContent(alarm.getMessage());
         m.setCreatedAt(new Date());
         messageRepository.save(m);
+    }
+
+    /**
+     * 传感器级阈值判定：经 iot_node 校验挂靠关系后按 node_code+channel 找 iot_sensor；
+     * sensor 配置了 warn_min/warn_max 且超限、且无未恢复同因告警时落 iot_alarm。
+     *
+     * @return true 表示已按传感器级阈值处理（跳过网关级 MetricThreshold）
+     */
+    private boolean raiseSensorAlarmIfExceeds(String gatewayCode, String nodeCode,
+                                              int channel, String sensorCode, double value) {
+        if (sensorRepository == null || nodeRepository == null) {
+            return false;
+        }
+        try {
+            com.iot.platform.model.Sensor s = null;
+            if (sensorCode != null && !sensorCode.isEmpty() && !sensorCode.startsWith("CH")) {
+                s = sensorRepository.findBySensorCode(sensorCode).orElse(null);
+            }
+            if (s == null && nodeCode != null && !nodeCode.isEmpty()) {
+                com.iot.platform.model.Node node = nodeRepository.findByNodeCode(nodeCode).orElse(null);
+                if (node != null && node.getGatewayCode() != null
+                        && node.getGatewayCode().equals(gatewayCode)) {
+                    for (com.iot.platform.model.Sensor cand : sensorRepository.findByNodeCode(nodeCode)) {
+                        if (String.valueOf(channel).equals(cand.getChannel())) {
+                            s = cand;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (s == null || (s.getWarnMin() == null && s.getWarnMax() == null)) {
+                return false;
+            }
+            boolean below = s.getWarnMin() != null && value < s.getWarnMin();
+            boolean above = s.getWarnMax() != null && value > s.getWarnMax();
+            if (!below && !above) {
+                // 传感器配置了阈值但未超限：视为已处理，跳过网关级判定（优先语义）
+                return true;
+            }
+            String rule = SENSOR_ALARM_PREFIX + s.getSensorCode();
+            boolean hasOpen = alarmRepository.findAll().stream()
+                    .anyMatch(a -> gatewayCode.equals(a.getDeviceId())
+                            && rule.equals(a.getRule())
+                            && "OPEN".equals(a.getStatus()));
+            if (!hasOpen) {
+                Alarm alarm = new Alarm();
+                alarm.setId(UUID.randomUUID().toString());
+                alarm.setDeviceId(gatewayCode);
+                alarm.setRule(rule);
+                alarm.setLevel("WARN");
+                alarm.setMessage(s.getSensorName() + " 超出阈值：当前 " + value
+                        + "（下限 " + s.getWarnMin() + " / 上限 " + s.getWarnMax() + "）");
+                alarm.setStatus("OPEN");
+                alarm.setCreatedAt(new Date());
+                alarmRepository.save(alarm);
+            }
+            return true;
+        } catch (Exception e) {
+            log.warn("sensor-level threshold check failed: gateway={} node={} channel={} reason={}",
+                    gatewayCode, nodeCode, channel, e.getMessage());
+            return false;
+        }
     }
 }

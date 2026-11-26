@@ -64,6 +64,7 @@ public class DataInitializer implements ApplicationRunner {
             initMenus();
             ensureSystemProductMenu();
             initIotMenus();
+            initThreeLayerMenus();
             ensureStaticMenus();
             initProductCatalog();
             ensureMenuIcons();
@@ -114,6 +115,35 @@ public class DataInitializer implements ApplicationRunner {
         Menu conflictMenu = menu("冲突校验工具", Menu.TYPE_MENU, iotDir.getId(), "/iot/conflict-check",
                 "iot/admin/conflict-check", "iot:conflict:check", "70");
         log.info("Bootstrap iot menus created");
+    }
+
+    /** 三层架构管理菜单（节点/传感器/控制设备），幂等：按 path 存在即跳过。 */
+    private void initThreeLayerMenus() {
+        java.util.Optional<Menu> iotDir = menuRepository.findByPath("/iot");
+        if (!iotDir.isPresent()) {
+            return;
+        }
+        String parentId = iotDir.get().getId();
+        if (menuRepository.findByPath("/iot/nodes").isPresent()) {
+            return;
+        }
+        Menu nodeMenu = menu("节点管理", Menu.TYPE_MENU, parentId, "/iot/nodes",
+                "iot/three/nodes", "iot:node:page", "72");
+        buttonOnce(nodeMenu.getId(), "节点新增", "iot:node:create");
+        buttonOnce(nodeMenu.getId(), "节点编辑", "iot:node:edit");
+        buttonOnce(nodeMenu.getId(), "节点删除", "iot:node:delete");
+        Menu sensorMenu = menu("传感器管理", Menu.TYPE_MENU, parentId, "/iot/sensors",
+                "iot/three/sensors", "iot:sensor:page", "73");
+        buttonOnce(sensorMenu.getId(), "传感器新增", "iot:sensor:create");
+        buttonOnce(sensorMenu.getId(), "传感器编辑", "iot:sensor:edit");
+        buttonOnce(sensorMenu.getId(), "传感器删除", "iot:sensor:delete");
+        Menu deviceMenu = menu("控制设备管理", Menu.TYPE_MENU, parentId, "/iot/control-devices",
+                "iot/three/devices", "iot:device_ctrl:page", "74");
+        buttonOnce(deviceMenu.getId(), "设备新增", "iot:device_ctrl:create");
+        buttonOnce(deviceMenu.getId(), "设备编辑", "iot:device_ctrl:edit");
+        buttonOnce(deviceMenu.getId(), "设备删除", "iot:device_ctrl:delete");
+        buttonOnce(deviceMenu.getId(), "设备下发", "iot:device_ctrl:issue");
+        log.info("Bootstrap three-layer menus created");
     }
 
     /** 兼容旧数据：顶级 DIR 仍作为产品菜单树根节点保留。 */

@@ -20,7 +20,7 @@ public class SensorConfigConverterTest {
     @BeforeEach
     public void setUp() {
         registry = new SensorMetadataRegistry();
-        converter = new SensorConfigConverter(registry);
+        converter = new SensorConfigConverter(registry, null, null);
     }
 
     @Test

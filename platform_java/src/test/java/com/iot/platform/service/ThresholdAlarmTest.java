@@ -42,7 +42,7 @@ class ThresholdAlarmTest {
 
     private ThresholdAlarmHandler handler() {
         return new ThresholdAlarmHandler(thresholdRepository, alarmRepository,
-                new SensorMetadataRegistry(), messageRepository);
+                new SensorMetadataRegistry(), messageRepository, null, null);
     }
 
     private MetricThreshold threshold(double min, double max) {

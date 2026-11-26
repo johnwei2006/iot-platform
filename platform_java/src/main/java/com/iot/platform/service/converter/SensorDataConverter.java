@@ -36,14 +36,23 @@ public class SensorDataConverter implements UplinkBusinessConverter {
     private final SensorMetadataRegistry registry;
     private final TdEngineProperties properties;
     private final SensorReadingWriter writer;
+    /** DB 后备：内存缓存未命中时按 节点+通道 查 iot_sensor，重启不丢配置 */
+    private com.iot.platform.repository.SensorRepository sensorRepository;
+    private com.iot.platform.repository.NodeRepository nodeRepository;
 
     @Autowired
     public SensorDataConverter(SensorMetadataRegistry registry,
                                TdEngineProperties properties,
-                               SensorReadingWriter writer) {
+                               SensorReadingWriter writer,
+                               @org.springframework.beans.factory.annotation.Autowired(required = false)
+                               com.iot.platform.repository.SensorRepository sensorRepository,
+                               @org.springframework.beans.factory.annotation.Autowired(required = false)
+                               com.iot.platform.repository.NodeRepository nodeRepository) {
         this.registry = registry;
         this.properties = properties;
         this.writer = writer;
+        this.sensorRepository = sensorRepository;
+        this.nodeRepository = nodeRepository;
     }
 
     @Override
@@ -93,7 +102,10 @@ public class SensorDataConverter implements UplinkBusinessConverter {
                 skipped++;
                 continue;
             }
-            SensorMetadata meta = registry.resolve(stationcode, nodecode, channel);
+            SensorMetadata meta = registry.lookup(stationcode, nodecode, channel);
+            if (meta == null) {
+                meta = resolveFromDatabase(stationcode, nodecode, channel);
+            }
             if (meta.isFallback()) {
                 fallbackCount++;
             }
@@ -126,6 +138,40 @@ public class SensorDataConverter implements UplinkBusinessConverter {
     private long fallbackMillis(UplinkMessage message) {
         long ts = normalizeEpoch(message.getTimestamp());
         return ts > 0 ? ts : System.currentTimeMillis();
+    }
+
+    /**
+     * DB 后备解析：(网关编码, 节点编码, 通道) -> iot_sensor。
+     * 经 iot_node 校验节点挂靠关系后按 node_code+channel 匹配传感器；
+     * 结果（含兜底）回填内存缓存，避免每条读数重复查库。
+     */
+    private SensorMetadata resolveFromDatabase(String stationcode, String nodecode, int channel) {
+        String sensorCode = null;
+        String sensorType = null;
+        try {
+            if (sensorRepository != null && nodeRepository != null && nodecode != null && !nodecode.isEmpty()) {
+                com.iot.platform.model.Node node = nodeRepository.findByNodeCode(nodecode).orElse(null);
+                if (node != null && node.getGatewayCode() != null
+                        && node.getGatewayCode().equals(stationcode)) {
+                    for (com.iot.platform.model.Sensor s : sensorRepository.findByNodeCode(nodecode)) {
+                        if (String.valueOf(channel).equals(s.getChannel())) {
+                            sensorCode = s.getSensorCode();
+                            sensorType = s.getSensorClassType();
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("sensor metadata db lookup failed: station={} node={} channel={} reason={}",
+                    stationcode, nodecode, channel, e.getMessage());
+        }
+        if (sensorCode == null || sensorCode.isEmpty()) {
+            sensorCode = "CH" + channel;
+            sensorType = "";
+        }
+        registry.register(stationcode, nodecode, channel, sensorCode, sensorType);
+        return registry.lookup(stationcode, nodecode, channel);
     }
 
     /**

@@ -80,3 +80,13 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261126-08-create-node-sensor-device-tables
+      author: iot-platform
+      comment: 三层架构表：节点/传感器/控制设备及其分类字典表 + 常用种子 + 用户数据权限补值
+      changes:
+        - sqlFile:
+            path: sql/008-create-node-sensor-device-tables.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true

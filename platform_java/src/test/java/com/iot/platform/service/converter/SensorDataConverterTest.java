@@ -41,7 +41,7 @@ public class SensorDataConverterTest {
         properties.getUnitBySensorType().put("1", "C");
         writer = mock(SensorReadingWriter.class);
         when(writer.write(any())).thenAnswer(inv -> ((List<?>) inv.getArgument(0)).size());
-        converter = new SensorDataConverter(registry, properties, writer);
+        converter = new SensorDataConverter(registry, properties, writer, null, null);
     }
 
     @Test
