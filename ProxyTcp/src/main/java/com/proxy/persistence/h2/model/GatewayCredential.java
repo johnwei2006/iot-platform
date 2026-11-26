@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * H2 模式下的网关预共享密钥表（mongo 模式密钥存于 iot_platform.devices）。
+ * H2 模式下的网关预共享密钥表（mongo 模式密钥存于 proxy.gateway_credential）。
  */
 @Entity
 @Table(name = "GatewayCredential")

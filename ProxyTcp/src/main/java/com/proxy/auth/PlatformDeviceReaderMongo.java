@@ -4,7 +4,6 @@ import java.util.Date;
 
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -13,30 +12,32 @@ import org.springframework.stereotype.Service;
 import org.springframework.context.annotation.Profile;
 
 /**
- * Mongo 模式网关凭据读取：直接访问 platform_java 维护的 iot_platform.devices 集合。
+ * Mongo 模式网关凭据读写：使用 ProxyTcp 自身 proxy 库的 gateway_credential 集合。
+ *
+ * <p>凭据由 ProxyTcp 的运维接口 POST /api/gateway/credentials 录入并维护，
+ * 不再依赖已废弃的 iot_platform.devices 集合（platform_java 已迁 MySQL）。
  */
 @Service
 @Profile("mongo")
 public class PlatformDeviceReaderMongo implements PlatformDeviceReader {
 
-	private static final String DEVICES_COLLECTION = "devices";
+	private static final String CREDENTIAL_COLLECTION = "gateway_credential";
 
 	@Autowired
-	@Qualifier("platformMongoTemplate")
-	private MongoTemplate platformMongoTemplate;
+	private MongoTemplate mongoTemplate;
 
 	@Override
 	public String getAuthSecret(String deviceId) {
 		try {
 			Query query = Query.query(Criteria.where("deviceId").is(deviceId));
-			Document device = platformMongoTemplate.findOne(query, Document.class, DEVICES_COLLECTION);
-			if (device == null) {
+			Document credential = mongoTemplate.findOne(query, Document.class, CREDENTIAL_COLLECTION);
+			if (credential == null) {
 				return null;
 			}
-			Object secret = device.get("authSecret");
+			Object secret = credential.get("authSecret");
 			return secret == null ? null : secret.toString();
 		} catch (Exception e) {
-			throw new IllegalStateException("Failed to read gateway credential from platform devices: "
+			throw new IllegalStateException("Failed to read gateway credential from proxy.gateway_credential: "
 					+ e.getMessage(), e);
 		}
 	}
@@ -45,22 +46,20 @@ public class PlatformDeviceReaderMongo implements PlatformDeviceReader {
 	public boolean upsertAuthSecret(String deviceId, String secret) {
 		try {
 			Query query = Query.query(Criteria.where("deviceId").is(deviceId));
-			Document device = platformMongoTemplate.findOne(query, Document.class, DEVICES_COLLECTION);
+			Document credential = mongoTemplate.findOne(query, Document.class, CREDENTIAL_COLLECTION);
 			Date now = new Date();
-			if (device == null) {
-				Document newDevice = new Document();
-				newDevice.put("deviceId", deviceId);
-				newDevice.put("name", deviceId);
-				newDevice.put("authSecret", secret);
-				newDevice.put("status", "OFFLINE");
-				newDevice.put("createdAt", now);
-				newDevice.put("updatedAt", now);
-				platformMongoTemplate.insert(newDevice, DEVICES_COLLECTION);
+			if (credential == null) {
+				Document newCredential = new Document();
+				newCredential.put("deviceId", deviceId);
+				newCredential.put("authSecret", secret);
+				newCredential.put("createdAt", now);
+				newCredential.put("updatedAt", now);
+				mongoTemplate.insert(newCredential, CREDENTIAL_COLLECTION);
 			} else {
 				Update update = new Update();
 				update.set("authSecret", secret);
 				update.set("updatedAt", now);
-				platformMongoTemplate.updateFirst(query, update, DEVICES_COLLECTION);
+				mongoTemplate.updateFirst(query, update, CREDENTIAL_COLLECTION);
 			}
 			return true;
 		} catch (Exception e) {

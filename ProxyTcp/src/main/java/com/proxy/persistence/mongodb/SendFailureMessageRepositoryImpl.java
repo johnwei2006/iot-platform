@@ -6,11 +6,13 @@ import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import com.mongodb.client.result.DeleteResult;
 import com.proxy.persistence.mongodb.model.SendFailureMessage;
 
 @Service
+@Profile("mongo")
 public class SendFailureMessageRepositoryImpl implements SendFailureMessageRepositoryCustom {
 	@Resource
 	private MongoOperations mongoTemplate;

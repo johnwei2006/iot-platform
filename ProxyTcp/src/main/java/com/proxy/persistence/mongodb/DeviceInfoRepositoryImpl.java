@@ -8,12 +8,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import com.proxy.persistence.mongodb.model.DeviceInfo;
 
 @Service
+@Profile("mongo")
 public class DeviceInfoRepositoryImpl implements DeviceInfoRepositoryCustom{
 	
     @Resource

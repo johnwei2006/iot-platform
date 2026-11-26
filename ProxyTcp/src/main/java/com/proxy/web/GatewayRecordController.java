@@ -55,7 +55,7 @@ public class GatewayRecordController {
 		return response;
 	}
 
-	/** 录入/更新网关预共享密钥（h2 模式的运维入口；mongo 模式由 platform_java 设备管理） */
+	/** 录入/更新网关预共享密钥（h2→本地 GatewayCredential 表；mongo→proxy.gateway_credential） */
 	@PostMapping("/credentials")
 	public Map<String, Object> upsertCredential(@RequestBody Map<String, String> body) {
 		Map<String, Object> response = new HashMap<String, Object>();

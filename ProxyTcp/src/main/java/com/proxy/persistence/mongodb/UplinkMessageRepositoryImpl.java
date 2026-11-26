@@ -9,11 +9,13 @@ import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import com.mongodb.client.result.DeleteResult;
 import com.proxy.persistence.mongodb.model.UplinkMessage;
 
 @Service
+@Profile("mongo")
 public class UplinkMessageRepositoryImpl implements UplinkMessageRepositoryCustom{
     @Resource
     private MongoOperations mongoTemplate;

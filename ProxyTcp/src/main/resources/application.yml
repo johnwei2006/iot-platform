@@ -36,8 +36,6 @@ gateway:
 # ===== 业务/网络参数（原 proxy.properties） =====
 bindaddress: 0.0.0.0
 tcpport: 50001
-# 平台库（iot_platform）连接：网关认证读取已入库网关的预共享密钥
-platformMongoUri: mongodb://127.0.0.1:27017/iot_platform
 serviceproxy: http://127.0.0.1:8020/uplinkService
 sendfailureproxy: http://127.0.0.1:8020/sendfailureproxy
 maxResendTimes: 3
@@ -87,8 +85,8 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
     show-sql: false
   autoconfigure:
-    # h2 模式下不加载 Mongo 自动配置
-    exclude: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+    # h2 模式下不加载 Mongo 自动配置（含 repository 扫描，否则 MongoRepository 接口会因无 mongoTemplate 启动失败）
+    exclude: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
 
 # ===== Mongo 模式（仅 profile=mongo 生效） =====
 # 排除 H2/JPA 自动配置，避免无用的内存库与 EntityManagerFactory 被创建。

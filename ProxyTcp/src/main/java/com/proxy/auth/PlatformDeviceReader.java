@@ -2,7 +2,7 @@ package com.proxy.auth;
 
 /**
  * 平台网关凭据读取接口：认证时校验"已入库"网关的预共享密钥。
- * Mongo 模式读 platform_java 的 iot_platform.devices 集合；
+ * Mongo 模式读 proxy 库 gateway_credential 集合；
  * H2 模式读本地 gateway_credential 表（通过 REST 运维接口录入）。
  */
 public interface PlatformDeviceReader {

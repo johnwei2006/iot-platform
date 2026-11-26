@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
@@ -15,6 +16,7 @@ import com.proxy.app.Constants.Status;
 import com.proxy.persistence.mongodb.model.DownlinkMessage;
 
 @Service
+@Profile("mongo")
 public class DownlinkMessageRepositoryImpl implements DownlinkMessageRepositoryCustom {
 	@Resource
 	private MongoOperations mongoTemplate;

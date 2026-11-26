@@ -18,7 +18,7 @@ import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
  * （如 GatewayTokenRepository）按名字解析该 bean，而多个 {@code MongoOperations} 类型 bean
  * 会让 {@code MongoDataAutoConfiguration} 的默认 mongoTemplate 因
  * {@code @ConditionalOnMissingBean(MongoOperations.class)} 不生效。
- * 本配置与 {@link PlatformMongoConfig} 的 platformMongoTemplate 并存，分别连 proxy / iot_platform 两个库。
+ * 网关凭据同样存于本 proxy 库（gateway_credential 集合），不再需要第二个连接 iot_platform 的 MongoTemplate。
  */
 @Configuration
 @Profile("mongo")

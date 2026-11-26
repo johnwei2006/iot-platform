@@ -26,3 +26,7 @@ Thumbs.db
 
 # 本地开发密钥（禁止提交）
 **/local-dev-*.pem
+
+# H2 文件数据库（ProxyTcp dbtype=h2 联调时生成，禁止提交）
+**/data/*.mv.db
+**/data/*.trace.db
