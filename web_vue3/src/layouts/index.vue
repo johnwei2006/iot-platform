@@ -12,6 +12,7 @@ import { LOCALES, type AppLocale } from '@/locales';
 import { unreadCount } from '@/api/system/me';
 import { buildProducts, productOfPath, type ProductView } from '@/utils/productMenus';
 import type { MenuNode } from '@/types';
+import { resetDynamicRoutes } from '@/router/dynamicState';
 
 const route = useRoute();
 const router = useRouter();
@@ -80,6 +81,7 @@ function goMessages(): void {
 
 async function handleLogout(): Promise<void> {
   await userStore.logout();
+  resetDynamicRoutes();
   await router.push({ name: 'Login' });
 }
 

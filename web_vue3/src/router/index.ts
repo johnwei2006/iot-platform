@@ -5,6 +5,7 @@ import { buildRoutesFromMenus } from './dynamicRoutes';
 import { tokens } from '@/utils/token';
 import { useUserStore } from '@/stores/modules/user';
 import { i18n } from '@/locales';
+import { isDynamicRegistered, setDynamicRegistered } from './dynamicState';
 
 const t = i18n.global.t;
 
@@ -14,21 +15,21 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 });
 
-let dynamicRegistered = false;
-
-/** 注册动态菜单路由（仅一次；重新登录后 resetMe 会重置标记）。 */
-async function ensureDynamicRoutes() {
+/** 注册动态菜单路由（仅一次；退出登录时 resetDynamicRoutes 重置标记）。返回本次是否新增了路由。 */
+async function ensureDynamicRoutes(): Promise<boolean> {
   const userStore = useUserStore();
-  if (dynamicRegistered) {
-    return;
+  if (isDynamicRegistered()) {
+    return false;
   }
   await userStore.loadMe();
   if (userStore.menus.length > 0) {
     for (const record of buildRoutesFromMenus(userStore.menus)) {
       router.addRoute('Layout', record);
     }
-    dynamicRegistered = true;
+    setDynamicRegistered(true);
+    return true;
   }
+  return false;
 }
 
 // 全局前置守卫：标题设置 + 登录鉴权 + 动态菜单路由 + 角色鉴权
@@ -40,8 +41,12 @@ router.beforeEach(async (to) => {
     return { name: 'Login', query: { redirect: to.fullPath } };
   }
   if (to.meta.requiresAuth && tokens.access) {
-    // 登录后（含刷新直链进入）先加载菜单并注册动态路由，避免 404
-    await ensureDynamicRoutes();
+    // 登录后（含刷新直链进入）先加载菜单并注册动态路由，避免 404。
+    // addRoute 不会让当前导航重新解析，必须重推一次目标地址。
+    const added = await ensureDynamicRoutes();
+    if (added) {
+      return { path: to.path, query: to.query, hash: to.hash, replace: true };
+    }
     if (to.matched.length === 0) {
       return { name: 'Home' };
     }
@@ -63,10 +68,5 @@ router.beforeEach(async (to) => {
   }
   return true;
 });
-
-/** 重新登录后重置动态路由标记（由 user store 的 resetMe 触发场景使用）。 */
-export function resetDynamicRoutes() {
-  dynamicRegistered = false;
-}
 
 export default router;

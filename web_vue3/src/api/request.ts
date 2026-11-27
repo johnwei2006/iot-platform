@@ -58,7 +58,8 @@ function expireSession(): void {
   ElMessage.error(t('common.sessionExpired'));
   const loginPath = `${import.meta.env.BASE_URL}login`;
   if (window.location.pathname !== loginPath) {
-    window.location.assign(loginPath);
+    const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.location.assign(`${loginPath}?redirect=${encodeURIComponent(redirect)}`);
   }
 }
 

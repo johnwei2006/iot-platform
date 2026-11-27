@@ -28,6 +28,7 @@ const handleSsoLogin = () => {
 
 const formRef = ref<FormInstance>();
 const loading = ref(false);
+const errorMessage = ref('');
 const form = reactive<LoginPayload>({
   username: '',
   password: '',
@@ -42,12 +43,19 @@ const handleSubmit = async () => {
   if (!formRef.value) return;
   await formRef.value.validate(async (valid) => {
     if (!valid) return;
+    errorMessage.value = '';
     loading.value = true;
     try {
       await userStore.login(form);
       ElMessage.success(t('login.loginSuccess'));
       const redirect = (route.query.redirect as string) || '/home';
       router.push(redirect);
+    } catch (error) {
+      const err = error as { response?: { status?: number; data?: { code?: number } }; message?: string };
+      const status = err.response?.status ?? err.response?.data?.code;
+      errorMessage.value = status === 401
+        ? t('login.invalidCredentials')
+        : err.message || t('login.loginFailed');
     } finally {
       loading.value = false;
     }
@@ -64,9 +72,18 @@ const handleSubmit = async () => {
           <span class="login-subtitle">{{ $t('login.subtitle') }}</span>
         </div>
       </template>
+      <el-alert
+        v-if="errorMessage"
+        class="login-error"
+        :title="errorMessage"
+        type="error"
+        show-icon
+        :closable="false"
+        role="alert"
+      />
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" size="large">
         <el-form-item :label="$t('login.username')" prop="username">
-          <el-input v-model="form.username" :placeholder="$t('login.usernamePlaceholder')" :prefix-icon="User" />
+          <el-input v-model="form.username" :placeholder="$t('login.usernamePlaceholder')" :prefix-icon="User" @input="errorMessage = ''" />
         </el-form-item>
         <el-form-item :label="$t('login.password')" prop="password">
           <el-input
@@ -75,6 +92,7 @@ const handleSubmit = async () => {
             show-password
             :placeholder="$t('login.passwordPlaceholder')"
             :prefix-icon="Lock"
+            @input="errorMessage = ''"
           />
         </el-form-item>
         <el-form-item>
@@ -118,6 +136,9 @@ const handleSubmit = async () => {
   font-size: 13px;
   font-weight: 400;
   color: #909399;
+}
+.login-error {
+  margin-bottom: 16px;
 }
 .login-btn {
   width: 100%;

@@ -50,6 +50,8 @@ export default {
       submit: '登 录',
       sso: '使用统一账号登录',
       loginSuccess: '登录成功',
+      invalidCredentials: '用户名或密码错误，请重试',
+      loginFailed: '登录失败，请稍后重试',
     },
     home: {
       welcome: '欢迎使用，{name}',
@@ -151,6 +153,8 @@ export default {
       submit: 'Sign In',
       sso: 'Sign in with SSO',
       loginSuccess: 'Signed in',
+      invalidCredentials: 'Invalid username or password. Please try again.',
+      loginFailed: 'Sign-in failed. Please try again later.',
     },
     home: {
       welcome: 'Welcome, {name}',
