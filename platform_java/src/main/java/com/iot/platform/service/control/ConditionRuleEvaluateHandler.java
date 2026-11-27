@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /**
  * 0x18 传感器实时数据 → 条件规则评估。位于上行管线持久化之后（@Order(5)），
  * 旁路步骤：评估失败只告警，不影响上行 ACK。
@@ -75,7 +78,16 @@ public class ConditionRuleEvaluateHandler implements UplinkHandler {
                 continue;
             }
             try {
-                ruleEngine.evaluateCondition(message.getDeviceId(), metric, value);
+                // 新规则 metricDeviceId 存传感器编码；旧规则存上报设备编码（stationcode），两者都评估以兼容
+                Set<String> metricIds = new LinkedHashSet<>();
+                metricIds.add(message.getDeviceId());
+                String sensorCode = meta.getSensorCode();
+                if (sensorCode != null && !sensorCode.trim().isEmpty()) {
+                    metricIds.add(sensorCode.trim());
+                }
+                for (String metricId : metricIds) {
+                    ruleEngine.evaluateCondition(metricId, metric, value);
+                }
             } catch (RuntimeException e) {
                 log.warn("condition rule evaluate failed: device={} metric={} err={}",
                         message.getDeviceId(), metric, e.getMessage());

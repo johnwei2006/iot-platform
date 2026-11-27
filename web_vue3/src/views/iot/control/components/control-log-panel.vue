@@ -6,7 +6,7 @@ import { listControlLogs } from '@/api/iot/control';
 import type { ControlLog } from '@/types/kb';
 
 const { t } = useI18n();
-const props = defineProps<{ areaId?: string }>();
+const props = defineProps<{ areaId?: string; deviceId?: string }>();
 
 const loading = ref(false);
 const logs = ref<ControlLog[]>([]);
@@ -42,7 +42,7 @@ function applyFilter() {
 async function refresh() {
   loading.value = true;
   try {
-    const res = await listControlLogs();
+    const res = await listControlLogs(props.deviceId ? { deviceId: props.deviceId } : undefined);
     logs.value = res.data || [];
     applyFilter();
   } catch (error) {
@@ -56,6 +56,10 @@ watch(() => props.areaId, () => {
   applyFilter();
 });
 
+watch(() => props.deviceId, () => {
+  void refresh();
+});
+
 onMounted(refresh);
 </script>
 
@@ -64,7 +68,11 @@ onMounted(refresh);
     <el-card shadow="never">
       <template #header>
         <div class="head-row">
-          <span class="head-title">{{ $t('control.logsTitle') }}<span v-if="areaId"> · {{ $t('control.currentArea') }}</span></span>
+          <span class="head-title">
+            {{ $t('control.logsTitle') }}
+            <span v-if="areaId"> · {{ $t('control.currentArea') }}</span>
+            <span v-if="deviceId"> · {{ deviceId }}</span>
+          </span>
           <el-segmented v-model="resultFilter" :options="filterOptions" :props="{ value: 'value', label: 'label' }" @change="applyFilter" />
         </div>
       </template>

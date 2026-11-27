@@ -10,7 +10,7 @@ import AreaSelect from '@/components/AreaSelect.vue';
 import type { DeviceEntry } from '@/types/kb';
 
 const { t } = useI18n();
-const emit = defineEmits<{ 'show-logs': [areaId?: string] }>();
+const emit = defineEmits<{ 'show-logs': [{ areaId?: string; deviceId?: string }] }>();
 const loading = ref(false);
 const devices = ref<DeviceCtrlEntity[]>([]);
 const areas = ref<AreaEntity[]>([]);
@@ -18,10 +18,6 @@ const deviceClasses = ref<DeviceClassDict[]>([]);
 const areaFilter = ref('');
 const keyword = ref('');
 const applying = ref(new Set<string>());
-
-const levelVisible = ref(false);
-const levelTarget = ref<DeviceEntry | null>(null);
-const levelValue = ref(50);
 
 const areaNameMap = computed(() => new Map(areas.value.map((a) => [a.id, a.areaName])));
 const classMap = computed(() => new Map(deviceClasses.value.map((c) => [c.deviceClass, c])));
@@ -70,10 +66,6 @@ function statusText(d: DeviceCtrlEntity) {
   return d.status || '--';
 }
 
-function switchModeOf(d: DeviceCtrlEntity): number | undefined {
-  return classMap.value.get(d.deviceClass || '')?.switchMode;
-}
-
 async function issue(entry: DeviceEntry, action: string, value?: string, key?: string) {
   if (key) applying.value.add(key);
   try {
@@ -100,24 +92,12 @@ function toggleDevice(d: DeviceCtrlEntity, on: boolean) {
   void issue(entryOf(d), on ? 'ON' : 'OFF', undefined, key);
 }
 
-function openLevel(d: DeviceCtrlEntity) {
-  levelTarget.value = entryOf(d);
-  levelValue.value = Number(d.status) || 50;
-  levelVisible.value = true;
+function openAreaLogs(areaId?: string) {
+  emit('show-logs', { areaId });
 }
 
-function confirmLevel() {
-  const v = Math.round(Number(levelValue.value));
-  if (Number.isNaN(v) || v < 0 || v > 100) {
-    ElMessage.warning(t('control.levelRangeTip'));
-    return;
-  }
-  levelVisible.value = false;
-  if (levelTarget.value) void issue(levelTarget.value, 'LEVEL', String(v));
-}
-
-function openLogs(areaId?: string) {
-  emit('show-logs', areaId);
+function openDeviceLogs(d: DeviceCtrlEntity) {
+  emit('show-logs', { areaId: d.areaId, deviceId: d.deviceCode });
 }
 
 function reset() {
@@ -165,7 +145,7 @@ onMounted(load);
       <section v-for="group in groups" :key="group.areaId || 'none'" class="group-section">
         <div class="group-head">
           <span class="group-title">{{ group.areaName }}</span>
-          <el-button link type="primary" class="log-link" @click="openLogs(group.areaId || undefined)">{{ $t('control.tabLogs') }}</el-button>
+          <el-button link type="primary" class="log-link" @click="openAreaLogs(group.areaId || undefined)">{{ $t('control.tabLogs') }}</el-button>
         </div>
         <div class="dev-grid">
           <article v-for="d in group.devices" :key="d.id || d.deviceCode" class="dev-card"
@@ -187,19 +167,11 @@ onMounted(load);
                 v-permission="'iot:control:issue'"
                 @change="(val: boolean) => toggleDevice(d, val)"
               />
-              <el-dropdown trigger="click" @command="(cmd: unknown) => {
-                if (cmd === 'level') openLevel(d);
-                else void issue(entryOf(d), String(cmd));
-              }">
+              <el-dropdown trigger="click" @command="openDeviceLogs(d)">
                 <button type="button" class="more-btn" :aria-label="$t('control.more')">···</button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item v-if="switchModeOf(d) === 1" command="LEVEL">{{ $t('control.setLevel') }}</el-dropdown-item>
-                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="OPEN">{{ $t('control.statusOn') }}</el-dropdown-item>
-                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="STOP">{{ $t('control.statusStop') }}</el-dropdown-item>
-                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="CLOSE">{{ $t('control.statusOff') }}</el-dropdown-item>
-                    <el-dropdown-item command="ON">{{ $t('control.forceOn') }}</el-dropdown-item>
-                    <el-dropdown-item command="OFF">{{ $t('control.forceOff') }}</el-dropdown-item>
+                    <el-dropdown-item command="logs">{{ $t('control.tabLogs') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -209,13 +181,6 @@ onMounted(load);
       </section>
     </el-card>
 
-    <el-dialog v-model="levelVisible" :title="$t('control.setLevelTitle')" width="360px">
-      <el-input-number v-model="levelValue" :min="0" :max="100" style="width: 100%" />
-      <template #footer>
-        <el-button @click="levelVisible = false">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="confirmLevel">{{ $t('control.issue') }}</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 

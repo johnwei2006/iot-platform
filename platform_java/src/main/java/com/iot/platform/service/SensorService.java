@@ -8,6 +8,7 @@ import com.iot.platform.model.Sensor;
 import com.iot.platform.model.SensorReading;
 import com.iot.platform.repository.SensorRepository;
 import com.iot.platform.security.datascope.DataScopeQuery;
+import com.iot.platform.timeseries.TdEngineRestReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class SensorService {
 
     @Autowired(required = false)
     private TdEngineProperties tdEngineProperties;
+
+    @Autowired(required = false)
+    private TdEngineRestReader tdEngineRestReader;
 
     public List<Sensor> list() {
         return sensorRepository.findAll();
@@ -135,8 +139,13 @@ public class SensorService {
      * 按传感器编码查询时序曲线。TDengine 不可用时返回空列表，避免影响业务页面。
      */
     public List<SensorReading> history(String sensorCode, long from, long to) {
-        if (tdEngineJdbcTemplate == null || tdEngineProperties == null
-                || sensorCode == null || sensorCode.trim().isEmpty() || from > to) {
+        if (sensorCode == null || sensorCode.trim().isEmpty() || from > to) {
+            return List.of();
+        }
+        if (tdEngineRestReader != null) {
+            return tdEngineRestReader.history(sensorCode, from, to);
+        }
+        if (tdEngineJdbcTemplate == null || tdEngineProperties == null) {
             return List.of();
         }
         String table = TdEngineConfig.sanitizeIdentifier(tdEngineProperties.getDatabase())

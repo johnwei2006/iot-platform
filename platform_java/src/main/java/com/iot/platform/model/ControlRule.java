@@ -48,12 +48,18 @@ public class ControlRule {
     /** 比较符：&gt; / &gt;= / &lt; / &lt;= */
     private String operator;
     private BigDecimal threshold;
-    /** 条件生效时段开始 HH:mm */
+    /** 定时规则生效日期 YYYY-MM-DD；条件规则生效时段 HH:mm */
     @TableField("start_time")
     private String startTime;
-    /** 条件生效时段结束 HH:mm */
+    /** 定时规则失效日期 YYYY-MM-DD；条件规则生效时段 HH:mm */
     @TableField("end_time")
     private String endTime;
+    /** 条件规则生效日期 YYYY-MM-DD（与 HH:mm 时段分开存储） */
+    @TableField("effective_from")
+    private String effectiveFrom;
+    /** 条件规则失效日期 YYYY-MM-DD */
+    @TableField("effective_to")
+    private String effectiveTo;
     /** 是否启用恢复反向动作 */
     @TableField("use_return")
     private Boolean useReturn;
@@ -103,6 +109,10 @@ public class ControlRule {
     public void setStartTime(String startTime) { this.startTime = startTime; }
     public String getEndTime() { return endTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
+    public String getEffectiveFrom() { return effectiveFrom; }
+    public void setEffectiveFrom(String effectiveFrom) { this.effectiveFrom = effectiveFrom; }
+    public String getEffectiveTo() { return effectiveTo; }
+    public void setEffectiveTo(String effectiveTo) { this.effectiveTo = effectiveTo; }
     public Boolean getUseReturn() { return useReturn; }
     public void setUseReturn(Boolean useReturn) { this.useReturn = useReturn; }
     public BigDecimal getReturnThreshold() { return returnThreshold; }

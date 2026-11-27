@@ -24,6 +24,8 @@ export interface ControlRule {
   threshold?: number;
   startTime?: string;
   endTime?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string;
   useReturn?: boolean;
   returnThreshold?: number;
   plotId?: string;

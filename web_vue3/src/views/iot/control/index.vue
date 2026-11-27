@@ -14,12 +14,19 @@ type Tab = 'oneClick' | 'smart' | 'logs';
 const validTabs: Tab[] = ['oneClick', 'smart', 'logs'];
 const active = ref<Tab>(validTabs.includes(route.query.tab as Tab) ? (route.query.tab as Tab) : 'oneClick');
 const areaId = ref<string>((route.query.areaId as string) || '');
+const deviceId = ref<string>((route.query.deviceId as string) || '');
 
 function switchTab(tab: Tab) {
   active.value = tab;
   router.replace({
     path: '/iot/control',
-    query: tab === 'logs' && areaId.value ? { tab, areaId: areaId.value } : { tab },
+    query: tab === 'logs'
+      ? {
+        tab,
+        ...(areaId.value ? { areaId: areaId.value } : {}),
+        ...(deviceId.value ? { deviceId: deviceId.value } : {}),
+      }
+      : { tab },
   });
 }
 
@@ -28,6 +35,9 @@ watch(() => route.query.tab, (tab) => {
 });
 watch(() => route.query.areaId, (id) => {
   areaId.value = (id as string) || '';
+});
+watch(() => route.query.deviceId, (id) => {
+  deviceId.value = (id as string) || '';
 });
 
 const tabs = computed(() => [
@@ -52,9 +62,12 @@ const tabs = computed(() => [
       >{{ tab.label }}</button>
     </div>
     <div class="tab-body">
-      <DeviceControlPanel v-if="active === 'oneClick'" @show-logs="(id) => { areaId = id || ''; switchTab('logs'); }" />
+      <DeviceControlPanel
+        v-if="active === 'oneClick'"
+        @show-logs="(filter) => { areaId = filter.areaId || ''; deviceId = filter.deviceId || ''; switchTab('logs'); }"
+      />
       <RuleControlPanel v-else-if="active === 'smart'" />
-      <ControlLogPanel v-else :area-id="areaId" />
+      <ControlLogPanel v-else :area-id="areaId" :device-id="deviceId" />
     </div>
   </div>
 </template>

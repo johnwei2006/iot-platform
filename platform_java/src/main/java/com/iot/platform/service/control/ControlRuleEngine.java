@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -123,12 +124,29 @@ public class ControlRuleEngine {
     }
 
     private boolean inWindow(ControlRule rule) {
+        if (!inEffectiveDates(rule)) {
+            return false;
+        }
         int now = ConflictChecker.minute(String.format("%02d:%02d",
                 new Date().toInstant().atZone(ZoneId.systemDefault()).getHour(),
                 new Date().toInstant().atZone(ZoneId.systemDefault()).getMinute()));
         int start = ConflictChecker.minute(rule.getStartTime());
         int end = ConflictChecker.minute(rule.getEndTime());
         return start >= 0 && end >= 0 && now >= start && now <= end;
+    }
+
+    /** 条件规则的生效日期范围；未配置任何日期时视为始终有效。 */
+    private boolean inEffectiveDates(ControlRule rule) {
+        String from = rule.getEffectiveFrom();
+        String to = rule.getEffectiveTo();
+        if ((from == null || from.isEmpty()) && (to == null || to.isEmpty())) {
+            return true;
+        }
+        String today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        if (from != null && !from.isEmpty() && today.compareTo(from) < 0) {
+            return false;
+        }
+        return to == null || to.isEmpty() || today.compareTo(to) <= 0;
     }
 
     private boolean isCurrentlyTriggered(ControlRule rule) {

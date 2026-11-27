@@ -190,3 +190,23 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261127-19-expand-control-rule-date-columns
+      author: iot-platform
+      comment: Extend control rule start_time/end_time to varchar(10) for date and HH:mm compatibility
+      changes:
+        - sqlFile:
+            path: sql/019-expand-control-rule-date-columns.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261127-20-add-control-rule-effective-dates
+      author: iot-platform
+      comment: Add effective_from/effective_to date range fields for condition rules
+      changes:
+        - sqlFile:
+            path: sql/020-add-control-rule-effective-dates.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
