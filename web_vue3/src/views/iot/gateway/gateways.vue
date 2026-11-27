@@ -105,6 +105,8 @@ onMounted(load);
       <el-select v-model="typeFilter" class="type-select" clearable :placeholder="$t('gateway.typePlaceholder')" :aria-label="$t('gateway.type')">
         <el-option :label="$t('gateway.type_1')" :value="1" />
         <el-option :label="$t('gateway.type_2')" :value="2" />
+        <el-option :label="$t('gateway.type_3')" :value="3" />
+        <el-option :label="$t('gateway.type_4')" :value="4" />
       </el-select>
       <AreaSelect v-model="areaFilter" class="area-select" :placeholder="$t('gateway.areaFilter')" />
       <el-button type="primary" @click="load">{{ $t('common.search') }}</el-button>

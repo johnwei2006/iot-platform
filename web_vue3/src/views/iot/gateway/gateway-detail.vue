@@ -160,6 +160,8 @@ onMounted(load);
           <el-select v-if="activeField === 'gatewayType'" v-model="draftValue" size="small" @change="save('gatewayType')">
             <el-option :label="$t('gateway.type_1')" :value="1" />
             <el-option :label="$t('gateway.type_2')" :value="2" />
+            <el-option :label="$t('gateway.type_3')" :value="3" />
+            <el-option :label="$t('gateway.type_4')" :value="4" />
           </el-select>
           <template v-else>
             <span>{{ typeName(device.gatewayType) }}</span>

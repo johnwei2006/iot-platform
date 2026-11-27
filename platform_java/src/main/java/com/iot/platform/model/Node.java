@@ -30,7 +30,7 @@ public class Node {
     private String longitude;
     /** 纬度 */
     private String latitude;
-    /** 节点类型：1-ACT，2-IRRI，3-DATA，4-植保机，5-开度 */
+    /** 节点类型：1-采集，2-控制，3-虚拟，4-第三方 */
     private Integer nodeType;
     /** 固件版本号 */
     private String firmwareVersion;

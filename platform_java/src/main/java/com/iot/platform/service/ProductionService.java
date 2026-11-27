@@ -67,6 +67,53 @@ public class ProductionService {
         return prefix + String.format("%04d", max + 1);
     }
 
+    /** 表单展示用：按类型/大类生成下一个可用编号预览。 */
+    public String nextCode(Kind kind, Integer type, String clazz) {
+        return generateCode(kind, subOf(kind, type, clazz));
+    }
+
+    private String subOf(Kind kind, Integer type, String clazz) {
+        return switch (kind) {
+            case GATEWAY -> gatewaySub(type);
+            case NODE -> nodeSub(type);
+            default -> classSub(clazz);
+        };
+    }
+
+    /** 编号是否可用（排除当前编辑记录；空编码视为不可用）。 */
+    public boolean codeAvailable(Kind kind, String code, String excludeId) {
+        if (code == null || code.isBlank()) {
+            return false;
+        }
+        boolean excluded = excludeId != null && !excludeId.isBlank();
+        return switch (kind) {
+            case GATEWAY -> gatewayRepository.findAll(Wrappers.<Gateway>lambdaQuery()
+                    .eq(Gateway::getDeviceId, code)
+                    .ne(excluded, Gateway::getId, excludeId)).isEmpty();
+            case NODE -> nodeRepository.findAll(Wrappers.<Node>lambdaQuery()
+                    .eq(Node::getNodeCode, code)
+                    .ne(excluded, Node::getId, excludeId)).isEmpty();
+            case SENSOR -> sensorRepository.findAll(Wrappers.<Sensor>lambdaQuery()
+                    .eq(Sensor::getSensorCode, code)
+                    .ne(excluded, Sensor::getId, excludeId)).isEmpty();
+            case CTRL -> deviceCtrlRepository.findAll(Wrappers.<DeviceCtrl>lambdaQuery()
+                    .eq(DeviceCtrl::getDeviceCode, code)
+                    .ne(excluded, DeviceCtrl::getId, excludeId)).isEmpty();
+        };
+    }
+
+    /** 用户自定义编码优先；留空则自动生成；重复编码拒绝入库。 */
+    private String resolveCode(Kind kind, String provided, String sub) {
+        String code = provided == null ? "" : provided.trim();
+        if (code.isEmpty()) {
+            return generateCode(kind, sub);
+        }
+        if (!codeAvailable(kind, code, null)) {
+            throw new DuplicateCodeException(code);
+        }
+        return code;
+    }
+
     /** 设备大类：前缀 + 编号所在表。 */
     public enum Kind {
         GATEWAY("GW") {
@@ -103,26 +150,26 @@ public class ProductionService {
         abstract List<String> codes(ProductionService service, String prefix);
     }
 
-    /** 网关类型片段：1-4G，2-5G。 */
+    /** 网关类型片段：1-4G，2-工控网关，3-5G，4-其它（不匹配值归入其它）。 */
     static String gatewaySub(Integer gatewayType) {
-        if (gatewayType == null) return "GN";
+        if (gatewayType == null) return "OT";
         return switch (gatewayType) {
             case 1 -> "4G";
-            case 2 -> "5G";
-            default -> "GN";
+            case 2 -> "GK";
+            case 3 -> "5G";
+            default -> "OT";
         };
     }
 
-    /** 节点类型片段：1-ACT，2-IRRI，3-DATA(采集)，4-植保机，5-开度。 */
+    /** 节点类型片段：1-采集，2-控制，3-虚拟，4-第三方（不匹配值归入第三方）。 */
     static String nodeSub(Integer nodeType) {
-        if (nodeType == null) return "GN";
+        if (nodeType == null) return "DS";
         return switch (nodeType) {
-            case 1 -> "AC";
-            case 2 -> "IR";
-            case 3 -> "CD";
-            case 4 -> "ZB";
-            case 5 -> "KD";
-            default -> "GN";
+            case 1 -> "CD";
+            case 2 -> "KZ";
+            case 3 -> "XN";
+            case 4 -> "DS";
+            default -> "DS";
         };
     }
 
@@ -146,7 +193,7 @@ public class ProductionService {
     /** 创建生产网关：编号自动生成，预共享密钥随机生成，不属于任何机构。 */
     public Gateway createGateway(Gateway src, String subject) {
         Date now = new Date();
-        src.setDeviceId(generateCode(Kind.GATEWAY, gatewaySub(src.getGatewayType())));
+        src.setDeviceId(resolveCode(Kind.GATEWAY, src.getDeviceId(), gatewaySub(src.getGatewayType())));
         src.setId(java.util.UUID.randomUUID().toString());
         src.setCreatedAt(now);
         src.setUpdatedAt(now);
@@ -162,7 +209,7 @@ public class ProductionService {
     /** 创建生产节点：编号自动生成，不属于任何机构。 */
     public Node createNode(Node src, String subject) {
         Date now = new Date();
-        src.setNodeCode(generateCode(Kind.NODE, nodeSub(src.getNodeType())));
+        src.setNodeCode(resolveCode(Kind.NODE, src.getNodeCode(), nodeSub(src.getNodeType())));
         src.setId(java.util.UUID.randomUUID().toString());
         src.setCreateTime(now);
         src.setUpdateTime(now);
@@ -178,7 +225,7 @@ public class ProductionService {
     /** 创建生产传感器：编号自动生成，不属于任何机构。 */
     public Sensor createSensor(Sensor src, String subject) {
         Date now = new Date();
-        src.setSensorCode(generateCode(Kind.SENSOR, classSub(src.getSensorClass())));
+        src.setSensorCode(resolveCode(Kind.SENSOR, src.getSensorCode(), classSub(src.getSensorClass())));
         src.setId(java.util.UUID.randomUUID().toString());
         src.setCreateTime(now);
         src.setUpdateTime(now);
@@ -194,7 +241,7 @@ public class ProductionService {
     /** 创建生产控制设备：编号自动生成，不属于任何机构。 */
     public DeviceCtrl createCtrl(DeviceCtrl src, String subject) {
         Date now = new Date();
-        src.setDeviceCode(generateCode(Kind.CTRL, classSub(src.getDeviceClass())));
+        src.setDeviceCode(resolveCode(Kind.CTRL, src.getDeviceCode(), classSub(src.getDeviceClass())));
         src.setId(java.util.UUID.randomUUID().toString());
         src.setCreateTime(now);
         src.setUpdateTime(now);
@@ -385,6 +432,13 @@ public class ProductionService {
     public static class DeviceAssignedException extends RuntimeException {
         public DeviceAssignedException() {
             super("device already assigned to an organization");
+        }
+    }
+
+    /** 自定义编号与已有设备重复。 */
+    public static class DuplicateCodeException extends RuntimeException {
+        public DuplicateCodeException(String code) {
+            super("device code already exists: " + code);
         }
     }
 

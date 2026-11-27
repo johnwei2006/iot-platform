@@ -14,6 +14,7 @@ public class SensorClass {
     private String classNameEn;
     private String unit;
     private Integer scale;
+    private String dataType;
 
     public String getSensorClass() { return sensorClass; }
     public void setSensorClass(String sensorClass) { this.sensorClass = sensorClass; }
@@ -25,4 +26,6 @@ public class SensorClass {
     public void setUnit(String unit) { this.unit = unit; }
     public Integer getScale() { return scale; }
     public void setScale(Integer scale) { this.scale = scale; }
+    public String getDataType() { return dataType; }
+    public void setDataType(String dataType) { this.dataType = dataType; }
 }

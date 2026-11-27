@@ -9,6 +9,7 @@ import com.iot.platform.security.RequireRoles;
 import com.iot.platform.service.ProductionService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -74,7 +76,32 @@ public class ProductionController {
         return ApiResponse.success(productionService.listUnassignedNodes());
     }
 
-    /* ---------- 生产入库（编号自动生成） ---------- */
+    /** 表单打开时展示的编号预览；用户可改成自定义编号。 */
+    @GetMapping("/next-code")
+    @RequireRoles({"ADMIN"})
+    public ApiResponse<?> nextCode(@RequestParam String kind,
+                                   @RequestParam(required = false) Integer type,
+                                   @RequestParam(required = false) String clazz) {
+        ProductionService.Kind k = ProductionService.Kind.valueOf(kind.toUpperCase());
+        return ApiResponse.success(productionService.nextCode(k, type, clazz));
+    }
+
+    /** 编号唯一性校验；id 为编辑时排除自身。 */
+    @GetMapping("/check-code")
+    @RequireRoles({"ADMIN"})
+    public ApiResponse<?> checkCode(@RequestParam String kind,
+                                    @RequestParam String code,
+                                    @RequestParam(required = false) String id) {
+        ProductionService.Kind k = ProductionService.Kind.valueOf(kind.toUpperCase());
+        return ApiResponse.success(productionService.codeAvailable(k, code, id));
+    }
+
+    @ExceptionHandler(ProductionService.DuplicateCodeException.class)
+    public ApiResponse<?> duplicateCode(ProductionService.DuplicateCodeException e) {
+        return ApiResponse.fail(409, e.getMessage());
+    }
+
+    /* ---------- 生产入库（编号自动生成，可手动修改） ---------- */
 
     @PostMapping("/gateways")
     @RequireRoles({"ADMIN"})

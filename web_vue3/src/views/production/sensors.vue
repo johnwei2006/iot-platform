@@ -7,11 +7,14 @@ import type { SensorEntity, SensorClassDict, SensorClassTypeDict } from '@/api/i
 import { listSensorClass, listSensorClassType } from '@/api/iot/sensor';
 import type { NodeEntity } from '@/api/iot/node';
 import {
+  checkProductionCode,
   createProductionSensor,
   deleteProductionSensor,
+  getNextProductionCode,
   listProductionNodes,
   listProductionSensors,
   updateProductionSensor,
+  type ProductionKind,
 } from '@/api/iot/production';
 import { fetchOrgList } from '@/api/system/org';
 import type { OrgRecord } from '@/types';
@@ -82,22 +85,63 @@ async function load() {
 
 const dialog = reactive({ visible: false, mode: 'create' as 'create' | 'edit', id: '' });
 const form = reactive<{
-  sensorName: string; sensorClass: string; sensorClassType: string; unit: string; channel: string;
-  nodeCode: string; warnMin: number | undefined; warnMax: number | undefined; scale: number | undefined;
-  reportInterval: number | undefined; commandRead: string;
+  sensorCode: string; sensorName: string; sensorClass: string; sensorClassType: string; unit: string;
+  channel: string; nodeCode: string;
 }>({
-  sensorName: '', sensorClass: '', sensorClassType: '', unit: '', channel: '', nodeCode: '',
-  warnMin: undefined, warnMax: undefined, scale: undefined, reportInterval: undefined, commandRead: '',
+  sensorCode: '', sensorName: '', sensorClass: '', sensorClassType: '', unit: '', channel: '', nodeCode: '',
 });
+const KIND: ProductionKind = 'SENSOR';
+const codeError = ref('');
+const codeDirty = ref(false);
 
-function openCreate() {
+const firstTypeOf = (clazz: string) =>
+  classTypes.value.find((item) => !!clazz && item.classType.startsWith(clazz))?.classType || '';
+
+const classUnit = (clazz: string) => classes.value.find((item) => item.sensorClass === clazz)?.unit || '';
+
+async function refreshNextCode() {
+  if (dialog.mode === 'edit' || codeDirty.value) return;
+  try {
+    const res = await getNextProductionCode(KIND, { clazz: form.sensorClass });
+    form.sensorCode = res.data || '';
+  } catch {
+    // 预览失败时保留当前值，提交前仍会校验唯一性
+  }
+}
+
+function onSensorClassChange() {
+  form.sensorClassType = firstTypeOf(form.sensorClass);
+  form.unit = classUnit(form.sensorClass);
+  void refreshNextCode();
+}
+
+async function validateCode(): Promise<boolean> {
+  const code = form.sensorCode.trim();
+  if (!code) {
+    codeError.value = t('production.codeRequired');
+    return false;
+  }
+  try {
+    const res = await checkProductionCode(KIND, code, dialog.mode === 'edit' ? dialog.id : undefined);
+    const ok = !!res.data;
+    codeError.value = ok ? '' : t('production.codeTaken');
+    return ok;
+  } catch {
+    codeError.value = t('production.loadFailed');
+    return false;
+  }
+}
+
+async function openCreate() {
   dialog.mode = 'create';
   dialog.id = '';
   Object.assign(form, {
-    sensorName: '', sensorClass: '', sensorClassType: '', unit: '', channel: '', nodeCode: '',
-    warnMin: undefined, warnMax: undefined, scale: undefined, reportInterval: undefined, commandRead: '',
+    sensorCode: '', sensorName: '', sensorClass: '', sensorClassType: '', unit: '', channel: '', nodeCode: '',
   });
+  codeError.value = '';
+  codeDirty.value = false;
   dialog.visible = true;
+  await refreshNextCode();
 }
 
 function openEdit(row: SensorEntity) {
@@ -105,11 +149,12 @@ function openEdit(row: SensorEntity) {
   dialog.mode = 'edit';
   dialog.id = row.id || '';
   Object.assign(form, {
-    sensorName: row.sensorName || '', sensorClass: row.sensorClass || '', sensorClassType: row.sensorClassType || '',
-    unit: row.unit || '', channel: row.channel || '', nodeCode: row.nodeCode || '',
-    warnMin: row.warnMin, warnMax: row.warnMax, scale: row.scale, reportInterval: row.reportInterval,
-    commandRead: row.commandRead || '',
+    sensorCode: row.sensorCode || '', sensorName: row.sensorName || '', sensorClass: row.sensorClass || '',
+    sensorClassType: row.sensorClassType || '', unit: row.unit || classUnit(row.sensorClass || ''),
+    channel: row.channel || '', nodeCode: row.nodeCode || '',
   });
+  codeError.value = '';
+  codeDirty.value = false;
   dialog.visible = true;
 }
 
@@ -126,6 +171,11 @@ async function submit() {
     ElMessage.warning(t('production.nodeRequired'));
     return;
   }
+  if (!form.sensorClassType) {
+    form.sensorClassType = firstTypeOf(form.sensorClass);
+  }
+  form.unit = classUnit(form.sensorClass);
+  if (!(await validateCode())) return;
   try {
     if (dialog.mode === 'create') {
       const res = await createProductionSensor({ ...form });
@@ -229,9 +279,12 @@ onMounted(load);
     <el-dialog v-model="dialog.visible" :title="dialog.mode === 'create' ? $t('production.createSensor') : $t('production.editSensor')" width="540px">
       <el-alert v-if="dialog.mode === 'create'" :title="$t('production.codeAutoHint')" type="info" :closable="false" show-icon class="code-hint" />
       <el-form label-width="110px">
+        <el-form-item :label="$t('production.code')" :error="codeError">
+          <el-input v-model="form.sensorCode" :disabled="dialog.mode === 'edit'" @input="codeDirty = true; codeError = ''" @blur="validateCode()" />
+        </el-form-item>
         <el-form-item :label="$t('sensor.name')"><el-input v-model="form.sensorName" :placeholder="$t('production.sensorNamePlaceholder')" /></el-form-item>
         <el-form-item :label="$t('sensor.class')">
-          <el-select v-model="form.sensorClass" style="width: 100%" @change="form.sensorClassType = ''">
+          <el-select v-model="form.sensorClass" style="width: 100%" @change="onSensorClassChange">
             <el-option v-for="c in classes" :key="c.sensorClass" :label="c.className" :value="c.sensorClass" />
           </el-select>
         </el-form-item>
@@ -240,7 +293,10 @@ onMounted(load);
             <el-option v-for="ct in classTypes.filter((item) => !form.sensorClass || item.classType.startsWith(form.sensorClass))" :key="ct.classType" :label="ct.classTypeName" :value="ct.classType" />
           </el-select>
         </el-form-item>
-        <el-form-item :label="$t('sensor.unit')"><el-input v-model="form.unit" style="width: 100%" /></el-form-item>
+        <el-form-item :label="$t('sensor.unit')">
+          <el-input v-model="form.unit" style="width: 100%" disabled />
+          <div class="form-tip">{{ $t('production.unitAutoTip') }}</div>
+        </el-form-item>
         <el-form-item :label="$t('production.slotPort')">
           <el-input v-model="form.channel" style="width: 140px" :placeholder="$t('production.channelPlaceholder')" />
           <span class="form-tip">{{ $t('production.channelTip') }}</span>
@@ -250,11 +306,6 @@ onMounted(load);
             <el-option v-for="n in nodes.filter((x) => !x.orgCode)" :key="n.nodeCode" :label="`${n.nodeCode}（${n.nodeName || ''}）`" :value="n.nodeCode" />
           </el-select>
         </el-form-item>
-        <el-form-item :label="$t('sensor.minValue')"><el-input-number v-model="form.warnMin" style="width: 100%" /></el-form-item>
-        <el-form-item :label="$t('sensor.maxValue')"><el-input-number v-model="form.warnMax" style="width: 100%" /></el-form-item>
-        <el-form-item :label="$t('sensor.decimals')"><el-input-number v-model="form.scale" :min="0" :max="6" style="width: 100%" /></el-form-item>
-        <el-form-item :label="$t('sensor.reportFrequency')"><el-input-number v-model="form.reportInterval" :min="0" style="width: 100%" /></el-form-item>
-        <el-form-item :label="$t('sensor.readCommand')"><el-input v-model="form.commandRead" :placeholder="$t('production.commandPlaceholder')" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialog.visible = false">{{ $t('common.cancel') }}</el-button>

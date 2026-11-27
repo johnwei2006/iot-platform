@@ -43,7 +43,7 @@ const filtered = computed(() => rules.value.filter((r) => r.kind === subTab.valu
 function deviceEntries(): DeviceEntry[] {
   return devices.value
     .filter((d) => form.selected.includes(d.deviceId))
-    .map((d) => ({ deviceId: d.deviceId, nodeId: d.nodeId || undefined, channel: 1, deviceName: d.name || d.deviceId, deviceType: t('device.title') }));
+    .map((d) => ({ deviceId: d.deviceId, channel: 1, deviceName: d.name || d.deviceId, deviceType: t('device.title') }));
 }
 
 function deviceName(deviceId?: string) {

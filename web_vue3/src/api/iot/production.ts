@@ -4,6 +4,8 @@ import type { NodeEntity } from './node';
 import type { SensorEntity } from './sensor';
 import type { DeviceCtrlEntity } from './device';
 
+export type ProductionKind = 'GATEWAY' | 'NODE' | 'SENSOR' | 'CTRL';
+
 /**
  * 生产管理 API：
  * - 列表返回全量设备（含已分配），前端展示分配状态与归属机构；
@@ -98,4 +100,14 @@ export function updateProductionControlDevice(id: string, data: Partial<DeviceCt
 
 export function deleteProductionControlDevice(id: string): Promise<ApiResponse<null>> {
   return request<null>({ url: `/api/production/control-devices/${id}`, method: 'DELETE' });
+}
+
+/** 表单打开时获取下一个自动编号（可按类型/大类计算编码片段）。 */
+export function getNextProductionCode(kind: ProductionKind, params?: { type?: number; clazz?: string }): Promise<ApiResponse<string>> {
+  return request<string>({ url: '/api/production/next-code', method: 'GET', params: { kind, ...params } });
+}
+
+/** 编号唯一性校验；id 用于编辑时排除自身。 */
+export function checkProductionCode(kind: ProductionKind, code: string, id?: string): Promise<ApiResponse<boolean>> {
+  return request<boolean>({ url: '/api/production/check-code', method: 'GET', params: { kind, code, id } });
 }

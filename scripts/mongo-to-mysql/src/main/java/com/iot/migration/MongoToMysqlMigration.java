@@ -66,10 +66,10 @@ public final class MongoToMysqlMigration {
                     + "`last_login_at`=VALUES(`last_login_at`)";
 
     private static final String DEVICE_UPSERT =
-            "INSERT INTO `iot_gateway` (`id`,`gateway_code`,`node_id`,`name`,`identifier_type`,`auth_secret`,"
+            "INSERT INTO `iot_gateway` (`id`,`gateway_code`,`name`,`identifier_type`,`auth_secret`,"
                     + "`status`,`org_code`,`owner_user_id`,`last_seen`,`created_at`,`updated_at`) "
-                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE "
-                    + "`gateway_code`=VALUES(`gateway_code`),`node_id`=VALUES(`node_id`),`name`=VALUES(`name`),"
+                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE "
+                    + "`gateway_code`=VALUES(`gateway_code`),`name`=VALUES(`name`),"
                     + "`identifier_type`=VALUES(`identifier_type`),`auth_secret`=VALUES(`auth_secret`),"
                     + "`status`=VALUES(`status`),`org_code`=VALUES(`org_code`),"
                     + "`owner_user_id`=VALUES(`owner_user_id`),`last_seen`=VALUES(`last_seen`),"
@@ -180,7 +180,6 @@ public final class MongoToMysqlMigration {
                         int i = 1;
                         ps.setString(i++, idOf(doc));
                         ps.setString(i++, text(doc, "deviceId", ""));
-                        ps.setString(i++, text(doc, "nodeId", null));
                         ps.setString(i++, text(doc, "name", null));
                         ps.setString(i++, text(doc, "identifierType", null));
                         ps.setString(i++, text(doc, "authSecret", null));

@@ -7,11 +7,14 @@ import type { DeviceCtrlEntity, DeviceClassDict, DeviceClassTypeDict } from '@/a
 import { listDeviceClass, listDeviceClassType } from '@/api/iot/device';
 import type { NodeEntity } from '@/api/iot/node';
 import {
+  checkProductionCode,
   createProductionControlDevice,
   deleteProductionControlDevice,
+  getNextProductionCode,
   listProductionNodes,
   listProductionControlDevices,
   updateProductionControlDevice,
+  type ProductionKind,
 } from '@/api/iot/production';
 import { fetchOrgList } from '@/api/system/org';
 import type { OrgRecord } from '@/types';
@@ -90,17 +93,58 @@ async function load() {
 
 const dialog = reactive({ visible: false, mode: 'create' as 'create' | 'edit', id: '' });
 const form = reactive<{
-  deviceName: string; deviceClass: string; deviceClassType: string; channel: string;
+  deviceCode: string; deviceName: string; deviceClass: string; deviceClassType: string; channel: string;
   nodeCode: string; connectType: number;
 }>({
-  deviceName: '', deviceClass: '', deviceClassType: '', channel: '', nodeCode: '', connectType: 0,
+  deviceCode: '', deviceName: '', deviceClass: '', deviceClassType: '', channel: '', nodeCode: '', connectType: 0,
 });
+const KIND: ProductionKind = 'CTRL';
+const codeError = ref('');
+const codeDirty = ref(false);
 
-function openCreate() {
+const firstTypeOf = (clazz: string) =>
+  classTypes.value.find((item) => !!clazz && String(item.type).startsWith(clazz))?.type || '';
+
+async function refreshNextCode() {
+  if (dialog.mode === 'edit' || codeDirty.value) return;
+  try {
+    const res = await getNextProductionCode(KIND, { clazz: form.deviceClass });
+    form.deviceCode = res.data || '';
+  } catch {
+    // 预览失败时保留当前值，提交前仍会校验唯一性
+  }
+}
+
+function onDeviceClassChange() {
+  form.deviceClassType = firstTypeOf(form.deviceClass);
+  void refreshNextCode();
+}
+
+async function validateCode(): Promise<boolean> {
+  const code = form.deviceCode.trim();
+  if (!code) {
+    codeError.value = t('production.codeRequired');
+    return false;
+  }
+  try {
+    const res = await checkProductionCode(KIND, code, dialog.mode === 'edit' ? dialog.id : undefined);
+    const ok = !!res.data;
+    codeError.value = ok ? '' : t('production.codeTaken');
+    return ok;
+  } catch {
+    codeError.value = t('production.loadFailed');
+    return false;
+  }
+}
+
+async function openCreate() {
   dialog.mode = 'create';
   dialog.id = '';
-  Object.assign(form, { deviceName: '', deviceClass: '', deviceClassType: '', channel: '', nodeCode: '', connectType: 0 });
+  Object.assign(form, { deviceCode: '', deviceName: '', deviceClass: '', deviceClassType: '', channel: '', nodeCode: '', connectType: 0 });
+  codeError.value = '';
+  codeDirty.value = false;
   dialog.visible = true;
+  await refreshNextCode();
 }
 
 function openEdit(row: DeviceCtrlEntity) {
@@ -108,9 +152,12 @@ function openEdit(row: DeviceCtrlEntity) {
   dialog.mode = 'edit';
   dialog.id = row.id || '';
   Object.assign(form, {
-    deviceName: row.deviceName || '', deviceClass: row.deviceClass || '', deviceClassType: row.deviceClassType || '',
-    channel: row.channel || '', nodeCode: row.nodeCode || '', connectType: row.connectType ?? 0,
+    deviceCode: row.deviceCode || '', deviceName: row.deviceName || '', deviceClass: row.deviceClass || '',
+    deviceClassType: row.deviceClassType || '', channel: row.channel || '', nodeCode: row.nodeCode || '',
+    connectType: row.connectType ?? 0,
   });
+  codeError.value = '';
+  codeDirty.value = false;
   dialog.visible = true;
 }
 
@@ -127,6 +174,10 @@ async function submit() {
     ElMessage.warning(t('production.nodeRequired'));
     return;
   }
+  if (!form.deviceClassType) {
+    form.deviceClassType = firstTypeOf(form.deviceClass);
+  }
+  if (!(await validateCode())) return;
   try {
     if (dialog.mode === 'create') {
       const res = await createProductionControlDevice({ ...form });
@@ -233,9 +284,12 @@ onMounted(load);
     <el-dialog v-model="dialog.visible" :title="dialog.mode === 'create' ? $t('production.createCtrl') : $t('production.editCtrl')" width="520px">
       <el-alert v-if="dialog.mode === 'create'" :title="$t('production.codeAutoHint')" type="info" :closable="false" show-icon class="code-hint" />
       <el-form label-width="110px">
+        <el-form-item :label="$t('production.code')" :error="codeError">
+          <el-input v-model="form.deviceCode" :disabled="dialog.mode === 'edit'" @input="codeDirty = true; codeError = ''" @blur="validateCode()" />
+        </el-form-item>
         <el-form-item :label="$t('device.name')"><el-input v-model="form.deviceName" :placeholder="$t('production.deviceNamePlaceholder')" /></el-form-item>
         <el-form-item :label="$t('device.class')">
-          <el-select v-model="form.deviceClass" style="width: 100%" @change="form.deviceClassType = ''">
+          <el-select v-model="form.deviceClass" style="width: 100%" @change="onDeviceClassChange">
             <el-option v-for="c in classes" :key="c.deviceClass" :label="c.className" :value="c.deviceClass" />
           </el-select>
         </el-form-item>
@@ -247,12 +301,6 @@ onMounted(load);
         <el-form-item :label="$t('production.slotPort')">
           <el-input v-model="form.channel" style="width: 140px" :placeholder="$t('production.channelPlaceholder')" />
           <span class="form-tip">{{ $t('production.channelTip') }}</span>
-        </el-form-item>
-        <el-form-item :label="$t('device.connectType')">
-          <el-radio-group v-model="form.connectType">
-            <el-radio :value="0">{{ $t('device.connectDirect') }}</el-radio>
-            <el-radio :value="1">{{ $t('device.connect485') }}</el-radio>
-          </el-radio-group>
         </el-form-item>
         <el-form-item :label="$t('production.boundNode')">
           <el-select v-model="form.nodeCode" clearable filterable style="width: 100%" :placeholder="$t('production.selectNode')">

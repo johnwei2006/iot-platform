@@ -15,7 +15,6 @@ public class Gateway {
     /** 网关编码（原 device_id；Java 字段名保留以兼容调用方与前端） */
     @TableField("gateway_code")
     private String deviceId;
-    private String nodeId;
     private String name;
     /** 标识类型：VIN / TERMINALNO / DEVICEID */
     private String identifierType;
@@ -42,7 +41,7 @@ public class Gateway {
     private String longitude;
     /** 纬度 */
     private String latitude;
-    /** 网关类型：1-4G网关，2-5G网关 ... */
+    /** 网关类型：1-4G，2-工控网关，3-5G，4-其它 */
     private Integer gatewayType;
     /** 固件版本号 */
     @TableField("firmware_version")
@@ -56,8 +55,6 @@ public class Gateway {
     public void setId(String id) { this.id = id; }
     public String getDeviceId() { return deviceId; }
     public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
-    public String getNodeId() { return nodeId; }
-    public void setNodeId(String nodeId) { this.nodeId = nodeId; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getIdentifierType() { return identifierType; }

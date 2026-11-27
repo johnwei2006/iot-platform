@@ -27,7 +27,7 @@ const areaFilter = ref('');
 const typeFilter = ref<number | ''>('');
 const onlineFilter = ref('');
 
-const NODE_TYPES: Record<number, string> = { 1: 'ACT', 2: 'IRRI', 3: 'DATA', 4: 'node.type_4', 5: 'node.type_5' };
+const NODE_TYPES: Record<number, string> = { 1: 'node.type_1', 2: 'node.type_2', 3: 'node.type_3', 4: 'node.type_4' };
 
 function typeName(type?: number) {
   if (type === undefined || type === null) return '--';

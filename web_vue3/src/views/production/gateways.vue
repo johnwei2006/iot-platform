@@ -5,10 +5,13 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import {
   assignGatewayOrg,
+  checkProductionCode,
   createProductionGateway,
   deleteProductionGateway,
+  getNextProductionCode,
   listProductionGateways,
   updateProductionGateway,
+  type ProductionKind,
 } from '@/api/iot/production';
 import { fetchOrgList } from '@/api/system/org';
 import type { Device, OrgRecord } from '@/types';
@@ -22,9 +25,39 @@ const typeFilter = ref<number | ''>('');
 const statusFilter = ref('');
 
 const dialog = reactive({ visible: false, mode: 'create' as 'create' | 'edit', id: '' });
-const form = reactive<{ name: string; gatewayType: number; firmwareVersion: string }>({
-  name: '', gatewayType: 1, firmwareVersion: '',
+const form = reactive<{ deviceId: string; name: string; gatewayType: number; firmwareVersion: string }>({
+  deviceId: '', name: '', gatewayType: 1, firmwareVersion: '',
 });
+const KIND: ProductionKind = 'GATEWAY';
+const codeError = ref('');
+const codeDirty = ref(false);
+
+async function refreshNextCode() {
+  if (dialog.mode === 'edit' || codeDirty.value) return;
+  try {
+    const res = await getNextProductionCode(KIND, { type: form.gatewayType });
+    form.deviceId = res.data || '';
+  } catch {
+    // 预览失败时保留当前值，提交前仍会校验唯一性
+  }
+}
+
+async function validateCode(): Promise<boolean> {
+  const code = form.deviceId.trim();
+  if (!code) {
+    codeError.value = t('production.codeRequired');
+    return false;
+  }
+  try {
+    const res = await checkProductionCode(KIND, code, dialog.mode === 'edit' ? dialog.id : undefined);
+    const ok = !!res.data;
+    codeError.value = ok ? '' : t('production.codeTaken');
+    return ok;
+  } catch {
+    codeError.value = t('production.loadFailed');
+    return false;
+  }
+}
 const assign = reactive({ visible: false, id: '', code: '', orgCode: '' });
 
 const typeName = (type?: number) => {
@@ -77,22 +110,29 @@ async function load() {
   }
 }
 
-function openCreate() {
+async function openCreate() {
   dialog.mode = 'create';
   dialog.id = '';
+  form.deviceId = '';
   form.name = '';
   form.gatewayType = 1;
   form.firmwareVersion = '';
+  codeError.value = '';
+  codeDirty.value = false;
   dialog.visible = true;
+  await refreshNextCode();
 }
 
 function openEdit(row: Device) {
   if (isAssigned(row)) return;
   dialog.mode = 'edit';
   dialog.id = row.id || '';
+  form.deviceId = row.deviceId || '';
   form.name = row.name || '';
   form.gatewayType = row.gatewayType ?? 1;
   form.firmwareVersion = row.firmwareVersion || '';
+  codeError.value = '';
+  codeDirty.value = false;
   dialog.visible = true;
 }
 
@@ -101,6 +141,7 @@ async function submit() {
     ElMessage.warning(t('production.nameRequired'));
     return;
   }
+  if (!(await validateCode())) return;
   try {
     if (dialog.mode === 'create') {
       const res = await createProductionGateway({ ...form });
@@ -171,6 +212,8 @@ onMounted(load);
       <el-select v-model="typeFilter" class="type-select" clearable :placeholder="$t('gateway.type')" :aria-label="$t('gateway.type')">
         <el-option :label="$t('gateway.type_1')" :value="1" />
         <el-option :label="$t('gateway.type_2')" :value="2" />
+        <el-option :label="$t('gateway.type_3')" :value="3" />
+        <el-option :label="$t('gateway.type_4')" :value="4" />
       </el-select>
       <el-select v-model="statusFilter" class="status-select" clearable :placeholder="$t('production.assignStatus')" :aria-label="$t('production.assignStatus')">
         <el-option :label="$t('production.unassigned')" value="UNASSIGNED" />
@@ -225,11 +268,16 @@ onMounted(load);
     <el-dialog v-model="dialog.visible" :title="dialog.mode === 'create' ? $t('production.createGateway') : $t('production.editGateway')" width="480px">
       <el-alert v-if="dialog.mode === 'create'" :title="$t('production.codeAutoHint')" type="info" :closable="false" show-icon class="code-hint" />
       <el-form label-width="100px">
+        <el-form-item :label="$t('production.code')" :error="codeError">
+          <el-input v-model="form.deviceId" :disabled="dialog.mode === 'edit'" @input="codeDirty = true; codeError = ''" @blur="validateCode()" />
+        </el-form-item>
         <el-form-item :label="$t('gateway.name')"><el-input v-model="form.name" :placeholder="$t('production.gatewayNamePlaceholder')" /></el-form-item>
         <el-form-item :label="$t('gateway.type')">
-          <el-radio-group v-model="form.gatewayType">
+          <el-radio-group v-model="form.gatewayType" @change="refreshNextCode">
             <el-radio :value="1">{{ $t('gateway.type_1') }}</el-radio>
             <el-radio :value="2">{{ $t('gateway.type_2') }}</el-radio>
+            <el-radio :value="3">{{ $t('gateway.type_3') }}</el-radio>
+            <el-radio :value="4">{{ $t('gateway.type_4') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item :label="$t('gateway.firmware')"><el-input v-model="form.firmwareVersion" :placeholder="$t('production.optional')" /></el-form-item>

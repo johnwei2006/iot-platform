@@ -130,3 +130,63 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261127-13-seed-sensor-class-dict
+      author: iot-platform
+      comment: 传感器大类/类型字典初始化：按规划文档新增两位数字编码的大类/类型，补 data_type 列
+      changes:
+        - sqlFile:
+            path: sql/013-seed-sensor-class-dict.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261127-14-seed-device-class-dict
+      author: iot-platform
+      comment: 控制设备大类/类型字典初始化：按规划截图新增两位数字编码的大类/类型
+      changes:
+        - sqlFile:
+            path: sql/014-seed-device-class-dict.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261127-15-update-gateway-node-type-comments
+      author: iot-platform
+      comment: 内置网关/节点类型定义：4G网关、工控网关；采集/控制/虚拟/第三方节点（同步列注释）
+      changes:
+        - sqlFile:
+            path: sql/015-update-gateway-node-type-comments.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261127-16-normalize-gateway-node-types
+      author: iot-platform
+      comment: 网关/节点内置类型收敛：1-4G/2-公开/3-5G/4-其它；1-采集/2-控制/3-虚拟/4-第三方，历史节点类型归一化
+      changes:
+        - sqlFile:
+            path: sql/016-normalize-gateway-node-types.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261127-17-fix-gateway-type-2
+      author: iot-platform
+      comment: 网关类型 2 修正为工控网关
+      changes:
+        - sqlFile:
+            path: sql/017-fix-gateway-type-2.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261127-18-drop-gateway-node-id
+      author: iot-platform
+      comment: 网关表移除 node_id 字段（节点通过 gateway_code 关联）
+      changes:
+        - sqlFile:
+            path: sql/018-drop-gateway-node-id.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true

@@ -37,7 +37,6 @@ export interface LoginPayload {
 export interface Device {
   id?: string;
   deviceId: string;
-  nodeId?: string;
   name?: string;
   identifierType?: string;
   status?: string;

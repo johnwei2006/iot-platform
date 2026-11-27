@@ -96,9 +96,6 @@ public class GatewayService {
         if (src.getName() != null) {
             d.setName(src.getName());
         }
-        if (src.getNodeId() != null) {
-            d.setNodeId(src.getNodeId());
-        }
         if (src.getIdentifierType() != null) {
             d.setIdentifierType(src.getIdentifierType());
         }

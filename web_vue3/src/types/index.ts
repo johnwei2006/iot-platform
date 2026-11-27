@@ -135,7 +135,6 @@ export interface MeResponse {
 export interface Device {
   id?: string;
   deviceId: string;
-  nodeId?: string;
   name?: string;
   identifierType?: string;
   /** 安装区域ID（iot_area.id） */
@@ -148,7 +147,7 @@ export interface Device {
   address?: string;
   longitude?: string;
   latitude?: string;
-  /** 网关类型：1-4G网关，2-5G网关 */
+  /** 网关类型：1-4G，2-工控网关，3-5G，4-其它 */
   gatewayType?: number;
   firmwareVersion?: string;
   pic?: string;

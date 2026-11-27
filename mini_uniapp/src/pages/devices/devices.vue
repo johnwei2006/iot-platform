@@ -18,7 +18,7 @@ function kindOf(d: Device) {
 }
 
 function entryOf(d: Device): DeviceEntry {
-  return { deviceId: d.deviceId, nodeId: d.nodeId || undefined, channel: 1, deviceName: d.name || d.deviceId, deviceType: kindOf(d) === 'blanket' ? '棉被' : '风机' };
+  return { deviceId: d.deviceId, channel: 1, deviceName: d.name || d.deviceId, deviceType: kindOf(d) === 'blanket' ? '棉被' : '风机' };
 }
 
 async function issue(d: Device, action: string, value?: string) {

@@ -5,11 +5,14 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import type { NodeEntity } from '@/api/iot/node';
 import {
+  checkProductionCode,
   createProductionNode,
   deleteProductionNode,
+  getNextProductionCode,
   listProductionGateways,
   listProductionNodes,
   updateProductionNode,
+  type ProductionKind,
 } from '@/api/iot/production';
 import { fetchOrgList } from '@/api/system/org';
 import type { Device, OrgRecord } from '@/types';
@@ -24,7 +27,7 @@ const typeFilter = ref<number | ''>('');
 const gatewayFilter = ref('');
 const statusFilter = ref('');
 
-const NODE_TYPES: Record<number, string> = { 1: 'ACT', 2: 'IRRI', 3: 'DATA', 4: 'node.type_4', 5: 'node.type_5' };
+const NODE_TYPES: Record<number, string> = { 1: 'node.type_1', 2: 'node.type_2', 3: 'node.type_3', 4: 'node.type_4' };
 
 const gatewayNameMap = computed(() => new Map(gateways.value.map((g) => [g.deviceId, g.name || g.deviceId])));
 const orgNameMap = computed(() => new Map(orgs.value.map((o) => [o.code, o.name])));
@@ -88,30 +91,67 @@ async function load() {
 }
 
 const dialog = reactive({ visible: false, mode: 'create' as 'create' | 'edit', id: '' });
-const form = reactive<{ nodeName: string; nodeType: number; gatewayCode: string; firmwareVersion: string; reportInterval: number | undefined }>({
-  nodeName: '', nodeType: 3, gatewayCode: '', firmwareVersion: '', reportInterval: undefined,
+const form = reactive<{ nodeCode: string; nodeName: string; nodeType: number; gatewayCode: string; firmwareVersion: string; reportInterval: number | undefined }>({
+  nodeCode: '', nodeName: '', nodeType: 1, gatewayCode: '', firmwareVersion: '', reportInterval: undefined,
 });
+const KIND: ProductionKind = 'NODE';
+const codeError = ref('');
+const codeDirty = ref(false);
 
-function openCreate() {
+async function refreshNextCode() {
+  if (dialog.mode === 'edit' || codeDirty.value) return;
+  try {
+    const res = await getNextProductionCode(KIND, { type: form.nodeType });
+    form.nodeCode = res.data || '';
+  } catch {
+    // 预览失败时保留当前值，提交前仍会校验唯一性
+  }
+}
+
+async function validateCode(): Promise<boolean> {
+  const code = form.nodeCode.trim();
+  if (!code) {
+    codeError.value = t('production.codeRequired');
+    return false;
+  }
+  try {
+    const res = await checkProductionCode(KIND, code, dialog.mode === 'edit' ? dialog.id : undefined);
+    const ok = !!res.data;
+    codeError.value = ok ? '' : t('production.codeTaken');
+    return ok;
+  } catch {
+    codeError.value = t('production.loadFailed');
+    return false;
+  }
+}
+
+async function openCreate() {
   dialog.mode = 'create';
   dialog.id = '';
+  form.nodeCode = '';
   form.nodeName = '';
-  form.nodeType = 3;
+  form.nodeType = 1;
   form.gatewayCode = '';
   form.firmwareVersion = '';
   form.reportInterval = undefined;
+  codeError.value = '';
+  codeDirty.value = false;
   dialog.visible = true;
+  await refreshNextCode();
 }
 
 function openEdit(row: NodeEntity) {
   if (isAssigned(row)) return;
   dialog.mode = 'edit';
   dialog.id = row.id || '';
+  form.nodeCode = row.nodeCode || '';
   form.nodeName = row.nodeName || '';
-  form.nodeType = row.nodeType ?? 3;
+  form.nodeType = row.nodeType ?? 1;
   form.gatewayCode = row.gatewayCode || '';
   form.firmwareVersion = row.firmwareVersion || '';
   form.reportInterval = row.reportInterval;
+  codeError.value = '';
+  codeDirty.value = false;
   dialog.visible = true;
 }
 
@@ -124,6 +164,7 @@ async function submit() {
     ElMessage.warning(t('production.gatewayRequired'));
     return;
   }
+  if (!(await validateCode())) return;
   try {
     if (dialog.mode === 'create') {
       const res = await createProductionNode({ ...form });
@@ -230,9 +271,12 @@ onMounted(load);
     <el-dialog v-model="dialog.visible" :title="dialog.mode === 'create' ? $t('production.createNode') : $t('production.editNode')" width="500px">
       <el-alert v-if="dialog.mode === 'create'" :title="$t('production.codeAutoHint')" type="info" :closable="false" show-icon class="code-hint" />
       <el-form label-width="110px">
+        <el-form-item :label="$t('production.code')" :error="codeError">
+          <el-input v-model="form.nodeCode" :disabled="dialog.mode === 'edit'" @input="codeDirty = true; codeError = ''" @blur="validateCode()" />
+        </el-form-item>
         <el-form-item :label="$t('node.name')"><el-input v-model="form.nodeName" :placeholder="$t('production.nodeNamePlaceholder')" /></el-form-item>
         <el-form-item :label="$t('node.type')">
-          <el-select v-model="form.nodeType" style="width: 100%">
+          <el-select v-model="form.nodeType" style="width: 100%" @change="refreshNextCode">
             <el-option v-for="(label, value) in NODE_TYPES" :key="value" :label="label.startsWith('node.') ? $t(label) : label" :value="Number(value)" />
           </el-select>
         </el-form-item>

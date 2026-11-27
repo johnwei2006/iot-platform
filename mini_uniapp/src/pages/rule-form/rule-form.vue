@@ -34,7 +34,7 @@ const form = ref({
 function deviceEntries(): DeviceEntry[] {
   return devices.value
     .filter((d) => form.value.selected.includes(d.deviceId))
-    .map((d) => ({ deviceId: d.deviceId, nodeId: d.nodeId || undefined, channel: 1, deviceName: d.name || d.deviceId, deviceType: '风机' }));
+    .map((d) => ({ deviceId: d.deviceId, channel: 1, deviceName: d.name || d.deviceId, deviceType: '风机' }));
 }
 
 function payload(): Partial<ControlRule> {
