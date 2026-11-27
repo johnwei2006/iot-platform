@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { ArrowLeft, Edit } from '@element-plus/icons-vue';
 import { getDevice, updateDevice } from '@/api/iot/gateway';
@@ -10,6 +11,7 @@ import type { Device, OrgRecord } from '@/types';
 
 type Field = 'name' | 'orgCode' | 'longitude' | 'latitude' | 'address' | 'areaId' | 'gatewayType' | 'firmwareVersion' | 'pic';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const id = String(route.params.id);
@@ -21,12 +23,13 @@ const draftValue = ref<string | number>('');
 const coordDraft = ref({ longitude: '', latitude: '' });
 const editInputRef = ref<{ focus: () => void } | null>(null);
 
-const TYPE_NAMES: Record<number, string> = { 1: '4G网关', 2: '5G网关' };
 const orgName = computed(() => orgs.value.find((o) => o.code === device.value?.orgCode)?.name || '--');
 
 function typeName(type?: number) {
   if (type === undefined || type === null) return '--';
-  return TYPE_NAMES[type] ?? String(type);
+  const key = `gateway.type_${type}`;
+  const translated = t(key);
+  return translated === key ? String(type) : translated;
 }
 
 function formatTime(value?: string) {
@@ -52,7 +55,7 @@ function startEdit(field: Field) {
   nextTick(() => editInputRef.value?.focus());
 }
 
-async function applyPatch(patch: Partial<Device>, message = '已保存') {
+async function applyPatch(patch: Partial<Device>, message = t('gateway.saved')) {
   if (!device.value) return;
   try {
     const res = await updateDevice(id, patch);
@@ -60,7 +63,7 @@ async function applyPatch(patch: Partial<Device>, message = '已保存') {
     activeField.value = null;
     ElMessage.success(message);
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
     activeField.value = null;
   }
 }
@@ -69,9 +72,9 @@ async function saveArea(areaId?: string) {
   try {
     const res = await updateDevice(id, { areaId: areaId || '' });
     device.value = res.data ?? device.value;
-    ElMessage.success('安装区域已更新');
+    ElMessage.success(t('gateway.areaUpdated'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
@@ -98,7 +101,7 @@ async function saveCoords() {
 }
 
 function placeholder(feature: string) {
-  ElMessage.info(`${feature}功能暂未开放`);
+  ElMessage.info(t('gateway.notAvailable', { feature }));
 }
 
 async function load() {
@@ -108,7 +111,7 @@ async function load() {
     device.value = detail.data;
     orgs.value = orgList;
   } catch (error) {
-    ElMessage.error((error as Error).message || '网关详情加载失败');
+    ElMessage.error((error as Error).message || t('gateway.detailLoadFailed'));
   } finally {
     loading.value = false;
   }
@@ -121,142 +124,142 @@ onMounted(load);
   <div class="detail-page" v-loading="loading">
     <header class="detail-header">
       <div class="title-wrap">
-        <el-button link :icon="ArrowLeft" aria-label="返回网关列表" @click="router.push('/iot/gateways')" />
+        <el-button link :icon="ArrowLeft" :aria-label="$t('gateway.backToList')" @click="router.push('/iot/gateways')" />
         <h2>{{ device?.name || '--' }}</h2>
         <el-tag :type="device?.status === 'ONLINE' ? 'success' : 'danger'" size="small" effect="light">
-          {{ device?.status === 'ONLINE' ? '在线' : '离线' }}
+          {{ device?.status === 'ONLINE' ? $t('common.online') : $t('common.offline') }}
         </el-tag>
       </div>
       <div class="header-actions">
-        <el-button @click="placeholder('安装配置')">安装配置</el-button>
-        <el-button type="primary" @click="placeholder('立即绑定')">立即绑定</el-button>
+        <el-button @click="placeholder($t('gateway.installConfig'))">{{ $t('gateway.installConfig') }}</el-button>
+        <el-button type="primary" @click="placeholder($t('gateway.bindNow'))">{{ $t('gateway.bindNow') }}</el-button>
       </div>
     </header>
 
     <div v-if="device" class="info-grid">
       <div class="info-cell">
-        <span class="info-label">网关名称</span>
+        <span class="info-label">{{ $t('gateway.name') }}</span>
         <div class="info-value">
           <el-input v-if="activeField === 'name'" ref="editInputRef" v-model="draftValue" size="small"
                     @blur="save('name')" @keyup.enter="save('name')" />
           <template v-else>
             <span>{{ device.name || '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑网关名称" @click="startEdit('name')" />
+            <el-button link :icon="Edit" :aria-label="$t('gateway.editName')" @click="startEdit('name')" />
           </template>
         </div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">网关编码</span>
+        <span class="info-label">{{ $t('gateway.code') }}</span>
         <div class="info-value"><span>{{ device.deviceId || '--' }}</span></div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">网关类型</span>
+        <span class="info-label">{{ $t('gateway.type') }}</span>
         <div class="info-value">
           <el-select v-if="activeField === 'gatewayType'" v-model="draftValue" size="small" @change="save('gatewayType')">
-            <el-option label="4G网关" :value="1" />
-            <el-option label="5G网关" :value="2" />
+            <el-option :label="$t('gateway.type_1')" :value="1" />
+            <el-option :label="$t('gateway.type_2')" :value="2" />
           </el-select>
           <template v-else>
             <span>{{ typeName(device.gatewayType) }}</span>
-            <el-button link :icon="Edit" aria-label="编辑网关类型" @click="startEdit('gatewayType')" />
+            <el-button link :icon="Edit" :aria-label="$t('gateway.editType')" @click="startEdit('gatewayType')" />
           </template>
         </div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">机构名称</span>
+        <span class="info-label">{{ $t('gateway.orgName') }}</span>
         <div class="info-value"><span>{{ orgName }}</span></div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">机构编码</span>
+        <span class="info-label">{{ $t('gateway.orgCode') }}</span>
         <div class="info-value">
           <el-select v-if="activeField === 'orgCode'" v-model="draftValue" size="small" filterable @change="save('orgCode')">
             <el-option v-for="org in orgs" :key="org.id" :label="org.name" :value="org.code" />
           </el-select>
           <template v-else>
             <span>{{ device.orgCode || '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑机构编码" @click="startEdit('orgCode')" />
+            <el-button link :icon="Edit" :aria-label="$t('gateway.editOrgCode')" @click="startEdit('orgCode')" />
           </template>
         </div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">经纬度</span>
+        <span class="info-label">{{ $t('gateway.coords') }}</span>
         <div class="info-value coord-value">
           <template v-if="activeField === 'longitude' || activeField === 'latitude'">
-            <el-input ref="editInputRef" v-model="coordDraft.longitude" size="small" placeholder="经度"
+            <el-input ref="editInputRef" v-model="coordDraft.longitude" size="small" :placeholder="$t('gateway.longitude')"
                       @blur="saveCoords" @keyup.enter="saveCoords" />
             <span>,</span>
-            <el-input v-model="coordDraft.latitude" size="small" placeholder="纬度"
+            <el-input v-model="coordDraft.latitude" size="small" :placeholder="$t('gateway.latitude')"
                       @blur="saveCoords" @keyup.enter="saveCoords" />
           </template>
           <template v-else>
             <span>{{ device.longitude || device.latitude ? `${device.longitude ?? '--'}, ${device.latitude ?? '--'}` : '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑经纬度" @click="startEdit('longitude')" />
+            <el-button link :icon="Edit" :aria-label="$t('gateway.editCoords')" @click="startEdit('longitude')" />
           </template>
         </div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">更新人</span>
+        <span class="info-label">{{ $t('gateway.updatedBy') }}</span>
         <div class="info-value"><span>--</span></div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">固件版本号</span>
+        <span class="info-label">{{ $t('gateway.firmware') }}</span>
         <div class="info-value">
           <el-input v-if="activeField === 'firmwareVersion'" ref="editInputRef" v-model="draftValue" size="small"
                     @blur="save('firmwareVersion')" @keyup.enter="save('firmwareVersion')" />
           <template v-else>
             <span>{{ device.firmwareVersion || '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑固件版本号" @click="startEdit('firmwareVersion')" />
+            <el-button link :icon="Edit" :aria-label="$t('gateway.editFirmware')" @click="startEdit('firmwareVersion')" />
           </template>
         </div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">SIM卡号</span>
+        <span class="info-label">{{ $t('gateway.sim') }}</span>
         <div class="info-value"><span>--</span></div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">更新时间</span>
+        <span class="info-label">{{ $t('common.updateTime') }}</span>
         <div class="info-value"><span>{{ formatTime(device.updatedAt) }}</span></div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">最后上报时间</span>
+        <span class="info-label">{{ $t('gateway.lastSeen') }}</span>
         <div class="info-value"><span>{{ formatTime(device.lastSeen) }}</span></div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">安装区域</span>
+        <span class="info-label">{{ $t('gateway.area') }}</span>
         <div class="info-value">
           <AreaSelect
             :model-value="device.areaId"
-            placeholder="选择安装区域"
+            :placeholder="$t('gateway.selectArea')"
             @change="(area) => saveArea(area?.id)"
           />
         </div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">详细地址</span>
+        <span class="info-label">{{ $t('gateway.address') }}</span>
         <div class="info-value">
           <el-input v-if="activeField === 'address'" ref="editInputRef" v-model="draftValue" size="small"
                     @blur="save('address')" @keyup.enter="save('address')" />
           <template v-else>
             <span>{{ device.address || '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑详细地址" @click="startEdit('address')" />
+            <el-button link :icon="Edit" :aria-label="$t('gateway.editAddress')" @click="startEdit('address')" />
           </template>
         </div>
       </div>
 
       <div class="info-cell">
-        <span class="info-label">网关图片</span>
+        <span class="info-label">{{ $t('gateway.pic') }}</span>
         <div class="info-value">
           <el-image v-if="device.pic" :src="device.pic" :preview-src-list="[device.pic]" fit="cover" class="gateway-pic" />
           <span v-else>--</span>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { ArrowLeft, Edit } from '@element-plus/icons-vue';
 import { listNodes, type NodeEntity } from '@/api/iot/node';
@@ -11,6 +12,7 @@ import {
 import AreaSelect from '@/components/AreaSelect.vue';
 import SensorHistoryChart from './components/sensor-history-chart.vue';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const id = String(route.params.id);
@@ -71,9 +73,9 @@ async function submitEdit() {
     const res = await updateSensor(id, form);
     sensor.value = res.data ?? sensor.value;
     editVisible.value = false;
-    ElMessage.success('已保存');
+    ElMessage.success(t('gateway.saved'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
@@ -82,9 +84,9 @@ async function submitAlarm() {
     const res = await updateSensor(id, { warnMin: alarmForm.warnMin, warnMax: alarmForm.warnMax });
     sensor.value = res.data ?? sensor.value;
     alarmVisible.value = false;
-    ElMessage.success('告警阈值已保存');
+    ElMessage.success(t('sensor.alarmSaved'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
@@ -92,18 +94,18 @@ async function saveArea(areaId?: string) {
   try {
     const res = await updateSensor(id, { areaId: areaId || '' });
     sensor.value = res.data ?? sensor.value;
-    ElMessage.success('关联区域已更新');
+    ElMessage.success(t('sensor.areaUpdated'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
 function placeholder(feature: string) {
-  ElMessage.info(`${feature}功能暂未开放`);
+  ElMessage.info(t('gateway.notAvailable', { feature }));
 }
 
 function onBindChange() {
-  placeholder('传感器绑定');
+  placeholder(t('sensor.bind'));
   bound.value = true;
 }
 
@@ -119,7 +121,7 @@ async function load() {
     classes.value = classRes.data ?? [];
     classTypes.value = typeRes.data ?? [];
   } catch (error) {
-    ElMessage.error((error as Error).message || '传感器详情加载失败');
+    ElMessage.error((error as Error).message || t('sensor.detailLoadFailed'));
     router.push('/iot/sensors');
   } finally {
     loading.value = false;
@@ -133,82 +135,82 @@ onMounted(load);
   <div class="sensor-detail-page" v-loading="loading">
     <header class="detail-header">
       <div class="title-wrap">
-        <el-button link :icon="ArrowLeft" aria-label="返回传感器列表" @click="router.push('/iot/sensors')" />
+        <el-button link :icon="ArrowLeft" :aria-label="$t('sensor.backToList')" @click="router.push('/iot/sensors')" />
         <h2>{{ displayName }}</h2>
         <el-tag :type="sensor?.status === 0 ? 'success' : 'danger'" size="small" effect="light">
-          {{ sensor?.status === 0 ? '正常' : '异常' }}
+          {{ sensor?.status === 0 ? $t('sensor.normal') : $t('sensor.abnormal') }}
         </el-tag>
-        <el-switch v-model="bound" active-text="已绑定传感器" size="small" @change="onBindChange" />
+        <el-switch v-model="bound" :active-text="$t('sensor.boundSwitch')" size="small" @change="onBindChange" />
       </div>
       <div class="header-actions">
-        <el-button @click="openEdit">编辑</el-button>
-        <el-button @click="openAlarm">告警配置</el-button>
-        <el-button type="primary" @click="placeholder('立即下发')">立即下发</el-button>
+        <el-button @click="openEdit">{{ $t('common.edit') }}</el-button>
+        <el-button @click="openAlarm">{{ $t('sensor.alarmConfig') }}</el-button>
+        <el-button type="primary" @click="placeholder($t('sensor.issueNow'))">{{ $t('sensor.issueNow') }}</el-button>
       </div>
     </header>
 
     <div v-if="sensor" class="info-grid">
       <div class="info-cell">
-        <span class="info-label">传感器名称</span>
-        <div class="info-value"><span>{{ sensor.sensorName || '--' }}</span><el-button link :icon="Edit" aria-label="编辑" @click="openEdit" /></div>
+        <span class="info-label">{{ $t('sensor.name') }}</span>
+        <div class="info-value"><span>{{ sensor.sensorName || '--' }}</span><el-button link :icon="Edit" :aria-label="$t('common.edit')" @click="openEdit" /></div>
       </div>
-      <div class="info-cell"><span class="info-label">网关编码</span><div class="info-value"><span>{{ node?.gatewayCode || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">传感器编码</span><div class="info-value"><span>{{ sensor.sensorCode }}</span></div></div>
-      <div class="info-cell"><span class="info-label">更新人</span><div class="info-value"><span>{{ sensor.updateBy || sensor.createBy || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">传感器类型</span><div class="info-value"><span>{{ typeName }}</span></div></div>
-      <div class="info-cell"><span class="info-label">更新时间</span><div class="info-value"><span>{{ formatTime(sensor.updateTime) }}</span></div></div>
-      <div class="info-cell"><span class="info-label">最小值</span><div class="info-value"><span>{{ sensor.warnMin ?? '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">最大值</span><div class="info-value"><span>{{ sensor.warnMax ?? '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">单位</span><div class="info-value"><span>{{ sensor.unit || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">节点位置</span><div class="info-value"><span>{{ node?.address || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('gateway.code') }}</span><div class="info-value"><span>{{ node?.gatewayCode || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('sensor.sensorCode') }}</span><div class="info-value"><span>{{ sensor.sensorCode }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('gateway.updatedBy') }}</span><div class="info-value"><span>{{ sensor.updateBy || sensor.createBy || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('sensor.type') }}</span><div class="info-value"><span>{{ typeName }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('common.updateTime') }}</span><div class="info-value"><span>{{ formatTime(sensor.updateTime) }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('sensor.minValue') }}</span><div class="info-value"><span>{{ sensor.warnMin ?? '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('sensor.maxValue') }}</span><div class="info-value"><span>{{ sensor.warnMax ?? '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('sensor.unit') }}</span><div class="info-value"><span>{{ sensor.unit || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('sensor.nodeLocation') }}</span><div class="info-value"><span>{{ node?.address || '--' }}</span></div></div>
       <div class="info-cell">
-        <span class="info-label">关联区域</span>
+        <span class="info-label">{{ $t('sensor.linkedArea') }}</span>
         <div class="info-value">
           <AreaSelect
             :model-value="sensor.areaId"
-            placeholder="选择关联区域"
+            :placeholder="$t('sensor.selectArea')"
             @change="(area) => saveArea(area?.id)"
           />
         </div>
       </div>
-      <div class="info-cell"><span class="info-label">创建时间</span><div class="info-value"><span>{{ formatTime(sensor.createTime) }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('common.createTime') }}</span><div class="info-value"><span>{{ formatTime(sensor.createTime) }}</span></div></div>
     </div>
 
     <sensor-history-chart v-if="sensor" :sensor="sensor" />
 
-    <el-dialog v-model="editVisible" title="编辑传感器" width="520px">
+    <el-dialog v-model="editVisible" :title="$t('sensor.editTitle')" width="520px">
       <el-form :model="form" label-width="90px">
-        <el-form-item label="传感器名称"><el-input v-model="form.sensorName" /></el-form-item>
-        <el-form-item label="大类">
+        <el-form-item :label="$t('sensor.name')"><el-input v-model="form.sensorName" /></el-form-item>
+        <el-form-item :label="$t('sensor.class')">
           <el-select v-model="form.sensorClass" clearable style="width: 100%">
             <el-option v-for="c in classes" :key="c.sensorClass" :label="c.className" :value="c.sensorClass" />
           </el-select>
         </el-form-item>
-        <el-form-item label="类型">
+        <el-form-item :label="$t('sensor.type')">
           <el-select v-model="form.sensorClassType" clearable style="width: 100%">
             <el-option v-for="t in classTypes" :key="t.classType" :label="t.classTypeName" :value="t.classType" />
           </el-select>
         </el-form-item>
-        <el-form-item label="单位"><el-input v-model="form.unit" /></el-form-item>
-        <el-form-item label="通道"><el-input v-model="form.channel" /></el-form-item>
-        <el-form-item label="读数指令"><el-input v-model="form.commandRead" /></el-form-item>
-        <el-form-item label="小数位"><el-input-number v-model="form.scale" :min="0" :max="6" /></el-form-item>
-        <el-form-item label="上报频率"><el-input-number v-model="form.reportInterval" :min="0" /></el-form-item>
+        <el-form-item :label="$t('sensor.unit')"><el-input v-model="form.unit" /></el-form-item>
+        <el-form-item :label="$t('sensor.channel')"><el-input v-model="form.channel" /></el-form-item>
+        <el-form-item :label="$t('sensor.readCommand')"><el-input v-model="form.commandRead" /></el-form-item>
+        <el-form-item :label="$t('sensor.decimals')"><el-input-number v-model="form.scale" :min="0" :max="6" /></el-form-item>
+        <el-form-item :label="$t('sensor.reportFrequency')"><el-input-number v-model="form.reportInterval" :min="0" /></el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEdit">保存</el-button>
+        <el-button @click="editVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitEdit">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="alarmVisible" title="告警配置" width="420px">
+    <el-dialog v-model="alarmVisible" :title="$t('sensor.alarmConfig')" width="420px">
       <el-form label-width="90px">
-        <el-form-item label="最小值"><el-input-number v-model="alarmForm.warnMin" style="width: 100%" /></el-form-item>
-        <el-form-item label="最大值"><el-input-number v-model="alarmForm.warnMax" style="width: 100%" /></el-form-item>
+        <el-form-item :label="$t('sensor.minValue')"><el-input-number v-model="alarmForm.warnMin" style="width: 100%" /></el-form-item>
+        <el-form-item :label="$t('sensor.maxValue')"><el-input-number v-model="alarmForm.warnMax" style="width: 100%" /></el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="alarmVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitAlarm">保存</el-button>
+        <el-button @click="alarmVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitAlarm">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
   </div>

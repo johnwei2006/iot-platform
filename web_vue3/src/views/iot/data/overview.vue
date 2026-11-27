@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { listDevices } from '@/api/iot/gateway';
 import { listRealtime, listThresholds, queryData } from '@/api/iot/gateway';
@@ -18,6 +19,7 @@ interface SensorItem {
   online: boolean;
 }
 
+const { t } = useI18n();
 const loading = ref(false);
 const devices = ref<Device[]>([]);
 const realtime = ref<Record<string, { online: boolean; sensors: SensorItem[]; lastSeen?: string }>>({});
@@ -30,7 +32,11 @@ const chartUnit = ref('');
 const chartPoints = ref<{ label: string; value: number }[]>([]);
 const pickText = ref('');
 
-const METRIC_NAMES: Record<string, string> = { '1': '温度', '2': '湿度', '3': '气压' };
+function metricName(sensorType: string): string {
+  const keys: Record<string, string> = { '1': 'data.metricTemp', '2': 'data.metricHumid', '3': 'data.metricPress' };
+  const key = keys[sensorType];
+  return key ? t(key) : '';
+}
 
 /** sensorType → 阈值表 metric 键（与后端 ConditionRuleEvaluateHandler.metricKey 一致） */
 function metricKey(sensorType: string): string {
@@ -62,29 +68,29 @@ function tileClass(t: SensorItem) {
   if (th && ((th.min != null && t.sensorValue < th.min) || (th.max != null && t.sensorValue > th.max))) return 'kb-tile--hot';
   return '';
 }
-function tileValue(t: SensorItem) {
-  return t.online && !Number.isNaN(t.sensorValue) ? `${t.sensorValue.toFixed(1)} ${t.unit}` : '暂无实时数据';
+function tileValue(item: SensorItem) {
+  return item.online && !Number.isNaN(item.sensorValue) ? `${item.sensorValue.toFixed(1)} ${item.unit}` : t('data.noRealtime');
 }
-function tileStatus(t: SensorItem) {
-  if (!t.online) return '离线';
-  const th = thresholds.value[`${t.deviceId}:${metricKey(t.sensorType)}`];
-  const out = th && ((th.min != null && t.sensorValue < th.min) || (th.max != null && t.sensorValue > th.max));
-  return out ? '超出阈值' : '正常';
+function tileStatus(item: SensorItem) {
+  if (!item.online) return t('common.offline');
+  const th = thresholds.value[`${item.deviceId}:${metricKey(item.sensorType)}`];
+  const out = th && ((th.min != null && item.sensorValue < th.min) || (th.max != null && item.sensorValue > th.max));
+  return out ? t('data.exceeded') : t('data.normal');
 }
 
-async function openChart(t: SensorItem) {
-  chartTitle.value = `${t.deviceName} · ${METRIC_NAMES[t.sensorType] || t.sensorCode || '读数'} 历史`;
-  chartUnit.value = t.unit;
+async function openChart(item: SensorItem) {
+  chartTitle.value = `${item.deviceName} · ${metricName(item.sensorType) || item.sensorCode || t('data.reading')} ${t('data.historySuffix')}`;
+  chartUnit.value = item.unit;
   const to = Date.now();
   const from = to - 24 * 3600 * 1000;
   try {
-    const res = await queryData(t.deviceId, from, to);
+    const res = await queryData(item.deviceId, from, to);
     const rows = (res.data as unknown as { serviceDataDecoded?: { sensors?: { channel: number; sensorValue: number }[] }; createdAt?: string }[]) || [];
-    const pts = rows.filter((r) => (r.serviceDataDecoded?.sensors || []).some((s) => String(s.channel) === String(t.channel))).slice(-48).map((r) => ({ label: (r.createdAt || '').slice(5, 16).replace('T', ' '), value: (r.serviceDataDecoded?.sensors || []).find((s) => String(s.channel) === String(t.channel))?.sensorValue ?? 0 }));
-    chartPoints.value = pts.length ? pts : [{ label: '暂无数据', value: 0 }];
+    const pts = rows.filter((r) => (r.serviceDataDecoded?.sensors || []).some((s) => String(s.channel) === String(item.channel))).slice(-48).map((r) => ({ label: (r.createdAt || '').slice(5, 16).replace('T', ' '), value: (r.serviceDataDecoded?.sensors || []).find((s) => String(s.channel) === String(item.channel))?.sensorValue ?? 0 }));
+    chartPoints.value = pts.length ? pts : [{ label: t('common.empty'), value: 0 }];
     chartVisible.value = true;
   } catch (error) {
-    ElMessage.error((error as Error).message || '历史数据加载失败');
+    ElMessage.error((error as Error).message || t('sensorData.historyLoadFailed'));
   }
 }
 async function refresh() {
@@ -107,12 +113,12 @@ async function refresh() {
     alarms.value = (alarmRes.data || []) as unknown as typeof alarms.value;
     for (const d of devices.value) {
       const thRes = await listThresholds(d.deviceId);
-      for (const t of thRes.data || []) {
-        thresholds.value[`${t.deviceId}:${t.metric}`] = { min: t.minValue, max: t.maxValue };
+      for (const th of thRes.data || []) {
+        thresholds.value[`${th.deviceId}:${th.metric}`] = { min: th.minValue, max: th.maxValue };
       }
     }
   } catch (error) {
-    ElMessage.error((error as Error).message || '加载失败');
+    ElMessage.error((error as Error).message || t('common.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -124,32 +130,32 @@ onMounted(refresh);
   <div v-loading="loading">
     <el-card shadow="never">
       <template #header>
-        <span class="ov-title">数据总览 · 实时瓦片</span>
-        <span class="ov-sub">点击瓦片查看近一天历史曲线；红色为超限</span>
+        <span class="ov-title">{{ $t('data.title') }}</span>
+        <span class="ov-sub">{{ $t('data.subtitle') }}</span>
       </template>
       <div class="tile-grid">
-        <button v-for="(t, i) in tiles" :key="i" class="kb-tile tile" :class="tileClass(t)" @click="openChart(t)">
-          <span class="tile__name">{{ t.deviceName }} · {{ METRIC_NAMES[t.sensorType] || t.sensorCode || '设备' }}</span>
-          <b class="tile__value">{{ tileValue(t) }}</b>
-          <span class="tile__status">{{ tileStatus(t) }}</span>
+        <button v-for="(item, i) in tiles" :key="i" class="kb-tile tile" :class="tileClass(item)" @click="openChart(item)">
+          <span class="tile__name">{{ item.deviceName }} · {{ metricName(item.sensorType) || item.sensorCode || $t('device.title') }}</span>
+          <b class="tile__value">{{ tileValue(item) }}</b>
+          <span class="tile__status">{{ tileStatus(item) }}</span>
         </button>
       </div>
     </el-card>
 
     <el-card shadow="never" style="margin-top: 16px">
-      <template #header><span class="ov-title">异常预警 · 持续中 {{ openAlarms.length }} 条</span></template>
-      <el-empty v-if="!openAlarms.length" description="当前没有持续中的告警" :image-size="72" />
+      <template #header><span class="ov-title">{{ $t('data.alarmTitle', { count: openAlarms.length }) }}</span></template>
+      <el-empty v-if="!openAlarms.length" :description="$t('data.noOpenAlarms')" :image-size="72" />
       <div v-else class="alarm-rows">
         <div v-for="a in openAlarms" :key="a.id" class="alarm-row">
           <span>{{ a.message }}</span>
-          <el-tag type="danger" size="small">指标超限</el-tag>
+          <el-tag type="danger" size="small">{{ $t('alarm.kindThreshold') }}</el-tag>
         </div>
       </div>
     </el-card>
 
     <el-dialog v-model="chartVisible" :title="chartTitle" width="720px">
       <KbLineChart :points="chartPoints" :unit="chartUnit" @pick="(p) => (pickText = `${p.label} · ${p.value} ${chartUnit}`)" />
-      <div class="pick">{{ pickText || '点击曲线查看某次采集值' }}</div>
+      <div class="pick">{{ pickText || $t('data.pickHint') }}</div>
     </el-dialog>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { listNodes, type NodeEntity } from '@/api/iot/node';
@@ -8,6 +9,7 @@ import { listDevices } from '@/api/iot/gateway';
 import { listAreas } from '@/api/iot/area';
 import AreaSelect from '@/components/AreaSelect.vue';
 
+const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
 const nodes = ref<NodeEntity[]>([]);
@@ -25,11 +27,13 @@ const areaFilter = ref('');
 const typeFilter = ref<number | ''>('');
 const onlineFilter = ref('');
 
-const NODE_TYPES: Record<number, string> = { 1: 'ACT', 2: 'IRRI', 3: 'DATA', 4: '植保机', 5: '开度' };
+const NODE_TYPES: Record<number, string> = { 1: 'ACT', 2: 'IRRI', 3: 'DATA', 4: 'node.type_4', 5: 'node.type_5' };
 
 function typeName(type?: number) {
   if (type === undefined || type === null) return '--';
-  return NODE_TYPES[type] ?? String(type);
+  const label = NODE_TYPES[type];
+  if (!label) return String(type);
+  return label.startsWith('node.') ? t(label) : label;
 }
 
 function gatewayName(code?: string) {
@@ -72,7 +76,7 @@ async function load() {
     gatewayNames.value = new Map((gatewayRes.data ?? []).map((g) => [g.deviceId, g.name || g.deviceId]));
     areaNames.value = new Map((areaRes.data ?? []).map((a) => [a.id, a.areaName]));
   } catch (error) {
-    ElMessage.error((error as Error).message || '节点列表加载失败');
+    ElMessage.error((error as Error).message || t('node.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -87,65 +91,65 @@ onMounted(load);
 
 <template>
   <div class="node-page">
-    <h2 class="page-title">节点管理</h2>
+    <h2 class="page-title">{{ $t('node.title') }}</h2>
 
     <div class="filter-bar">
       <div class="search-group">
-        <el-select v-model="gatewayField" class="field-select" aria-label="网关搜索字段">
-          <el-option label="网关编号" value="gatewayCode" />
+        <el-select v-model="gatewayField" class="field-select" :aria-label="$t('node.gatewayField')">
+          <el-option :label="$t('node.gatewayCode')" value="gatewayCode" />
         </el-select>
-        <el-input v-model="gatewayKey" class="search-input" clearable placeholder="请输入内容">
+        <el-input v-model="gatewayKey" class="search-input" clearable :placeholder="$t('common.search')">
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
       <div class="search-group">
-        <el-select v-model="nodeField" class="field-select" aria-label="节点搜索字段">
-          <el-option label="节点编号" value="nodeCode" />
+        <el-select v-model="nodeField" class="field-select" :aria-label="$t('node.nodeField')">
+          <el-option :label="$t('node.nodeCode')" value="nodeCode" />
         </el-select>
-        <el-input v-model="nodeKey" class="search-input" clearable placeholder="请输入内容">
+        <el-input v-model="nodeKey" class="search-input" clearable :placeholder="$t('common.search')">
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
-      <AreaSelect v-model="areaFilter" class="area-select" placeholder="按安装区域筛选" />
-      <el-select v-model="typeFilter" class="type-select" clearable placeholder="请选择节点类型" aria-label="节点类型">
-        <el-option v-for="(label, value) in NODE_TYPES" :key="value" :label="label" :value="Number(value)" />
+      <AreaSelect v-model="areaFilter" class="area-select" :placeholder="$t('gateway.areaFilter')" />
+      <el-select v-model="typeFilter" class="type-select" clearable :placeholder="$t('node.typePlaceholder')" :aria-label="$t('node.type')">
+        <el-option v-for="(label, value) in NODE_TYPES" :key="value" :label="label.startsWith('node.') ? $t(label) : label" :value="Number(value)" />
       </el-select>
-      <el-select v-model="onlineFilter" class="status-select" clearable placeholder="请选择节点状态" aria-label="节点状态">
-        <el-option label="在线" value="ONLINE" />
-        <el-option label="离线" value="OFFLINE" />
+      <el-select v-model="onlineFilter" class="status-select" clearable :placeholder="$t('node.statusPlaceholder')" :aria-label="$t('node.status')">
+        <el-option :label="$t('common.online')" value="ONLINE" />
+        <el-option :label="$t('common.offline')" value="OFFLINE" />
       </el-select>
-      <el-button type="primary" @click="load">搜索</el-button>
-      <el-button @click="reset">重置</el-button>
+      <el-button type="primary" @click="load">{{ $t('common.search') }}</el-button>
+      <el-button @click="reset">{{ $t('common.reset') }}</el-button>
     </div>
 
     <div class="table-card" v-loading="loading">
-      <el-table :data="filtered" border style="width: 100%" empty-text="暂无数据">
-        <el-table-column label="序号" type="index" width="60" align="center" />
-        <el-table-column label="网关名称" min-width="150" show-overflow-tooltip>
+      <el-table :data="filtered" border style="width: 100%" :empty-text="$t('common.empty')">
+        <el-table-column :label="$t('common.page')" type="index" width="60" align="center" />
+        <el-table-column :label="$t('node.gatewayName')" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">{{ gatewayName(row.gatewayCode) }}</template>
         </el-table-column>
-        <el-table-column prop="gatewayCode" label="网关编码" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="nodeName" label="节点名称" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="nodeCode" label="节点编码" min-width="160" show-overflow-tooltip />
-        <el-table-column label="状态" width="90" align="center">
+        <el-table-column prop="gatewayCode" :label="$t('gateway.code')" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="nodeName" :label="$t('node.name')" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="nodeCode" :label="$t('node.nodeCode')" min-width="160" show-overflow-tooltip />
+        <el-table-column :label="$t('common.status')" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.online === 1 ? 'success' : 'danger'" size="small" effect="light">
-              {{ row.online === 1 ? '在线' : '离线' }}
+              {{ row.online === 1 ? $t('common.online') : $t('common.offline') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="节点类型" width="110" align="center">
+        <el-table-column :label="$t('node.type')" width="110" align="center">
           <template #default="{ row }">{{ typeName(row.nodeType) }}</template>
         </el-table-column>
-        <el-table-column label="安装区域" min-width="140" show-overflow-tooltip>
+        <el-table-column :label="$t('gateway.area')" min-width="140" show-overflow-tooltip>
           <template #default="{ row }">{{ areaName(row.areaId) }}</template>
         </el-table-column>
-        <el-table-column label="最后上报时间" width="170" align="center">
+        <el-table-column :label="$t('gateway.lastSeen')" width="170" align="center">
           <template #default="{ row }">{{ formatTime(row.lastReportTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center" fixed="right">
+        <el-table-column :label="$t('common.actions')" width="100" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row)">查看详情</el-button>
+            <el-button link type="primary" @click="openDetail(row)">{{ $t('gateway.viewDetail') }}</el-button>
           </template>
         </el-table-column>
       </el-table>

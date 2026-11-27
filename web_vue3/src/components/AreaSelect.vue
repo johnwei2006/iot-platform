@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { i18n } from '@/locales';
 import { listAreas, type AreaEntity } from '@/api/iot/area';
 
 const props = withDefaults(defineProps<{
@@ -10,7 +11,7 @@ const props = withDefaults(defineProps<{
   width?: string;
 }>(), {
   modelValue: undefined,
-  placeholder: '请选择区域',
+  placeholder: () => i18n.global.t('area.selectArea'),
   clearable: true,
   disabled: false,
   width: '100%',

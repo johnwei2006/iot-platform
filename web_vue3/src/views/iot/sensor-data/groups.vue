@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   createSensorGroup,
@@ -13,6 +14,7 @@ import {
 } from '@/api/iot/sensor';
 import { useUserStore } from '@/stores/modules/user';
 
+const { t } = useI18n();
 const router = useRouter();
 const store = useUserStore();
 const canEdit = computed(
@@ -56,7 +58,7 @@ async function load() {
     groups.value = groupRes.data || [];
     allSensors.value = sensorRes.data || [];
   } catch (error) {
-    ElMessage.error((error as Error).message || '加载失败');
+    ElMessage.error((error as Error).message || t('common.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -80,11 +82,11 @@ function openEdit(g: SensorGroupEntity) {
 
 async function submit() {
   if (!form.groupName.trim()) {
-    ElMessage.warning('请输入组合名称');
+    ElMessage.warning(t('sensorGroups.nameRequired'));
     return;
   }
   if (!form.sensorCodes.length) {
-    ElMessage.warning('请至少选择一个传感器');
+    ElMessage.warning(t('sensorGroups.sensorsRequired'));
     return;
   }
   saving.value = true;
@@ -96,15 +98,15 @@ async function submit() {
     };
     if (editingId.value) {
       await updateSensorGroup(editingId.value, payload);
-      ElMessage.success('更新成功');
+      ElMessage.success(t('sensorGroups.updated'));
     } else {
       await createSensorGroup(payload);
-      ElMessage.success('创建成功');
+      ElMessage.success(t('sensorGroups.created'));
     }
     dialogVisible.value = false;
     await load();
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   } finally {
     saving.value = false;
   }
@@ -112,12 +114,12 @@ async function submit() {
 
 async function remove(g: SensorGroupEntity) {
   try {
-    await ElMessageBox.confirm(`确认删除组合「${g.groupName}」？`, '删除确认', { type: 'warning' });
+    await ElMessageBox.confirm(t('sensorGroups.deleteConfirm', { name: g.groupName }), t('common.deleteTitle'), { type: 'warning' });
     await deleteSensorGroup(g.id);
-    ElMessage.success('删除成功');
+    ElMessage.success(t('sensorGroups.deleted'));
     await load();
   } catch (error) {
-    if (error !== 'cancel') ElMessage.error((error as Error).message || '删除失败');
+    if (error !== 'cancel') ElMessage.error((error as Error).message || t('control.deleteFailed'));
   }
 }
 
@@ -133,25 +135,25 @@ onMounted(load);
     <el-card shadow="never">
       <template #header>
         <div class="page-header">
-          <span class="page-title">传感器组合管理</span>
+          <span class="page-title">{{ $t('sensorGroups.title') }}</span>
           <div class="page-actions">
-            <el-button @click="router.push({ path: '/iot/sensor-data' })">返回数据页</el-button>
-            <el-button v-if="canEdit" type="primary" @click="openCreate">新建组合</el-button>
+            <el-button @click="router.push({ path: '/iot/sensor-data' })">{{ $t('sensorGroups.backToData') }}</el-button>
+            <el-button v-if="canEdit" type="primary" @click="openCreate">{{ $t('sensorGroups.create') }}</el-button>
           </div>
         </div>
       </template>
 
-      <el-empty v-if="!groups.length" description="暂无组合，点击右上角新建" :image-size="90" />
+      <el-empty v-if="!groups.length" :description="$t('sensorGroups.empty')" :image-size="90" />
       <div v-else class="card-grid">
         <el-card v-for="g in groups" :key="g.id" shadow="hover" class="group-card">
           <template #header>
             <div class="card-head">
               <span class="card-title">{{ g.groupName }}</span>
-              <el-tag size="small" type="info">{{ parseCodes(g.sensorCodes).length }} 个测点</el-tag>
+              <el-tag size="small" type="info">{{ $t('sensorGroups.pointCount', { count: parseCodes(g.sensorCodes).length }) }}</el-tag>
             </div>
           </template>
           <div class="card-body">
-            <p class="desc">{{ g.description || '暂无描述' }}</p>
+            <p class="desc">{{ g.description || $t('sensorGroups.noDescription') }}</p>
             <div class="tags">
               <el-tag v-for="code in parseCodes(g.sensorCodes)" :key="code" size="small" class="code-tag">
                 {{ codeName(code) }}
@@ -160,10 +162,10 @@ onMounted(load);
           </div>
           <template #footer>
             <div class="card-actions">
-              <el-button type="primary" link @click="viewData(g)">查看数据</el-button>
+              <el-button type="primary" link @click="viewData(g)">{{ $t('sensorGroups.viewData') }}</el-button>
               <template v-if="canEdit">
-                <el-button link @click="openEdit(g)">编辑</el-button>
-                <el-button type="danger" link @click="remove(g)">删除</el-button>
+                <el-button link @click="openEdit(g)">{{ $t('common.edit') }}</el-button>
+                <el-button type="danger" link @click="remove(g)">{{ $t('common.delete') }}</el-button>
               </template>
             </div>
           </template>
@@ -171,30 +173,30 @@ onMounted(load);
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑组合' : '新建组合'" width="560px">
+    <el-dialog v-model="dialogVisible" :title="editingId ? $t('sensorGroups.editTitle') : $t('sensorGroups.createTitle')" width="560px">
       <el-form :model="form" label-width="90px">
-        <el-form-item label="组合名称" required>
-          <el-input v-model="form.groupName" maxlength="128" placeholder="请输入组合名称" />
+        <el-form-item :label="$t('sensorGroups.groupName')" required>
+          <el-input v-model="form.groupName" maxlength="128" :placeholder="$t('sensorGroups.groupNamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="传感器" required>
+        <el-form-item :label="$t('sensor.title')" required>
           <el-select
             v-model="form.sensorCodes"
             multiple
             filterable
             collapse-tags
-            placeholder="选择要加入组合的传感器"
+            :placeholder="$t('sensorGroups.selectSensors')"
             style="width: 100%"
           >
             <el-option v-for="opt in sensorOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="form.description" type="textarea" :rows="3" maxlength="255" placeholder="可选" />
+        <el-form-item :label="$t('common.remark')">
+          <el-input v-model="form.description" type="textarea" :rows="3" maxlength="255" :placeholder="$t('sensorGroups.optional')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">保存</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="submit">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
   </div>

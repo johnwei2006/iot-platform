@@ -1,0 +1,43 @@
+/** 消息中心域。 */
+export default {
+  'zh-CN': {
+    messages: {
+      tabUnread: '未读',
+      tabRead: '已读',
+      typeAlarm: '告警',
+      typeSystem: '系统',
+      empty: '暂无{tab}消息',
+      loadFailed: '消息加载失败',
+      markReadFailed: '标记已读失败',
+      prefTitle: '通知偏好',
+      prefDialog: '通知偏好（本期仅存配置，不实际推送）',
+      prefLoadFailed: '偏好加载失败',
+      prefSaved: '通知偏好已保存',
+      receiveKinds: '接收类型',
+      receiveChannels: '接收渠道',
+      channelInapp: '站内',
+      channelWechat: '微信',
+      channelSms: '短信',
+    },
+  },
+  en: {
+    messages: {
+      tabUnread: 'Unread',
+      tabRead: 'Read',
+      typeAlarm: 'Alarm',
+      typeSystem: 'System',
+      empty: 'No {tab} messages',
+      loadFailed: 'Failed to load messages',
+      markReadFailed: 'Failed to mark as read',
+      prefTitle: 'Notification Preferences',
+      prefDialog: 'Notification Preferences (config only for now, no actual push)',
+      prefLoadFailed: 'Failed to load preferences',
+      prefSaved: 'Notification preferences saved',
+      receiveKinds: 'Message Types',
+      receiveChannels: 'Channels',
+      channelInapp: 'In-App',
+      channelWechat: 'WeChat',
+      channelSms: 'SMS',
+    },
+  },
+} as const;

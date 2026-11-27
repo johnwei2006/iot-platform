@@ -1,7 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { RouterView } from 'vue-router';
+import { ElConfigProvider } from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
+import en from 'element-plus/es/locale/lang/en';
+import { storeToRefs } from 'pinia';
+import { useLocaleStore } from '@/stores/modules/locale';
+
+const localeStore = useLocaleStore();
+const { locale } = storeToRefs(localeStore);
+const elLocale = computed(() => (locale.value === 'zh-CN' ? zhCn : en));
 </script>
 
 <template>
-  <RouterView />
+  <el-config-provider :locale="elLocale">
+    <RouterView />
+  </el-config-provider>
 </template>

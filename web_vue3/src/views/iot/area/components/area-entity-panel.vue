@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { getAreaRefs, type AreaEntity, type AreaRefCounts } from '@/api/iot/area';
 import { listDevices } from '@/api/iot/gateway';
@@ -14,6 +15,7 @@ interface EntityItem {
   code: string;
 }
 
+const { t } = useI18n();
 const props = defineProps<{ area: AreaEntity | null }>();
 const emit = defineEmits<{ close: [] }>();
 
@@ -23,12 +25,12 @@ const refs = ref<AreaRefCounts | null>(null);
 const activeTab = ref<'gateway' | 'node' | 'sensor' | 'deviceCtrl'>('gateway');
 const lists = ref<Record<string, EntityItem[]>>({ gateway: [], node: [], sensor: [], deviceCtrl: [] });
 
-const tabs = [
-  { key: 'gateway', label: '网关' },
-  { key: 'node', label: '节点' },
-  { key: 'sensor', label: '传感器' },
-  { key: 'deviceCtrl', label: '控制设备' },
-] as const;
+const tabs = computed(() => [
+  { key: 'gateway' as const, label: t('entity.gateway') },
+  { key: 'node' as const, label: t('entity.node') },
+  { key: 'sensor' as const, label: t('entity.sensor') },
+  { key: 'deviceCtrl' as const, label: t('entity.deviceCtrl') },
+]);
 
 const detailPath: Record<string, (id: string) => string> = {
   gateway: (id) => `/iot/gateways/${id}`,
@@ -53,7 +55,7 @@ async function load() {
       deviceCtrl: (deviceRes.data ?? []).map((d) => ({ id: d.id, name: d.deviceName, code: d.deviceCode })),
     };
   } catch (error) {
-    ElMessage.error((error as Error).message || '区域关联实体加载失败');
+    ElMessage.error((error as Error).message || t('area.refsLoadFailed'));
   } finally {
     loading.value = false;
   }
@@ -72,14 +74,14 @@ onMounted(load);
     <div class="panel-head">
       <div>
         <div class="panel-title">{{ area.areaName }}</div>
-        <div class="panel-sub">区域关联实体 · 共 {{ refs?.total ?? 0 }} 个</div>
+        <div class="panel-sub">{{ $t('area.refsSummary', { count: refs?.total ?? 0 }) }}</div>
       </div>
-      <el-button link aria-label="关闭" @click="emit('close')">✕</el-button>
+      <el-button :aria-label="$t('common.actions')" @click="emit('close')">✕</el-button>
     </div>
     <el-tabs v-model="activeTab" class="entity-tabs">
       <el-tab-pane v-for="tab in tabs" :key="tab.key" :name="tab.key">
         <template #label>{{ tab.label }} ({{ refs?.[tab.key] ?? 0 }})</template>
-        <el-empty v-if="!lists[tab.key]?.length" :description="`该区域暂无${tab.label}`" :image-size="60" />
+        <el-empty v-if="!lists[tab.key]?.length" :description="$t('area.refsEmpty', { name: tab.label })" :image-size="60" />
         <div v-else class="entity-list">
           <div v-for="item in lists[tab.key]" :key="item.id" class="entity-item" @click="item.id && openEntity(tab.key, item.id)">
             <span class="entity-name">{{ item.name }}</span>

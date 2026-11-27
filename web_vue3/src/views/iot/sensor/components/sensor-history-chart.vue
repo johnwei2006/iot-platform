@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { getSensorHistory, type SensorEntity, type SensorHistoryPoint } from '@/api/iot/sensor';
 import KbLineChart from '@/components/KbLineChart.vue';
 
+const { t } = useI18n();
 const props = defineProps<{ sensor: SensorEntity }>();
 
 function today() {
@@ -33,7 +35,7 @@ async function load() {
     points.value = res.data ?? [];
   } catch (error) {
     points.value = [];
-    ElMessage.warning((error as Error).message || '历史数据加载失败，请稍后重试');
+    ElMessage.warning((error as Error).message || t('sensorData.historyLoadFailed'));
   } finally {
     loading.value = false;
   }
@@ -41,7 +43,7 @@ async function load() {
 
 function exportCsv() {
   if (!points.value.length) {
-    ElMessage.warning('当前曲线暂无数据可导出');
+    ElMessage.warning(t('sensorData.noExportData'));
     return;
   }
   const rows = points.value.map((p) => {
@@ -51,14 +53,14 @@ function exportCsv() {
       `${pad(time.getHours())}:${pad(time.getMinutes())}:${pad(time.getSeconds())}`;
     return `${stamp},${p.senval}`;
   });
-  const csv = `\uFEFF时间,${metricLabel.value}\n${rows.join('\n')}\n`;
+  const csv = `\uFEFF${t('sensorData.time')},${metricLabel.value}\n${rows.join('\n')}\n`;
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
   link.download = `${props.sensor.sensorCode}-${date.value}.csv`;
   link.click();
   URL.revokeObjectURL(url);
-  ElMessage.success('已导出 CSV');
+  ElMessage.success(t('sensor.exportedCsv'));
 }
 
 onMounted(load);
@@ -67,19 +69,19 @@ onMounted(load);
 <template>
   <div class="history-card" v-loading="loading">
     <div class="history-toolbar">
-      <el-date-picker v-model="date" type="date" format="YYYY年MM月DD日" value-format="YYYY-MM-DD"
-                      placeholder="选择日期" @change="load" />
-      <el-select :model-value="metricLabel" class="metric-select" aria-label="测点指标">
+      <el-date-picker v-model="date" type="date" format="YYYY-MM-DD" value-format="YYYY-MM-DD"
+                      :placeholder="$t('sensor.selectDate')" @change="load" />
+      <el-select :model-value="metricLabel" class="metric-select" :aria-label="$t('sensor.metricPoint')">
         <el-option :label="metricLabel" :value="metricLabel" />
       </el-select>
       <div class="toolbar-spacer" />
-      <el-button @click="load">刷新</el-button>
-      <el-button @click="exportCsv">导出</el-button>
+      <el-button @click="load">{{ $t('common.refresh') }}</el-button>
+      <el-button @click="exportCsv">{{ $t('common.export') }}</el-button>
     </div>
 
     <div class="chart-legend"><span class="legend-dot" />{{ metricLabel }}</div>
     <KbLineChart v-if="chartPoints.length" :points="chartPoints" :unit="sensor.unit || ''" :height="260" area />
-    <el-empty v-else description="当日暂无历史数据" :image-size="70" />
+    <el-empty v-else :description="$t('sensor.noHistoryData')" :image-size="70" />
   </div>
 </template>
 

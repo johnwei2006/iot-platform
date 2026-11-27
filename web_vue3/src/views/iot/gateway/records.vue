@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { fetchReconnectRecords, fetchTokenRequests } from '@/api/iot/gatewayRecords';
 import type { GatewayReconnectRecord, GatewayTokenRequestRecord } from '@/types';
 
+const { t } = useI18n();
 const props = defineProps<{ deviceId?: string }>();
 
 const activeTab = ref<'reconnect' | 'token'>('reconnect');
@@ -29,10 +31,10 @@ const resultTagType = (result: string): 'success' | 'danger' | 'warning' | 'info
 
 const resultText = (result: string): string => {
   const map: Record<string, string> = {
-    SUCCESS: '认证成功',
-    UNKNOWN_DEVICE: '网关未入库',
-    INVALID_SECRET: '密钥错误',
-    ERROR: '平台错误',
+    SUCCESS: t('gatewayRecords.resultSuccess'),
+    UNKNOWN_DEVICE: t('gatewayRecords.unknownDevice'),
+    INVALID_SECRET: t('gatewayRecords.invalidSecret'),
+    ERROR: t('gatewayRecords.platformError'),
   };
   return map[result] ?? result;
 };
@@ -58,7 +60,7 @@ async function load() {
     }
   } catch (error) {
     console.error('加载网关认证记录失败', error);
-    ElMessage.error('加载网关认证记录失败');
+    ElMessage.error(t('gatewayRecords.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -106,50 +108,50 @@ onMounted(load);
       <div class="filter-bar">
         <el-input
           v-model="filter.deviceId"
-          placeholder="按设备 ID 筛选"
+          :placeholder="$t('gatewayRecords.deviceIdPlaceholder')"
           clearable
           class="filter-input"
           @keyup.enter="search"
         />
-        <el-button type="primary" @click="search">查询</el-button>
-        <el-button @click="reset">重置</el-button>
+        <el-button type="primary" @click="search">{{ $t('common.query') }}</el-button>
+        <el-button @click="reset">{{ $t('common.reset') }}</el-button>
       </div>
     </el-card>
 
     <el-card shadow="never" class="table-card">
       <el-tabs v-model="activeTab" @tab-change="switchTab">
-        <el-tab-pane label="重连记录" name="reconnect">
+        <el-tab-pane :label="$t('gatewayRecords.reconnect')" name="reconnect">
           <el-table :data="reconnectRecords" v-loading="loading" border stripe>
-            <el-table-column prop="deviceId" label="设备 ID" min-width="140" />
-            <el-table-column prop="ip" label="来源 IP" min-width="140" />
-            <el-table-column prop="port" label="端口" width="90" />
-            <el-table-column label="连接时间" min-width="170">
+            <el-table-column prop="deviceId" :label="$t('gatewayRecords.deviceId')" min-width="140" />
+            <el-table-column prop="ip" :label="$t('gatewayRecords.ip')" min-width="140" />
+            <el-table-column prop="port" :label="$t('gatewayRecords.port')" width="90" />
+            <el-table-column :label="$t('gatewayRecords.connectTime')" min-width="170">
               <template #default="{ row }">{{ formatTime(row.connectTime) }}</template>
             </el-table-column>
-            <el-table-column label="类型" width="110">
+            <el-table-column :label="$t('common.type')" width="110">
               <template #default="{ row }">
                 <el-tag :type="row.type === 'FIRST' ? 'success' : 'primary'">
-                  {{ row.type === 'FIRST' ? '首次联网' : '重连' }}
+                  {{ row.type === 'FIRST' ? $t('gatewayRecords.first') : $t('gatewayRecords.reconnectTag') }}
                 </el-tag>
               </template>
             </el-table-column>
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="Token 申请记录" name="token">
+        <el-tab-pane :label="$t('gatewayRecords.tokenRequests')" name="token">
           <el-table :data="tokenRecords" v-loading="loading" border stripe>
-            <el-table-column prop="deviceId" label="设备 ID" min-width="140" />
-            <el-table-column prop="ip" label="来源 IP" min-width="140" />
-            <el-table-column prop="port" label="端口" width="90" />
-            <el-table-column label="申请时间" min-width="170">
+            <el-table-column prop="deviceId" :label="$t('gatewayRecords.deviceId')" min-width="140" />
+            <el-table-column prop="ip" :label="$t('gatewayRecords.ip')" min-width="140" />
+            <el-table-column prop="port" :label="$t('gatewayRecords.port')" width="90" />
+            <el-table-column :label="$t('gatewayRecords.requestTime')" min-width="170">
               <template #default="{ row }">{{ formatTime(row.requestTime) }}</template>
             </el-table-column>
-            <el-table-column label="结果" width="130">
+            <el-table-column :label="$t('gatewayRecords.result')" width="130">
               <template #default="{ row }">
                 <el-tag :type="resultTagType(row.result)">{{ resultText(row.result) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="Token(hex)" min-width="180">
+            <el-table-column :label="$t('gatewayRecords.tokenHex')" min-width="180">
               <template #default="{ row }">
                 <span class="token-hex">{{ row.tokenHex || '-' }}</span>
               </template>

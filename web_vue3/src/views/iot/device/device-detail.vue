@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft, Edit, MoreFilled } from '@element-plus/icons-vue';
 import { listNodes, type NodeEntity } from '@/api/iot/node';
@@ -12,6 +13,7 @@ import AreaSelect from '@/components/AreaSelect.vue';
 
 type Field = 'deviceName' | 'longitude' | 'latitude';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const id = String(route.params.id);
@@ -28,23 +30,25 @@ const coordDraft = ref({ longitude: '', latitude: '' });
 const editInputRef = ref<{ focus: () => void } | null>(null);
 const form = reactive<Partial<DeviceCtrlEntity>>({});
 
-const SWITCH_MODES: Record<number, string> = { 1: '开度', 2: '二开', 3: '三开' };
+const SWITCH_KEYS: Record<number, string> = { 1: 'device.switchMode_1', 2: 'device.switchMode_4', 3: 'device.switchMode_5' };
 
 const typeName = computed(() => {
   if (!device.value) return '--';
-  return classTypes.value.find((t) => t.type === device.value?.deviceClassType)?.typeName
+  return classTypes.value.find((c) => c.type === device.value?.deviceClassType)?.typeName
     || classes.value.find((c) => c.deviceClass === device.value?.deviceClass)?.className
     || device.value.deviceClassType || device.value.deviceClass || '--';
 });
 
 const switchMode = computed(() => {
   const mode = device.value && classes.value.find((c) => c.deviceClass === device.value?.deviceClass)?.switchMode;
-  return mode ? (SWITCH_MODES[mode] ?? String(mode)) : '--';
+  if (!mode) return '--';
+  const key = SWITCH_KEYS[mode];
+  return key ? t(key) : String(mode);
 });
 
 function statusLabel(status?: string) {
-  if (status === '0' || status === 'open') return '开启';
-  if (status === '1' || status === 'stop') return '停止';
+  if (status === '0' || status === 'open') return t('control.statusOn');
+  if (status === '1' || status === 'stop') return t('control.statusStop');
   return status || '--';
 }
 
@@ -74,9 +78,9 @@ async function applyPatch(patch: Partial<DeviceCtrlEntity>) {
     const res = await updateControlDevice(id, patch);
     device.value = res.data ?? device.value;
     activeField.value = null;
-    ElMessage.success('已保存');
+    ElMessage.success(t('gateway.saved'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
     activeField.value = null;
   }
 }
@@ -85,9 +89,9 @@ async function saveArea(areaId?: string) {
   try {
     const res = await updateControlDevice(id, { areaId: areaId || '' });
     device.value = res.data ?? device.value;
-    ElMessage.success('关联区域已更新');
+    ElMessage.success(t('sensor.areaUpdated'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
@@ -131,14 +135,14 @@ async function submitEdit() {
     const res = await updateControlDevice(id, form);
     device.value = res.data ?? device.value;
     editVisible.value = false;
-    ElMessage.success('已保存');
+    ElMessage.success(t('gateway.saved'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
 async function closeDevice() {
-  await ElMessageBox.confirm('确认关闭设备？该操作仅更新设备状态，不下发指令。', '提示', { type: 'warning' });
+  await ElMessageBox.confirm(t('device.closeConfirm'), t('common.confirm'), { type: 'warning' });
   await applyPatch({ status: '0' });
 }
 
@@ -147,20 +151,20 @@ async function showEntry() {
     const res = await getControlDeviceEntry(id);
     const entry = res.data;
     if (!entry) {
-      ElMessage.warning('未解析到控制三元组');
+      ElMessage.warning(t('device.entryNotFound'));
       return;
     }
     await ElMessageBox.alert(
       `deviceId：${entry.deviceId}<br/>nodeId：${entry.nodeId ?? '-'}<br/>channel：${entry.channel ?? '-'}`,
-      '控制三元组', { dangerouslyUseHTMLString: true, confirmButtonText: '知道了' },
+      t('device.entryTitle'), { dangerouslyUseHTMLString: true, confirmButtonText: t('common.confirm') },
     );
   } catch (error) {
-    ElMessage.error((error as Error).message || '三元组解析失败');
+    ElMessage.error((error as Error).message || t('device.entryParseFailed'));
   }
 }
 
 function onBindChange() {
-  ElMessage.info('设备绑定功能暂未开放');
+  ElMessage.info(t('device.bindNotAvailable'));
   bound.value = true;
 }
 
@@ -176,7 +180,7 @@ async function load() {
     classes.value = classRes.data ?? [];
     classTypes.value = typeRes.data ?? [];
   } catch (error) {
-    ElMessage.error((error as Error).message || '控制设备详情加载失败');
+    ElMessage.error((error as Error).message || t('device.detailLoadFailed'));
     router.push('/iot/control-devices');
   } finally {
     loading.value = false;
@@ -190,21 +194,21 @@ onMounted(load);
   <div class="ctrl-detail-page" v-loading="loading">
     <header class="detail-header">
       <div class="title-wrap">
-        <el-button link :icon="ArrowLeft" aria-label="返回控制设备列表" @click="router.push('/iot/control-devices')" />
+        <el-button link :icon="ArrowLeft" :aria-label="$t('device.backToList')" @click="router.push('/iot/control-devices')" />
         <h2>{{ device?.deviceName || device?.deviceCode || '--' }}</h2>
         <el-tag :type="device?.online === 1 ? 'success' : 'danger'" size="small" effect="light">
-          {{ device?.online === 1 ? '在线' : '离线' }}
+          {{ device?.online === 1 ? $t('common.online') : $t('common.offline') }}
         </el-tag>
-        <el-switch v-model="bound" size="small" active-text="已绑定传感器" @change="onBindChange" />
+        <el-switch v-model="bound" size="small" :active-text="$t('device.boundSwitch')" @change="onBindChange" />
       </div>
       <div class="header-actions">
-        <el-button type="primary" @click="closeDevice">关闭设备</el-button>
+        <el-button type="primary" @click="closeDevice">{{ $t('device.closeDevice') }}</el-button>
         <el-dropdown trigger="click">
-          <el-button :icon="MoreFilled" aria-label="更多操作" />
+          <el-button :icon="MoreFilled" :aria-label="$t('control.more')" />
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="openEdit">编辑设备</el-dropdown-item>
-              <el-dropdown-item @click="showEntry">查看三元组</el-dropdown-item>
+              <el-dropdown-item @click="openEdit">{{ $t('device.editDevice') }}</el-dropdown-item>
+              <el-dropdown-item @click="showEntry">{{ $t('device.viewEntry') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -213,50 +217,50 @@ onMounted(load);
 
     <div v-if="device" class="info-grid">
       <div class="info-cell">
-        <span class="info-label">设备名称</span>
+        <span class="info-label">{{ $t('device.name') }}</span>
         <div class="info-value">
           <el-input v-if="activeField === 'deviceName'" ref="editInputRef" v-model="draftValue" size="small"
                     @blur="save('deviceName')" @keyup.enter="save('deviceName')" />
-          <template v-else><span>{{ device.deviceName || '--' }}</span><el-button link :icon="Edit" aria-label="编辑设备名称" @click="startEdit('deviceName')" /></template>
+          <template v-else><span>{{ device.deviceName || '--' }}</span><el-button link :icon="Edit" :aria-label="$t('device.editName')" @click="startEdit('deviceName')" /></template>
         </div>
       </div>
-      <div class="info-cell"><span class="info-label">网关编码</span><div class="info-value"><span>{{ node?.gatewayCode || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">节点编码</span><div class="info-value"><span>{{ device.nodeCode || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">设备编码</span><div class="info-value"><span>{{ device.deviceCode }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('gateway.code') }}</span><div class="info-value"><span>{{ node?.gatewayCode || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('node.nodeCode') }}</span><div class="info-value"><span>{{ device.nodeCode || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('device.code') }}</span><div class="info-value"><span>{{ device.deviceCode }}</span></div></div>
       <div class="info-cell">
-        <span class="info-label">经纬度</span>
+        <span class="info-label">{{ $t('gateway.coords') }}</span>
         <div class="info-value coord-value">
           <template v-if="activeField === 'longitude' || activeField === 'latitude'">
-            <el-input ref="editInputRef" v-model="coordDraft.longitude" size="small" placeholder="经度" @blur="saveCoords" @keyup.enter="saveCoords" />
+            <el-input ref="editInputRef" v-model="coordDraft.longitude" size="small" :placeholder="$t('gateway.longitude')" @blur="saveCoords" @keyup.enter="saveCoords" />
             <span>,</span>
-            <el-input v-model="coordDraft.latitude" size="small" placeholder="纬度" @blur="saveCoords" @keyup.enter="saveCoords" />
+            <el-input v-model="coordDraft.latitude" size="small" :placeholder="$t('gateway.latitude')" @blur="saveCoords" @keyup.enter="saveCoords" />
           </template>
           <template v-else>
             <span>{{ device.longitude || device.latitude ? `${device.longitude ?? '--'}, ${device.latitude ?? '--'}` : '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑经纬度" @click="startEdit('longitude')" />
+            <el-button link :icon="Edit" :aria-label="$t('gateway.editCoords')" @click="startEdit('longitude')" />
           </template>
         </div>
       </div>
-      <div class="info-cell"><span class="info-label">创建时间</span><div class="info-value"><span>{{ formatTime(device.createTime) }}</span></div></div>
-      <div class="info-cell"><span class="info-label">更新人</span><div class="info-value"><span>{{ device.updateBy || device.createBy || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">设备类型</span><div class="info-value"><span>{{ typeName }}</span></div></div>
-      <div class="info-cell"><span class="info-label">更新时间</span><div class="info-value"><span>{{ formatTime(device.updateTime) }}</span></div></div>
-      <div class="info-cell"><span class="info-label">开关模式</span><div class="info-value"><span>{{ switchMode }}</span></div></div>
-      <div class="info-cell"><span class="info-label">状态</span><div class="info-value"><span>{{ statusLabel(device.status) }}</span></div></div>
-      <div class="info-cell"><span class="info-label">最后上报时间</span><div class="info-value"><span>--</span></div></div>
-      <div class="info-cell"><span class="info-label">安装位置</span><div class="info-value"><span>{{ device.address || node?.address || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('common.createTime') }}</span><div class="info-value"><span>{{ formatTime(device.createTime) }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('gateway.updatedBy') }}</span><div class="info-value"><span>{{ device.updateBy || device.createBy || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('device.type') }}</span><div class="info-value"><span>{{ typeName }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('common.updateTime') }}</span><div class="info-value"><span>{{ formatTime(device.updateTime) }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('device.switchMode') }}</span><div class="info-value"><span>{{ switchMode }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('common.status') }}</span><div class="info-value"><span>{{ statusLabel(device.status) }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('gateway.lastSeen') }}</span><div class="info-value"><span>--</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('node.installLocation') }}</span><div class="info-value"><span>{{ device.address || node?.address || '--' }}</span></div></div>
       <div class="info-cell">
-        <span class="info-label">关联区域</span>
+        <span class="info-label">{{ $t('sensor.linkedArea') }}</span>
         <div class="info-value">
           <AreaSelect
             :model-value="device.areaId"
-            placeholder="选择关联区域"
+            :placeholder="$t('sensor.selectArea')"
             @change="(area) => saveArea(area?.id)"
           />
         </div>
       </div>
       <div class="info-cell">
-        <span class="info-label">设备图片</span>
+        <span class="info-label">{{ $t('device.pic') }}</span>
         <div class="info-value">
           <el-image v-if="device.pic" :src="device.pic" :preview-src-list="[device.pic]" fit="cover" class="device-pic" />
           <span v-else>--</span>
@@ -266,40 +270,40 @@ onMounted(load);
 
     <div class="warning-section">
       <el-tabs model-value="warning">
-        <el-tab-pane label="预警记录" name="warning">
-          <el-table :data="[]" border style="width: 100%" empty-text="暂无数据">
-            <el-table-column label="序号" type="index" width="60" align="center" />
-            <el-table-column label="预警时间" min-width="170" />
-            <el-table-column label="预警内容" min-width="220" />
-            <el-table-column label="接收人" min-width="120" />
-            <el-table-column label="确认时间" min-width="170" />
-            <el-table-column label="状态" width="100" align="center" />
-            <el-table-column label="操作" width="80" align="center" />
+        <el-tab-pane :label="$t('device.warningRecords')" name="warning">
+          <el-table :data="[]" border style="width: 100%" :empty-text="$t('common.empty')">
+            <el-table-column :label="$t('common.page')" type="index" width="60" align="center" />
+            <el-table-column :label="$t('device.warningTime')" min-width="170" />
+            <el-table-column :label="$t('device.warningContent')" min-width="220" />
+            <el-table-column :label="$t('device.warningReceiver')" min-width="120" />
+            <el-table-column :label="$t('device.confirmTime')" min-width="170" />
+            <el-table-column :label="$t('common.status')" width="100" align="center" />
+            <el-table-column :label="$t('common.actions')" width="80" align="center" />
           </el-table>
         </el-tab-pane>
       </el-tabs>
     </div>
 
-    <el-dialog v-model="editVisible" title="编辑控制设备" width="520px">
+    <el-dialog v-model="editVisible" :title="$t('device.editTitle')" width="520px">
       <el-form :model="form" label-width="90px">
-        <el-form-item label="设备名称"><el-input v-model="form.deviceName" /></el-form-item>
-        <el-form-item label="设备大类">
+        <el-form-item :label="$t('device.name')"><el-input v-model="form.deviceName" /></el-form-item>
+        <el-form-item :label="$t('device.class')">
           <el-select v-model="form.deviceClass" clearable style="width: 100%">
             <el-option v-for="c in classes" :key="c.deviceClass" :label="c.className" :value="c.deviceClass" />
           </el-select>
         </el-form-item>
-        <el-form-item label="设备类型">
+        <el-form-item :label="$t('device.type')">
           <el-select v-model="form.deviceClassType" clearable style="width: 100%">
-            <el-option v-for="t in classTypes" :key="t.type" :label="t.typeName" :value="t.type" />
+            <el-option v-for="c in classTypes" :key="c.type" :label="c.typeName" :value="c.type" />
           </el-select>
         </el-form-item>
-        <el-form-item label="安装区域"><el-input v-model="form.address" /></el-form-item>
-        <el-form-item label="通道"><el-input v-model="form.channel" /></el-form-item>
-        <el-form-item label="自动控制"><el-switch v-model="form.auto" :active-value="1" :inactive-value="0" /></el-form-item>
+        <el-form-item :label="$t('gateway.area')"><el-input v-model="form.address" /></el-form-item>
+        <el-form-item :label="$t('sensor.channel')"><el-input v-model="form.channel" /></el-form-item>
+        <el-form-item :label="$t('device.autoControl')"><el-switch v-model="form.auto" :active-value="1" :inactive-value="0" /></el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEdit">保存</el-button>
+        <el-button @click="editVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitEdit">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
   </div>

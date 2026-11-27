@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import {
@@ -18,6 +19,7 @@ import AreaFormDialog from './components/area-form-dialog.vue';
 import AreaEntityPanel from './components/area-entity-panel.vue';
 
 const store = useUserStore();
+const { t } = useI18n();
 const canEdit = computed(
   () => !!store.superAdmin || (store.roles || []).some((r) => String(r).toUpperCase() === 'ADMIN'),
 );
@@ -58,7 +60,7 @@ async function load() {
     const res = await listAreas();
     areas.value = res.data || [];
   } catch (error) {
-    ElMessage.error((error as Error).message || '区域列表加载失败');
+    ElMessage.error((error as Error).message || t('area.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -111,16 +113,16 @@ function clearBoundary() {
 
 async function save() {
   if (!form.value.areaName.trim()) {
-    ElMessage.warning('请输入区域名称');
+    ElMessage.warning(t('area.nameRequired'));
     return;
   }
   if (dialogMode.value === 'create') {
     if (boundaryPoints.value.length < 3) {
-      ElMessage.warning('请在地图上绘制区域边界（至少三个点）');
+      ElMessage.warning(t('area.boundaryRequired'));
       return;
     }
     if (!drawAreaMu.value || drawAreaMu.value <= 0) {
-      ElMessage.warning('绘制面积无效，请重新绘制边界');
+      ElMessage.warning(t('area.drawAreaInvalid'));
       return;
     }
   }
@@ -133,18 +135,18 @@ async function save() {
         drawAreaMu: drawAreaMu.value,
         labelAreaMu: form.value.labelAreaMu ?? drawAreaMu.value,
       });
-      ElMessage.success('区域创建成功');
+      ElMessage.success(t('area.created'));
     } else {
       await updateArea(editingId.value, {
         areaName: form.value.areaName.trim(),
         labelAreaMu: form.value.labelAreaMu,
       });
-      ElMessage.success('区域更新成功');
+      ElMessage.success(t('area.updated'));
     }
     dialogVisible.value = false;
     await load();
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   } finally {
     saving.value = false;
   }
@@ -152,13 +154,13 @@ async function save() {
 
 async function remove(area: AreaEntity) {
   try {
-    await ElMessageBox.confirm(`确认删除区域「${area.areaName}」？`, '删除确认', { type: 'warning' });
+    await ElMessageBox.confirm(t('area.deleteConfirm', { name: area.areaName }), t('common.deleteTitle'), { type: 'warning' });
     await deleteArea(area.id);
-    ElMessage.success('删除成功');
+    ElMessage.success(t('sensorGroups.deleted'));
     if (selectedId.value === area.id) selectedId.value = '';
     await load();
   } catch (error) {
-    if (error !== 'cancel') ElMessage.error((error as Error).message || '删除失败');
+    if (error !== 'cancel') ElMessage.error((error as Error).message || t('control.deleteFailed'));
   }
 }
 
@@ -189,8 +191,8 @@ onMounted(load);
 
     <aside class="side-panel">
       <div class="panel-head">
-        <div class="panel-title">区域管理</div>
-        <el-input v-model="keyword" placeholder="请输入名称" clearable @keyup.enter="onSearch">
+        <div class="panel-title">{{ $t('area.title') }}</div>
+        <el-input v-model="keyword" :placeholder="$t('area.searchPlaceholder')" clearable @keyup.enter="onSearch">
           <template #append>
             <el-button @click="onSearch"><el-icon><Search /></el-icon></el-button>
           </template>
@@ -199,7 +201,7 @@ onMounted(load);
       <div class="panel-list">
         <el-empty
           v-if="!filteredAreas.length"
-          :description="areas.length ? '未找到匹配区域' : '暂无区域'"
+          :description="areas.length ? $t('area.noMatch') : $t('area.empty')"
           :image-size="70"
         />
         <div
@@ -211,22 +213,22 @@ onMounted(load);
         >
           <div class="item-name">{{ area.areaName }}</div>
           <div class="item-row">
-            <el-tag size="small" type="primary" effect="light">区域</el-tag>
-            <span class="item-area">{{ displayArea(area) }}亩</span>
+            <el-tag size="small" type="primary" effect="light">{{ $t('common.area') }}</el-tag>
+            <span class="item-area">{{ displayArea(area) }}{{ $t('area.mu') }}</span>
           </div>
           <el-dropdown v-if="canEdit" trigger="click" @command="(cmd: unknown) => handleCommand(String(cmd), area)">
             <span class="item-more" @click.stop>···</span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                <el-dropdown-item command="edit">{{ $t('common.edit') }}</el-dropdown-item>
+                <el-dropdown-item command="delete" divided>{{ $t('common.delete') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
         </div>
       </div>
       <div v-if="canEdit" class="panel-foot">
-        <el-button type="primary" style="width: 100%" @click="openCreate">新建区域</el-button>
+        <el-button type="primary" style="width: 100%" @click="openCreate">{{ $t('area.create') }}</el-button>
       </div>
     </aside>
 

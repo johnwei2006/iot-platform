@@ -200,11 +200,11 @@ onBeforeUnmount(() => {
     <div v-if="!keyReady" class="map-placeholder">
       <el-result
         icon="warning"
-        title="地图服务未配置"
-        sub-title="请在环境变量中配置 VITE_AMAP_KEY 与 VITE_AMAP_SECURITY_CODE 后刷新页面"
+        :title="$t('area.mapNotConfigured')"
+        :sub-title="$t('area.mapConfigHint')"
       >
         <template #extra>
-          <span class="hint">区域列表仍可正常使用，配置完成后即可查看卫星地图与绘制边界。</span>
+          <span class="hint">{{ $t('area.mapFallbackHint') }}</span>
         </template>
       </el-result>
     </div>

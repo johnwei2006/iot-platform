@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { User, Lock } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/modules/user';
 import type { LoginPayload } from '@/types';
 
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
@@ -32,8 +34,8 @@ const form = reactive<LoginPayload>({
 });
 
 const rules: FormRules<LoginPayload> = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  username: [{ required: true, message: () => t('login.usernamePlaceholder'), trigger: 'blur' }],
+  password: [{ required: true, message: () => t('login.passwordPlaceholder'), trigger: 'blur' }],
 };
 
 const handleSubmit = async () => {
@@ -43,7 +45,7 @@ const handleSubmit = async () => {
     loading.value = true;
     try {
       await userStore.login(form);
-      ElMessage.success('登录成功');
+      ElMessage.success(t('login.loginSuccess'));
       const redirect = (route.query.redirect as string) || '/home';
       router.push(redirect);
     } finally {
@@ -58,30 +60,30 @@ const handleSubmit = async () => {
     <el-card class="login-card" shadow="always">
       <template #header>
         <div class="login-header">
-          <span class="login-title">IoT 平台管理控制台</span>
-          <span class="login-subtitle">请登录以继续</span>
+          <span class="login-title">{{ $t('login.title') }}</span>
+          <span class="login-subtitle">{{ $t('login.subtitle') }}</span>
         </div>
       </template>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" size="large">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" :prefix-icon="User" />
+        <el-form-item :label="$t('login.username')" prop="username">
+          <el-input v-model="form.username" :placeholder="$t('login.usernamePlaceholder')" :prefix-icon="User" />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
+        <el-form-item :label="$t('login.password')" prop="password">
           <el-input
             v-model="form.password"
             type="password"
             show-password
-            placeholder="请输入密码"
+            :placeholder="$t('login.passwordPlaceholder')"
             :prefix-icon="Lock"
           />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="login-btn" :loading="loading" @click="handleSubmit">
-            登 录
+            {{ $t('login.submit') }}
           </el-button>
         </el-form-item>
         <el-form-item v-if="ssoLoginUrl">
-          <el-button class="sso-btn" @click="handleSsoLogin">使用统一账号登录</el-button>
+          <el-button class="sso-btn" @click="handleSsoLogin">{{ $t('login.sso') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>

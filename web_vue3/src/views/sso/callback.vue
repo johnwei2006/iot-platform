@@ -1,22 +1,24 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { Loading, CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/modules/user';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 
 const status = ref<'loading' | 'success' | 'error'>('loading');
-const message = ref('正在完成单点登录...');
+const message = ref(t('sso.processing'));
 
 onMounted(async () => {
   const ticket = route.query.ticket as string | undefined;
   if (!ticket) {
     status.value = 'error';
-    message.value = '缺少 SSO 票据，请重新登录';
+    message.value = t('sso.missingTicket');
     ElMessage.error(message.value);
     router.replace({ name: 'Login' });
     return;
@@ -25,13 +27,13 @@ onMounted(async () => {
     const redirectUri = `${window.location.origin}${import.meta.env.BASE_URL}sso/callback`;
     await userStore.exchangeSsoTicket(ticket, redirectUri);
     status.value = 'success';
-    message.value = '单点登录成功，正在跳转...';
-    ElMessage.success('单点登录成功');
+    message.value = t('sso.success');
+    ElMessage.success(t('sso.successMsg'));
     const redirect = (route.query.redirect as string) || '/home';
     router.replace(redirect);
   } catch {
     status.value = 'error';
-    message.value = 'SSO 登录失败，票据无效或已过期';
+    message.value = t('sso.failed');
     ElMessage.error(message.value);
     router.replace({ name: 'Login' });
   }

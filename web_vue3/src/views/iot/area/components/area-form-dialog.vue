@@ -20,25 +20,25 @@ const emit = defineEmits<{
 <template>
   <el-dialog
     :model-value="visible"
-    :title="mode === 'create' ? '新建' : '编辑'"
+    :title="mode === 'create' ? $t('area.createTitle') : $t('area.editTitle')"
     width="440px"
     :close-on-click-modal="false"
     @update:model-value="emit('update:visible', Boolean($event))"
   >
     <el-form :model="form" label-width="90px">
-      <el-form-item label="区域名称" required>
-        <el-input v-model="form.areaName" maxlength="128" placeholder="请输入" />
+      <el-form-item :label="$t('area.name')" required>
+        <el-input v-model="form.areaName" maxlength="128" :placeholder="$t('area.namePlaceholder')" />
       </el-form-item>
-      <el-form-item label="绘制面积" required>
-        <span class="readonly-area">{{ (drawAreaMu ?? 0).toFixed(2) }}亩</span>
+      <el-form-item :label="$t('area.drawArea')" required>
+        <span class="readonly-area">{{ (drawAreaMu ?? 0).toFixed(2) }}{{ $t('area.mu') }}</span>
       </el-form-item>
-      <el-form-item v-if="mode === 'create'" label="边界">
+      <el-form-item v-if="mode === 'create'" :label="$t('area.boundary')">
         <div class="boundary-row">
-          <span class="point-hint">已绘制 {{ boundaryPoints.length }} 个边界点</span>
-          <el-button link type="primary" @click="emit('clear-boundary')">清空边界数据</el-button>
+          <span class="point-hint">{{ $t('area.boundaryPoints', { count: boundaryPoints.length }) }}</span>
+          <el-button link type="primary" @click="emit('clear-boundary')">{{ $t('area.clearBoundary') }}</el-button>
         </div>
       </el-form-item>
-      <el-form-item label="标注面积">
+      <el-form-item :label="$t('area.labelArea')">
         <el-input-number
           v-model="form.labelAreaMu"
           :min="0"
@@ -50,8 +50,8 @@ const emit = defineEmits<{
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="emit('save')">保存</el-button>
+      <el-button @click="emit('update:visible', false)">{{ $t('common.cancel') }}</el-button>
+      <el-button type="primary" :loading="saving" @click="emit('save')">{{ $t('common.save') }}</el-button>
     </template>
   </el-dialog>
 </template>

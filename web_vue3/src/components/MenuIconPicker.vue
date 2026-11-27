@@ -29,12 +29,12 @@ function clear(): void {
   <div class="icon-picker">
     <el-popover v-model:visible="pickerVisible" placement="bottom-start" :width="380" trigger="click">
       <template #reference>
-        <button type="button" class="picker-trigger" aria-label="选择菜单图标">
+        <button type="button" class="picker-trigger" :aria-label="$t('system.pickIcon')">
           <el-icon v-if="props.modelValue" :size="18"><component :is="icons[props.modelValue]" /></el-icon>
-          <span>{{ props.modelValue || '选择图标' }}</span>
+          <span>{{ props.modelValue || $t('system.pickIcon') }}</span>
         </button>
       </template>
-      <el-input v-model="keyword" size="small" clearable placeholder="搜索图标名称，如 DataLine" />
+      <el-input v-model="keyword" size="small" clearable :placeholder="$t('system.searchIcon')" />
       <div class="icon-grid">
         <button
           v-for="name in filtered"
@@ -48,10 +48,10 @@ function clear(): void {
           <el-icon :size="18"><component :is="icons[name]" /></el-icon>
           <span>{{ name }}</span>
         </button>
-        <div v-if="!filtered.length" class="empty">没有匹配的图标</div>
+        <div v-if="!filtered.length" class="empty">{{ $t('system.noIconMatch') }}</div>
       </div>
     </el-popover>
-    <el-button v-if="props.modelValue" link type="danger" size="small" @click="clear">清除</el-button>
+    <el-button v-if="props.modelValue" link type="danger" size="small" @click="clear">{{ $t('system.clearIcon') }}</el-button>
   </div>
 </template>
 <style scoped>

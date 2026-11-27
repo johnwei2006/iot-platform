@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance } from 'axios';
 import type { ApiResponse } from '@/types';
+import { i18n } from '@/locales';
 
 /** admin-service 客户端：经 /admin-api 代理（生产同域反代），JWT 由拦截器注入 */
 export const adminHttp: AxiosInstance = axios.create({
@@ -21,7 +22,7 @@ export function unwrap<T>(promise: Promise<{ data: ApiResponse<T> }>): Promise<T
   return promise.then((r) => {
     const body = r.data;
     if (body.code !== 200) {
-      throw new Error(body.message || '请求失败');
+      throw new Error(body.message || i18n.global.t('common.requestFailed'));
     }
     return body.data;
   });

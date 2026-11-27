@@ -4,6 +4,9 @@ import { routes } from './routes';
 import { buildRoutesFromMenus } from './dynamicRoutes';
 import { tokens } from '@/utils/token';
 import { useUserStore } from '@/stores/modules/user';
+import { i18n } from '@/locales';
+
+const t = i18n.global.t;
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,7 +33,9 @@ async function ensureDynamicRoutes() {
 
 // 全局前置守卫：标题设置 + 登录鉴权 + 动态菜单路由 + 角色鉴权
 router.beforeEach(async (to) => {
-  document.title = (to.meta.title as string) || import.meta.env.VITE_APP_TITLE;
+  const title = to.meta.title as string | undefined;
+  // 静态路由 title 存 i18n key（route.*）；动态路由 title 为数据库菜单名，原样展示
+  document.title = (title && title.startsWith('route.') ? t(title) : title) || import.meta.env.VITE_APP_TITLE;
   if (to.meta.requiresAuth && !tokens.access) {
     return { name: 'Login', query: { redirect: to.fullPath } };
   }
@@ -51,7 +56,7 @@ router.beforeEach(async (to) => {
     if (!userStore.superAdmin && !userRoles.includes('super_admin') && !userRoles.includes('org_admin')) {
       const allowed = required.some((r) => userRoles.includes(String(r).toLowerCase()));
       if (!allowed) {
-        ElMessage.error('当前账号无权访问该页面');
+        ElMessage.error(t('common.noAccessPage'));
         return { name: 'Home' };
       }
     }

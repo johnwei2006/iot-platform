@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { listAreas, type AreaEntity } from '@/api/iot/area';
@@ -8,6 +9,7 @@ import { listControlDevices, listDeviceClass, type DeviceClassDict, type DeviceC
 import AreaSelect from '@/components/AreaSelect.vue';
 import type { DeviceEntry } from '@/types/kb';
 
+const { t } = useI18n();
 const emit = defineEmits<{ 'show-logs': [areaId?: string] }>();
 const loading = ref(false);
 const devices = ref<DeviceCtrlEntity[]>([]);
@@ -39,7 +41,7 @@ const groups = computed(() => {
   }
   return Array.from(byArea.entries()).map(([areaId, list]) => ({
     areaId,
-    areaName: areaNameMap.value.get(areaId) || '未分配区域',
+    areaName: areaNameMap.value.get(areaId) || t('control.unassignedArea'),
     devices: list,
   }));
 });
@@ -50,7 +52,7 @@ function entryOf(d: DeviceCtrlEntity): DeviceEntry {
     nodeId: d.nodeCode || undefined,
     channel: Number(d.channel) || 1,
     deviceName: d.deviceName || d.deviceCode,
-    deviceType: classMap.value.get(d.deviceClass || '')?.className || '控制设备',
+    deviceType: classMap.value.get(d.deviceClass || '')?.className || t('device.title'),
   };
 }
 
@@ -59,12 +61,12 @@ function isOn(d: DeviceCtrlEntity) {
 }
 
 function statusText(d: DeviceCtrlEntity) {
-  if (d.online === 0) return '离线';
+  if (d.online === 0) return t('common.offline');
   const dict = classMap.value.get(d.deviceClass || '');
-  if (d.status === '1' || d.status === 'ON' || d.status === 'OPEN') return dict?.onName || '开启';
-  if (d.status === '0' || d.status === 'OFF' || d.status === 'CLOSE') return dict?.offName || '关闭';
-  if (d.status === '2' || d.status === 'STOP') return dict?.stopName || '停止';
-  if (d.status === 'AUTO') return '自动';
+  if (d.status === '1' || d.status === 'ON' || d.status === 'OPEN') return dict?.onName || t('control.statusOn');
+  if (d.status === '0' || d.status === 'OFF' || d.status === 'CLOSE') return dict?.offName || t('control.statusOff');
+  if (d.status === '2' || d.status === 'STOP') return dict?.stopName || t('control.statusStop');
+  if (d.status === 'AUTO') return t('control.statusAuto');
   return d.status || '--';
 }
 
@@ -78,12 +80,12 @@ async function issue(entry: DeviceEntry, action: string, value?: string, key?: s
     const res = await sendCommand([entry], action, value);
     const first = (res.data?.logs || [])[0];
     if (first?.result === 'FAILED') {
-      ElMessage.error(first.detail || '指令未下发');
+      ElMessage.error(first.detail || t('control.commandNotSent'));
     } else {
-      ElMessage.success('指令已发送，等待设备回报');
+      ElMessage.success(t('control.commandSent'));
     }
   } catch (error) {
-    ElMessage.error((error as Error).message || '下发失败');
+    ElMessage.error((error as Error).message || t('control.issueFailed'));
   } finally {
     if (key) {
       applying.value.delete(key);
@@ -107,7 +109,7 @@ function openLevel(d: DeviceCtrlEntity) {
 function confirmLevel() {
   const v = Math.round(Number(levelValue.value));
   if (Number.isNaN(v) || v < 0 || v > 100) {
-    ElMessage.warning('开度需为 0-100');
+    ElMessage.warning(t('control.levelRangeTip'));
     return;
   }
   levelVisible.value = false;
@@ -133,7 +135,7 @@ async function load() {
     areas.value = areaRes.data || [];
     deviceClasses.value = classRes.data || [];
   } catch (error) {
-    ElMessage.error((error as Error).message || '控制设备加载失败');
+    ElMessage.error((error as Error).message || t('control.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -147,23 +149,23 @@ onMounted(load);
     <el-card shadow="never">
       <template #header>
         <div class="head-row">
-          <span class="head-title">控制列表</span>
+          <span class="head-title">{{ $t('control.controlList') }}</span>
           <div class="filter-row">
-            <AreaSelect v-model="areaFilter" class="area-select" placeholder="选择区域" />
-            <el-input v-model="keyword" class="search-input" placeholder="搜索设备名称" clearable>
+            <AreaSelect v-model="areaFilter" class="area-select" :placeholder="$t('control.selectArea')" />
+            <el-input v-model="keyword" class="search-input" :placeholder="$t('control.searchDevice')" clearable>
               <template #prefix><el-icon><Search /></el-icon></template>
             </el-input>
-            <el-button type="primary" @click="load">搜索</el-button>
-            <el-button @click="reset">重置</el-button>
+            <el-button type="primary" @click="load">{{ $t('common.search') }}</el-button>
+            <el-button @click="reset">{{ $t('common.reset') }}</el-button>
           </div>
         </div>
       </template>
 
-      <el-empty v-if="!groups.length" description="暂无可控设备" :image-size="90" />
+      <el-empty v-if="!groups.length" :description="$t('control.noDevices')" :image-size="90" />
       <section v-for="group in groups" :key="group.areaId || 'none'" class="group-section">
         <div class="group-head">
           <span class="group-title">{{ group.areaName }}</span>
-          <el-button link type="primary" class="log-link" @click="openLogs(group.areaId || undefined)">控制记录</el-button>
+          <el-button link type="primary" class="log-link" @click="openLogs(group.areaId || undefined)">{{ $t('control.tabLogs') }}</el-button>
         </div>
         <div class="dev-grid">
           <article v-for="d in group.devices" :key="d.id || d.deviceCode" class="dev-card"
@@ -189,15 +191,15 @@ onMounted(load);
                 if (cmd === 'level') openLevel(d);
                 else void issue(entryOf(d), String(cmd));
               }">
-                <button type="button" class="more-btn" aria-label="更多控制">···</button>
+                <button type="button" class="more-btn" :aria-label="$t('control.more')">···</button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item v-if="switchModeOf(d) === 1" command="LEVEL">开度设置</el-dropdown-item>
-                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="OPEN">开启</el-dropdown-item>
-                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="STOP">停止</el-dropdown-item>
-                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="CLOSE">关闭</el-dropdown-item>
-                    <el-dropdown-item command="ON">强制开启</el-dropdown-item>
-                    <el-dropdown-item command="OFF">强制关闭</el-dropdown-item>
+                    <el-dropdown-item v-if="switchModeOf(d) === 1" command="LEVEL">{{ $t('control.setLevel') }}</el-dropdown-item>
+                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="OPEN">{{ $t('control.statusOn') }}</el-dropdown-item>
+                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="STOP">{{ $t('control.statusStop') }}</el-dropdown-item>
+                    <el-dropdown-item v-if="switchModeOf(d) === 2 || switchModeOf(d) === 3" command="CLOSE">{{ $t('control.statusOff') }}</el-dropdown-item>
+                    <el-dropdown-item command="ON">{{ $t('control.forceOn') }}</el-dropdown-item>
+                    <el-dropdown-item command="OFF">{{ $t('control.forceOff') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -207,11 +209,11 @@ onMounted(load);
       </section>
     </el-card>
 
-    <el-dialog v-model="levelVisible" title="设置开度" width="360px">
+    <el-dialog v-model="levelVisible" :title="$t('control.setLevelTitle')" width="360px">
       <el-input-number v-model="levelValue" :min="0" :max="100" style="width: 100%" />
       <template #footer>
-        <el-button @click="levelVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmLevel">下发</el-button>
+        <el-button @click="levelVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="confirmLevel">{{ $t('control.issue') }}</el-button>
       </template>
     </el-dialog>
   </div>

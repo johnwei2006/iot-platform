@@ -17,26 +17,26 @@ function typeName(sensor: SensorEntity) {
 
 <template>
   <div class="sensor-table">
-    <div class="table-title">已绑定传感器({{ sensors.length }}个)</div>
-    <el-table :data="sensors" border style="width: 100%" empty-text="暂无数据">
-      <el-table-column label="序号" type="index" width="60" align="center" />
-      <el-table-column label="设备组名称" min-width="120"><template #default>--</template></el-table-column>
-      <el-table-column label="传感器类型" min-width="140">
+    <div class="table-title">{{ $t('node.boundSensors', { count: sensors.length }) }}</div>
+    <el-table :data="sensors" border style="width: 100%" :empty-text="$t('common.empty')">
+      <el-table-column :label="$t('common.page')" type="index" width="60" align="center" />
+      <el-table-column :label="$t('node.groupName')" min-width="120"><template #default>--</template></el-table-column>
+      <el-table-column :label="$t('sensor.type')" min-width="140">
         <template #default="{ row }">{{ typeName(row) }}</template>
       </el-table-column>
-      <el-table-column label="传感器名称" min-width="150">
+      <el-table-column :label="$t('sensor.name')" min-width="150">
         <template #default="{ row }">{{ row.sensorName || '--' }}</template>
       </el-table-column>
-      <el-table-column prop="sensorCode" label="传感器编码" min-width="160" show-overflow-tooltip />
-      <el-table-column label="状态" width="90" align="center">
+      <el-table-column prop="sensorCode" :label="$t('sensor.code')" min-width="160" show-overflow-tooltip />
+      <el-table-column :label="$t('common.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 0 ? 'success' : 'danger'" size="small" effect="light">
-            {{ row.status === 0 ? '在线' : '离线' }}
+            {{ row.status === 0 ? $t('common.online') : $t('common.offline') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="别名区域" min-width="120"><template #default>--</template></el-table-column>
-      <el-table-column label="操作" width="80" align="center"><template #default>--</template></el-table-column>
+      <el-table-column :label="$t('node.aliasArea')" min-width="120"><template #default>--</template></el-table-column>
+      <el-table-column :label="$t('common.actions')" width="80" align="center"><template #default>--</template></el-table-column>
     </el-table>
   </div>
 </template>

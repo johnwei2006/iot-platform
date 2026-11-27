@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { listDevices } from '@/api/iot/gateway';
 import { checkRule, createRule, deleteRule, listRules, toggleRule, updateRule } from '@/api/iot/control';
 import type { ConflictResult, ControlRule, DeviceEntry } from '@/types/kb';
 import type { Device } from '@/types';
 
+const { t } = useI18n();
 const loading = ref(false);
 const rules = ref<ControlRule[]>([]);
 const devices = ref<Device[]>([]);
@@ -17,7 +19,7 @@ const conflict = ref<ConflictResult | null>(null);
 const editingId = ref<string | null>(null);
 const intent = ref<'DRAFT' | 'ENABLE'>('DRAFT');
 
-const METRIC_LABELS: Record<string, string> = { temp: '空气温度', humid: '空气湿度', press: '空气气压' };
+const METRIC_KEYS: Record<string, string> = { temp: 'control.metricTemp', humid: 'control.metricHumid', press: 'control.metricPress' };
 
 const form = reactive({
   name: '',
@@ -41,7 +43,7 @@ const filtered = computed(() => rules.value.filter((r) => r.kind === subTab.valu
 function deviceEntries(): DeviceEntry[] {
   return devices.value
     .filter((d) => form.selected.includes(d.deviceId))
-    .map((d) => ({ deviceId: d.deviceId, nodeId: d.nodeId || undefined, channel: 1, deviceName: d.name || d.deviceId, deviceType: '控制设备' }));
+    .map((d) => ({ deviceId: d.deviceId, nodeId: d.nodeId || undefined, channel: 1, deviceName: d.name || d.deviceId, deviceType: t('device.title') }));
 }
 
 function deviceName(deviceId?: string) {
@@ -49,12 +51,18 @@ function deviceName(deviceId?: string) {
   return devices.value.find((d) => d.deviceId === deviceId)?.name || deviceId;
 }
 
+function metricLabel(metric?: string) {
+  if (!metric) return '';
+  const key = METRIC_KEYS[metric];
+  return key ? t(key) : metric;
+}
+
 function conditionText(r: ControlRule, close: boolean) {
-  const metric = r.metric ? (METRIC_LABELS[r.metric] || r.metric) : '';
+  const metric = metricLabel(r.metric);
   const operator = r.operator || '>';
   const threshold = r.threshold ?? '--';
-  const prefix = close && r.useReturn ? '恢复 ' : '';
-  const name = close ? deviceName(r.metricDeviceId) : deviceName(r.metricDeviceId);
+  const prefix = close && r.useReturn ? `${t('control.returnPrefix')} ` : '';
+  const name = deviceName(r.metricDeviceId);
   return `${prefix}${name} ${metric} ${operator} ${threshold}`;
 }
 
@@ -120,9 +128,9 @@ async function doCheck() {
   conflict.value = null;
   try {
     const res = await checkRule(payload());
-    conflict.value = res.data || { error: '校验失败', hits: [] };
+    conflict.value = res.data || { error: t('control.checkFailed'), hits: [] };
   } catch (error) {
-    ElMessage.error((error as Error).message || '校验失败');
+    ElMessage.error((error as Error).message || t('control.checkFailed'));
   }
 }
 
@@ -133,11 +141,11 @@ async function doSave(withEnable: boolean) {
     const body = payload();
     if (editingId.value) await updateRule(editingId.value, body, intent.value);
     else await createRule(body, intent.value);
-    ElMessage.success(withEnable ? '已校验并启用' : '已保存停用草稿');
+    ElMessage.success(withEnable ? t('control.savedEnabled') : t('control.savedDraft'));
     formVisible.value = false;
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   } finally {
     saving.value = false;
   }
@@ -146,20 +154,20 @@ async function doSave(withEnable: boolean) {
 async function doToggle(r: ControlRule) {
   try {
     await toggleRule(r.id!);
-    ElMessage.success(r.enabled ? '已停用' : '已校验并启用');
+    ElMessage.success(r.enabled ? t('control.disabled') : t('control.savedEnabled'));
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '操作失败');
+    ElMessage.error((error as Error).message || t('common.failed'));
   }
 }
 
 async function doDelete(r: ControlRule) {
   try {
     await deleteRule(r.id!);
-    ElMessage.success('已删除');
+    ElMessage.success(t('control.deleted'));
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '删除失败');
+    ElMessage.error((error as Error).message || t('control.deleteFailed'));
   }
 }
 
@@ -171,7 +179,7 @@ async function refresh() {
     devices.value = devRes.data || [];
     if (!form.metricDeviceId && devices.value.length) form.metricDeviceId = devices.value[0].deviceId;
   } catch (error) {
-    ElMessage.error((error as Error).message || '规则加载失败');
+    ElMessage.error((error as Error).message || t('control.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -186,91 +194,91 @@ onMounted(refresh);
       <template #header>
         <div class="head-row">
           <div class="sub-tabs" role="tablist">
-            <button type="button" class="sub-tab" :class="{ active: subTab === 'TIMED' }" @click="subTab = 'TIMED'">定时控制</button>
-            <button type="button" class="sub-tab" :class="{ active: subTab === 'CONDITION' }" @click="subTab = 'CONDITION'">条件控制</button>
+            <button type="button" class="sub-tab" :class="{ active: subTab === 'TIMED' }" @click="subTab = 'TIMED'">{{ $t('control.tabTimed') }}</button>
+            <button type="button" class="sub-tab" :class="{ active: subTab === 'CONDITION' }" @click="subTab = 'CONDITION'">{{ $t('control.tabCondition') }}</button>
           </div>
-          <el-button type="primary" v-permission="'iot:rule:create'" @click="openCreate">增加控制</el-button>
+          <el-button type="primary" v-permission="'iot:rule:create'" @click="openCreate">{{ $t('control.addRule') }}</el-button>
         </div>
       </template>
 
       <el-table :data="filtered" stripe border>
-        <el-table-column label="控制名称" prop="name" min-width="180" show-overflow-tooltip />
-        <el-table-column label="生效日期" min-width="120">
+        <el-table-column :label="$t('control.ruleName')" prop="name" min-width="180" show-overflow-tooltip />
+        <el-table-column :label="$t('control.effectiveDate')" min-width="120">
           <template #default>--</template>
         </el-table-column>
-        <el-table-column label="失效日期" min-width="120">
+        <el-table-column :label="$t('control.expiryDate')" min-width="120">
           <template #default>--</template>
         </el-table-column>
-        <el-table-column label="每日生效时间范围" min-width="170">
+        <el-table-column :label="$t('control.dailyRange')" min-width="170">
           <template #default="{ row }">{{ timeRange(row) }}</template>
         </el-table-column>
-        <el-table-column v-if="subTab === 'CONDITION'" label="开启条件" min-width="220">
+        <el-table-column v-if="subTab === 'CONDITION'" :label="$t('control.openCondition')" min-width="220">
           <template #default="{ row }">{{ conditionText(row, false) }}</template>
         </el-table-column>
-        <el-table-column v-if="subTab === 'CONDITION'" label="关闭条件" min-width="220">
+        <el-table-column v-if="subTab === 'CONDITION'" :label="$t('control.closeCondition')" min-width="220">
           <template #default="{ row }">{{ conditionText(row, true) }}</template>
         </el-table-column>
-        <el-table-column v-else label="执行动作" min-width="140">
-          <template #default="{ row }">{{ row.action === 'ON' ? '开启' : '关闭' }}</template>
+        <el-table-column v-else :label="$t('control.action')" min-width="140">
+          <template #default="{ row }">{{ row.action === 'ON' ? $t('control.statusOn') : $t('control.statusOff') }}</template>
         </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column :label="$t('common.status')" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.enabled ? 'success' : 'info'" size="small" effect="light">{{ row.enabled ? '启用' : '关闭' }}</el-tag>
+            <el-tag :type="row.enabled ? 'success' : 'info'" size="small" effect="light">{{ row.enabled ? $t('common.enable') : $t('control.statusOff') }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column :label="$t('common.actions')" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" v-permission="'iot:rule:toggle'" @click="doToggle(row)">{{ row.enabled ? '停用' : '启用' }}</el-button>
-            <el-button link type="primary" v-permission="'iot:rule:edit'" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" v-permission="'iot:rule:edit'" @click="doDelete(row)">删除</el-button>
+            <el-button link type="primary" v-permission="'iot:rule:toggle'" @click="doToggle(row)">{{ row.enabled ? $t('common.disable') : $t('common.enable') }}</el-button>
+            <el-button link type="primary" v-permission="'iot:rule:edit'" @click="openEdit(row)">{{ $t('common.edit') }}</el-button>
+            <el-button link type="danger" v-permission="'iot:rule:edit'" @click="doDelete(row)">{{ $t('common.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <div class="empty-hint" v-if="!filtered.length">当前分类暂无控制规则，点击「增加控制」创建。</div>
+      <div class="empty-hint" v-if="!filtered.length">{{ $t('control.emptyHint') }}</div>
     </el-card>
 
-    <el-dialog v-model="formVisible" :title="`${editingId ? '编辑' : '新建'}${form.kind === 'CONDITION' ? '条件' : '定时'}控制`" width="560px">
+    <el-dialog v-model="formVisible" :title="`${editingId ? $t('common.edit') : $t('control.create')}${form.kind === 'CONDITION' ? $t('control.conditionWord') : $t('control.timedWord')}`" width="560px">
       <el-form label-width="110px">
-        <el-form-item label="名称"><el-input v-model="form.name" maxlength="40" placeholder="输入控制名称" /></el-form-item>
-        <el-form-item label="执行设备">
-          <el-select v-model="form.selected" multiple filterable style="width: 100%" placeholder="选择设备">
+        <el-form-item :label="$t('common.name')"><el-input v-model="form.name" maxlength="40" :placeholder="$t('control.namePlaceholder')" /></el-form-item>
+        <el-form-item :label="$t('control.targetDevices')">
+          <el-select v-model="form.selected" multiple filterable style="width: 100%" :placeholder="$t('control.selectDevices')">
             <el-option v-for="d in devices" :key="d.deviceId" :value="d.deviceId" :label="d.name || d.deviceId" />
           </el-select>
         </el-form-item>
-        <el-form-item label="执行动作">
+        <el-form-item :label="$t('control.action')">
           <el-radio-group v-model="form.action">
-            <el-radio value="ON">开启</el-radio>
-            <el-radio value="OFF">关闭</el-radio>
+            <el-radio value="ON">{{ $t('control.statusOn') }}</el-radio>
+            <el-radio value="OFF">{{ $t('control.statusOff') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <template v-if="form.kind === 'TIMED'">
-          <el-form-item label="执行时间"><el-time-picker v-model="form.time" format="HH:mm" placeholder="选择时间" /></el-form-item>
-          <el-form-item label="反向时间（选填）"><el-time-picker v-model="form.closeTime" format="HH:mm" placeholder="不设置则留空" /></el-form-item>
+          <el-form-item :label="$t('control.execTime')"><el-time-picker v-model="form.time" format="HH:mm" :placeholder="$t('control.selectTime')" /></el-form-item>
+          <el-form-item :label="$t('control.reverseTime')"><el-time-picker v-model="form.closeTime" format="HH:mm" :placeholder="$t('control.reverseTimePlaceholder')" /></el-form-item>
         </template>
         <template v-else>
-          <el-form-item label="取数设备">
+          <el-form-item :label="$t('control.metricDevice')">
             <el-select v-model="form.metricDeviceId" filterable style="width: 100%">
               <el-option v-for="d in devices" :key="d.deviceId" :value="d.deviceId" :label="d.name || d.deviceId" />
             </el-select>
           </el-form-item>
-          <el-form-item label="指标">
+          <el-form-item :label="$t('control.metric')">
             <el-select v-model="form.metric" style="width: 100%">
-              <el-option value="temp" label="空气温度" /><el-option value="humid" label="空气湿度" /><el-option value="press" label="空气气压" />
+              <el-option value="temp" :label="$t('control.metricTemp')" /><el-option value="humid" :label="$t('control.metricHumid')" /><el-option value="press" :label="$t('control.metricPress')" />
             </el-select>
           </el-form-item>
-          <el-form-item label="触发条件">
+          <el-form-item :label="$t('control.triggerCondition')">
             <el-select v-model="form.operator" style="width: 90px">
-              <el-option value=">" label="高于" /><el-option value=">=" label="不低于" />
-              <el-option value="<" label="低于" /><el-option value="<=" label="不高于" />
+              <el-option value=">" :label="$t('control.opAbove')" /><el-option value=">=" :label="$t('control.opAboveEq')" />
+              <el-option value="<" :label="$t('control.opBelow')" /><el-option value="<=" :label="$t('control.opBelowEq')" />
             </el-select>
             <el-input-number v-model="form.threshold" style="width: 140px; margin-left: 8px" />
           </el-form-item>
-          <el-form-item label="生效时段">
+          <el-form-item :label="$t('control.activePeriod')">
             <el-time-picker v-model="form.startTime" format="HH:mm" style="width: 130px" />
-            <span style="margin: 0 6px">至</span>
+            <span style="margin: 0 6px">{{ $t('control.to') }}</span>
             <el-time-picker v-model="form.endTime" format="HH:mm" style="width: 130px" />
           </el-form-item>
-          <el-form-item label="恢复反向动作">
+          <el-form-item :label="$t('control.useReturn')">
             <el-switch v-model="form.useReturn" />
             <el-input-number v-if="form.useReturn" v-model="form.returnThreshold" style="width: 140px; margin-left: 12px" />
           </el-form-item>
@@ -279,14 +287,14 @@ onMounted(refresh);
 
       <el-alert v-if="conflict" :type="conflict.error ? 'warning' : conflict.hits.some((h) => h.hard) ? 'error' : conflict.hits.length ? 'warning' : 'success'"
         :closable="false" show-icon
-        :title="conflict.error || (conflict.hits.some((h) => h.hard) ? '存在控制冲突' : conflict.hits.length ? '存在同向重复' : '校验通过')"
+        :title="conflict.error || (conflict.hits.some((h) => h.hard) ? $t('control.hasConflict') : conflict.hits.length ? $t('control.hasDuplicate') : $t('control.checkPassed'))"
         style="margin-bottom: 12px" />
       <div v-for="h in conflict?.hits || []" :key="h.ruleName" class="hit-row">{{ h.ruleName }} · {{ h.detail }}</div>
 
       <template #footer>
-        <el-button v-permission="'iot:rule:check'" :disabled="saving" @click="doCheck">检查冲突</el-button>
-        <el-button v-permission="'iot:rule:edit'" :disabled="saving || (conflict?.hits.some((h) => h.hard) || false)" @click="doSave(false)">保存草稿</el-button>
-        <el-button type="primary" v-permission="'iot:rule:edit'" :disabled="saving || (conflict?.hits.some((h) => h.hard) || false)" @click="doSave(true)">保存并启用</el-button>
+        <el-button v-permission="'iot:rule:check'" :disabled="saving" @click="doCheck">{{ $t('control.checkConflict') }}</el-button>
+        <el-button v-permission="'iot:rule:edit'" :disabled="saving || (conflict?.hits.some((h) => h.hard) || false)" @click="doSave(false)">{{ $t('control.saveDraft') }}</el-button>
+        <el-button type="primary" v-permission="'iot:rule:edit'" :disabled="saving || (conflict?.hits.some((h) => h.hard) || false)" @click="doSave(true)">{{ $t('control.saveEnable') }}</el-button>
       </template>
     </el-dialog>
   </div>

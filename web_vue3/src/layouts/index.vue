@@ -1,22 +1,27 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   QuestionFilled, Grid, ChatDotRound, SwitchButton, ArrowRight, User,
 } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/modules/user';
 import { useThemeStore, type FontSize, type ThemeMode, type ThemeSkin } from '@/stores/modules/theme';
+import { useLocaleStore } from '@/stores/modules/locale';
+import { LOCALES, type AppLocale } from '@/locales';
 import { unreadCount } from '@/api/system/me';
 import { buildProducts, productOfPath, type ProductView } from '@/utils/productMenus';
 import type { MenuNode } from '@/types';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const userStore = useUserStore();
 const themeStore = useThemeStore();
+const localeStore = useLocaleStore();
 
-const username = computed(() => userStore.userInfo?.name ?? '未登录');
-const orgName = computed(() => userStore.userInfo?.orgName || userStore.userInfo?.orgCode || '未分配机构');
+const username = computed(() => userStore.userInfo?.name ?? t('layout.notLoggedIn'));
+const orgName = computed(() => userStore.userInfo?.orgName || userStore.userInfo?.orgCode || t('layout.notAssignedOrg'));
 const activeMenu = computed(() => route.path);
 const products = computed<ProductView[]>(() => buildProducts(userStore.menus, userStore.products));
 
@@ -41,6 +46,26 @@ function selectProduct(product: ProductView): void {
 function iconOf(node: MenuNode): string {
   if (typeof node.icon === 'string' && node.icon) return node.icon;
   return node.type === 'DIR' ? 'Folder' : 'Document';
+}
+
+/** 菜单名：按 path 命中语言包则翻译，否则回退数据库名。 */
+function menuLabel(node: MenuNode): string {
+  if (node.path) {
+    const key = `menus.${node.path}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+  }
+  return node.name;
+}
+
+/** 产品名：按根路径命中语言包则翻译，否则回退数据库名。 */
+function productLabel(product: ProductView): string {
+  if (product.path) {
+    const key = `products.${product.path}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+  }
+  return product.name;
 }
 
 function loadUnread(): void {
@@ -73,10 +98,10 @@ onMounted(() => {
     <header class="kb-topbar">
       <div class="kb-brand">
         <span class="kb-brand__mark" aria-hidden="true">科</span>
-        <span class="kb-brand__name">百觅物联网平台</span>
+        <span class="kb-brand__name">{{ $t('layout.brand') }}</span>
       </div>
 
-      <nav class="kb-products" aria-label="产品导航">
+      <nav class="kb-products" aria-label="products">
         <button
           v-for="product in products"
           :key="product.id"
@@ -86,75 +111,85 @@ onMounted(() => {
           :aria-current="activeProduct?.id === product.id ? 'page' : undefined"
           @click="selectProduct(product)"
         >
-          {{ product.name }}
+          {{ productLabel(product) }}
         </button>
       </nav>
 
       <div class="kb-tools">
         <el-popover placement="bottom-end" :width="240" trigger="click">
           <template #reference>
-            <button type="button" class="kb-tool" aria-label="帮助">
+            <button type="button" class="kb-tool" :aria-label="$t('layout.help')">
               <el-icon :size="18"><QuestionFilled /></el-icon>
             </button>
           </template>
-          <div class="kb-popover-title">帮助与支持</div>
-          <p class="kb-popover-text">可按产品切换左侧菜单；消息角标显示未读消息。</p>
+          <div class="kb-popover-title">{{ $t('layout.helpTitle') }}</div>
+          <p class="kb-popover-text">{{ $t('layout.helpText') }}</p>
         </el-popover>
 
         <el-popover placement="bottom-end" :width="300" trigger="click">
           <template #reference>
-            <button type="button" class="kb-tool kb-tool--theme" aria-label="主题设置">
+            <button type="button" class="kb-tool kb-tool--theme" :aria-label="$t('layout.theme')">
               <el-icon :size="18"><Grid /></el-icon>
-              <span>主题</span>
+              <span>{{ $t('layout.theme') }}</span>
             </button>
           </template>
-          <div class="kb-popover-title">外观设置</div>
+          <div class="kb-popover-title">{{ $t('layout.appearance') }}</div>
           <div class="kb-setting-row">
-            <span>风格</span>
+            <span>{{ $t('layout.skin') }}</span>
             <el-radio-group
               :model-value="themeStore.skin"
               size="small"
               @update:model-value="(v: ThemeSkin) => themeStore.setSkin(v)"
             >
-              <el-radio-button value="blue">企业蓝</el-radio-button>
-              <el-radio-button value="green">翡翠绿</el-radio-button>
-              <el-radio-button value="gray">石墨灰</el-radio-button>
+              <el-radio-button value="blue">{{ $t('layout.skinBlue') }}</el-radio-button>
+              <el-radio-button value="green">{{ $t('layout.skinGreen') }}</el-radio-button>
+              <el-radio-button value="gray">{{ $t('layout.skinGray') }}</el-radio-button>
             </el-radio-group>
           </div>
           <div class="kb-setting-row">
-            <span>模式</span>
+            <span>{{ $t('layout.mode') }}</span>
             <el-radio-group
               :model-value="themeStore.mode"
               size="small"
               @update:model-value="(v: ThemeMode) => themeStore.setMode(v)"
             >
-              <el-radio-button value="light">浅色</el-radio-button>
-              <el-radio-button value="dark">深色</el-radio-button>
+              <el-radio-button value="light">{{ $t('layout.light') }}</el-radio-button>
+              <el-radio-button value="dark">{{ $t('layout.dark') }}</el-radio-button>
             </el-radio-group>
           </div>
           <div class="kb-setting-row">
-            <span>字号</span>
+            <span>{{ $t('layout.fontSize') }}</span>
             <el-radio-group
               :model-value="themeStore.fontSize"
               size="small"
               @update:model-value="(v: FontSize) => themeStore.setFontSize(v)"
             >
-              <el-radio-button value="standard">标准</el-radio-button>
-              <el-radio-button value="large">大字号</el-radio-button>
+              <el-radio-button value="standard">{{ $t('layout.fontStandard') }}</el-radio-button>
+              <el-radio-button value="large">{{ $t('layout.fontLarge') }}</el-radio-button>
+            </el-radio-group>
+          </div>
+          <div class="kb-setting-row">
+            <span>{{ $t('layout.language') }}</span>
+            <el-radio-group
+              :model-value="localeStore.locale"
+              size="small"
+              @update:model-value="(v: AppLocale) => localeStore.setLocale(v)"
+            >
+              <el-radio-button v-for="l in LOCALES" :key="l.value" :value="l.value">{{ l.label }}</el-radio-button>
             </el-radio-group>
           </div>
         </el-popover>
 
         <el-popover placement="bottom-end" :width="260" trigger="click">
           <template #reference>
-            <button type="button" class="kb-tool kb-tool--msg" aria-label="消息">
+            <button type="button" class="kb-tool kb-tool--msg" :aria-label="$t('layout.messages')">
               <el-icon :size="19"><ChatDotRound /></el-icon>
               <span v-if="unread" class="kb-msg-badge">{{ unread > 99 ? '99+' : unread }}</span>
             </button>
           </template>
-          <div class="kb-popover-title">消息中心</div>
-          <p class="kb-popover-text">当前有 {{ unread }} 条未读消息，包含任务与告警。</p>
-          <el-button link type="primary" @click="goMessages">查看全部消息</el-button>
+          <div class="kb-popover-title">{{ $t('layout.messageCenter') }}</div>
+          <p class="kb-popover-text">{{ $t('layout.unreadText', { count: unread }) }}</p>
+          <el-button link type="primary" @click="goMessages">{{ $t('layout.viewAll') }}</el-button>
         </el-popover>
 
         <el-dropdown trigger="click" @command="(cmd: string) => cmd === 'logout' && handleLogout()">
@@ -167,7 +202,7 @@ onMounted(() => {
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout">
-                <el-icon><SwitchButton /></el-icon>退出登录
+                <el-icon><SwitchButton /></el-icon>{{ $t('layout.logout') }}
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -177,29 +212,29 @@ onMounted(() => {
 
     <el-container class="kb-body">
       <el-aside :width="'var(--kb-sidebar-width)'" class="kb-sidebar">
-        <div class="kb-sidebar__title">{{ activeProduct?.name || '工作台' }}</div>
+        <div class="kb-sidebar__title">{{ activeProduct ? productLabel(activeProduct) : $t('layout.workbench') }}</div>
         <el-scrollbar class="kb-sidebar__scroll">
           <el-menu :default-active="activeMenu" router class="kb-menu">
             <template v-for="node in activeProduct?.menus || []" :key="node.id">
               <el-sub-menu v-if="node.type === 'DIR' && node.children?.length" :index="node.id">
                 <template #title>
                   <el-icon><component :is="iconOf(node)" /></el-icon>
-                  <span>{{ node.name }}</span>
+                  <span>{{ menuLabel(node) }}</span>
                 </template>
                 <el-menu-item v-for="child in node.children" :key="child.id" :index="child.path || child.id">
                   <el-icon><component :is="iconOf(child)" /></el-icon>
-                  <span>{{ child.name }}</span>
+                  <span>{{ menuLabel(child) }}</span>
                 </el-menu-item>
               </el-sub-menu>
               <el-menu-item v-else-if="node.type === 'MENU' && node.path" :index="node.path">
                 <el-icon><component :is="iconOf(node)" /></el-icon>
-                <span>{{ node.name }}</span>
+                <span>{{ menuLabel(node) }}</span>
                 <el-icon class="kb-menu__arrow"><ArrowRight /></el-icon>
               </el-menu-item>
             </template>
           </el-menu>
           <div v-if="!activeProduct?.menus.length" class="kb-sidebar__empty">
-            该产品暂无可用菜单，请联系管理员分配。
+            {{ $t('layout.sidebarEmpty') }}
           </div>
         </el-scrollbar>
       </el-aside>

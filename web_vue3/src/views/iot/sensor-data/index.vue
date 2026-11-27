@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import MultiSensorChart from './components/multi-sensor-chart.vue';
 import {
@@ -24,6 +25,7 @@ interface TableRow extends SensorHistoryPoint {
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const loading = ref(false);
 const groups = ref<SensorGroupEntity[]>([]);
@@ -74,7 +76,7 @@ async function loadBase() {
       ? queryId
       : groups.value[0]?.id || '';
   } catch (error) {
-    ElMessage.error((error as Error).message || '加载组合或传感器失败');
+    ElMessage.error((error as Error).message || t('sensorData.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -112,7 +114,7 @@ async function loadData() {
       )
       .sort((a, b) => a.ts - b.ts);
   } catch (error) {
-    ElMessage.error((error as Error).message || '历史数据加载失败');
+    ElMessage.error((error as Error).message || t('sensorData.historyLoadFailed'));
   } finally {
     loading.value = false;
   }
@@ -120,10 +122,10 @@ async function loadData() {
 
 function exportCsv() {
   if (!tableRows.value.length) {
-    ElMessage.warning('暂无数据可导出');
+    ElMessage.warning(t('sensorData.noExportData'));
     return;
   }
-  const head = ['时间', '传感器名称', '传感器编码', '数值', '单位'];
+  const head = [t('sensorData.time'), t('sensor.name'), t('sensor.sensorCode'), t('sensorData.value'), t('sensor.unit')];
   const lines = tableRows.value.map((r) =>
     [new Date(r.ts).toLocaleString('zh-CN'), r.sensorName || '', r.sensorcode || '', r.senval, r.unit || '']
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
@@ -135,7 +137,7 @@ function exportCsv() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `传感器数据_${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = `${t('sensorData.title')}_${new Date().toISOString().slice(0, 10)}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -159,50 +161,50 @@ onMounted(() => {
     <el-card shadow="never">
       <template #header>
         <div class="page-header">
-          <span class="page-title">传感器数据</span>
+          <span class="page-title">{{ $t('sensorData.title') }}</span>
           <div class="page-actions">
-            <el-button v-permission="'iot:sensor_data:group'" plain @click="goGroups">组合管理</el-button>
-            <el-button v-permission="'iot:sensor_data:export'" @click="exportCsv">导出数据</el-button>
-            <el-button type="success" plain @click="loadData">刷新</el-button>
+            <el-button v-permission="'iot:sensor_data:group'" plain @click="goGroups">{{ $t('sensorData.groupManage') }}</el-button>
+            <el-button v-permission="'iot:sensor_data:export'" @click="exportCsv">{{ $t('common.export') }}</el-button>
+            <el-button type="success" plain @click="loadData">{{ $t('common.refresh') }}</el-button>
           </div>
         </div>
       </template>
 
       <el-form :inline="true" class="filters">
-        <el-form-item label="传感器组合">
+        <el-form-item :label="$t('sensorData.group')">
           <el-select
             v-model="activeGroupId"
-            placeholder="请选择组合"
+            :placeholder="$t('sensorData.selectGroup')"
             clearable
             style="width: 240px"
           >
             <el-option v-for="g in groupOptions" :key="g.value" :label="g.label" :value="g.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="时间范围">
+        <el-form-item :label="$t('sensorData.timeRange')">
           <el-date-picker
             v-model="range"
             type="datetimerange"
             value-format="timestamp"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="$t('sensorData.to')"
+            :start-placeholder="$t('sensorData.startTime')"
+            :end-placeholder="$t('sensorData.endTime')"
             :clearable="false"
             style="width: 360px"
           />
         </el-form-item>
         <el-form-item>
-          <span class="hint">已选 {{ selectedSensors.length }} 个测点</span>
+          <span class="hint">{{ $t('sensorData.selectedPoints', { count: selectedSensors.length }) }}</span>
         </el-form-item>
       </el-form>
 
-      <el-empty v-if="!groups.length" description="暂无传感器组合，请先到组合管理创建" :image-size="90" />
+      <el-empty v-if="!groups.length" :description="$t('sensorData.noGroups')" :image-size="90" />
       <el-tabs v-else v-model="activeTab">
-        <el-tab-pane label="图表数据" name="chart">
-          <el-empty v-if="!chartSeries.length" description="当前组合在所选时间范围内暂无数据" :image-size="90" />
+        <el-tab-pane :label="$t('sensorData.tabChart')" name="chart">
+          <el-empty v-if="!chartSeries.length" :description="$t('sensorData.noChartData')" :image-size="90" />
           <MultiSensorChart v-else :series="chartSeries" :height="480" />
         </el-tab-pane>
-        <el-tab-pane label="表格数据" name="table">
+        <el-tab-pane :label="$t('sensorData.tabTable')" name="table">
           <el-table
             :data="tableRows"
             border
@@ -211,15 +213,15 @@ onMounted(() => {
             default-sort="{ prop: 'ts', order: 'ascending' }"
           >
             <el-table-column type="index" label="#" width="60" />
-            <el-table-column label="时间" min-width="180">
+            <el-table-column :label="$t('sensorData.time')" min-width="180">
               <template #default="{ row }">{{ new Date(row.ts).toLocaleString('zh-CN') }}</template>
             </el-table-column>
-            <el-table-column label="传感器名称" prop="sensorName" min-width="140" />
-            <el-table-column label="传感器编码" prop="sensorcode" min-width="140" />
-            <el-table-column label="数值" prop="senval" min-width="100" sortable />
-            <el-table-column label="单位" prop="unit" min-width="80" />
+            <el-table-column :label="$t('sensor.name')" prop="sensorName" min-width="140" />
+            <el-table-column :label="$t('sensor.sensorCode')" prop="sensorcode" min-width="140" />
+            <el-table-column :label="$t('sensorData.value')" prop="senval" min-width="100" sortable />
+            <el-table-column :label="$t('sensor.unit')" prop="unit" min-width="80" />
           </el-table>
-          <div class="table-foot">共 {{ tableRows.length }} 条记录</div>
+          <div class="table-foot">{{ $t('sensorData.totalRecords', { count: tableRows.length }) }}</div>
         </el-tab-pane>
       </el-tabs>
     </el-card>

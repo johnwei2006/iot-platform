@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { listNodes, type NodeEntity } from '@/api/iot/node';
@@ -11,6 +12,7 @@ import {
 import AreaSelect from '@/components/AreaSelect.vue';
 import { listAreas } from '@/api/iot/area';
 
+const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
 const devices = ref<DeviceCtrlEntity[]>([]);
@@ -28,7 +30,7 @@ const typeFilter = ref('');
 const connectFilter = ref<number | ''>('');
 const onlineFilter = ref('');
 
-const SWITCH_MODES: Record<number, string> = { 1: '开度', 2: '二开', 3: '三开' };
+const SWITCH_KEYS: Record<number, string> = { 1: 'device.switchMode_1', 2: 'device.switchMode_4', 3: 'device.switchMode_5' };
 const nodeByCode = computed(() => new Map(nodes.value.map((n) => [n.nodeCode, n])));
 const areaNameMap = ref(new Map<string, string>());
 
@@ -41,7 +43,7 @@ function nodeOf(code?: string) {
 }
 
 function typeName(row: DeviceCtrlEntity) {
-  const type = classTypes.value.find((t) => t.type === row.deviceClassType)?.typeName;
+  const type = classTypes.value.find((c) => c.type === row.deviceClassType)?.typeName;
   if (type) return type;
   const cls = classes.value.find((c) => c.deviceClass === row.deviceClass)?.className;
   return cls || row.deviceClassType || row.deviceClass || '--';
@@ -49,7 +51,9 @@ function typeName(row: DeviceCtrlEntity) {
 
 function switchMode(row: DeviceCtrlEntity) {
   const mode = classes.value.find((c) => c.deviceClass === row.deviceClass)?.switchMode;
-  return mode ? (SWITCH_MODES[mode] ?? String(mode)) : '--';
+  if (!mode) return '--';
+  const key = SWITCH_KEYS[mode];
+  return key ? t(key) : String(mode);
 }
 
 const filtered = computed(() => devices.value.filter((d) => {
@@ -86,7 +90,7 @@ async function load() {
     classTypes.value = typeRes.data ?? [];
     areaNameMap.value = new Map((areaRes.data ?? []).map((a) => [a.id, a.areaName]));
   } catch (error) {
-    ElMessage.error((error as Error).message || '控制设备列表加载失败');
+    ElMessage.error((error as Error).message || t('device.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -101,80 +105,80 @@ onMounted(load);
 
 <template>
   <div class="ctrl-page">
-    <h2 class="page-title">控制设备管理</h2>
+    <h2 class="page-title">{{ $t('device.titleManage') }}</h2>
 
     <div class="filter-bar">
       <div class="search-group">
-        <el-select v-model="codeField" class="field-select" aria-label="编码搜索字段">
-          <el-option label="设备编码" value="deviceCode" />
+        <el-select v-model="codeField" class="field-select" :aria-label="$t('device.codeField')">
+          <el-option :label="$t('device.code')" value="deviceCode" />
         </el-select>
-        <el-input v-model="codeKey" class="search-input" clearable placeholder="请输入内容">
+        <el-input v-model="codeKey" class="search-input" clearable :placeholder="$t('device.inputPlaceholder')">
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
       <div class="search-group">
-        <el-select v-model="nameField" class="field-select" aria-label="名称搜索字段">
-          <el-option label="设备名称" value="deviceName" />
+        <el-select v-model="nameField" class="field-select" :aria-label="$t('device.nameField')">
+          <el-option :label="$t('device.name')" value="deviceName" />
         </el-select>
-        <el-input v-model="nameKey" class="search-input" clearable placeholder="请输入内容">
+        <el-input v-model="nameKey" class="search-input" clearable :placeholder="$t('device.inputPlaceholder')">
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
-      <AreaSelect v-model="areaFilter" class="area-select" placeholder="按关联区域筛选" />
-      <el-button type="primary" @click="load">搜索</el-button>
-      <el-button @click="reset">重置</el-button>
+      <AreaSelect v-model="areaFilter" class="area-select" :placeholder="$t('sensor.areaFilter')" />
+      <el-button type="primary" @click="load">{{ $t('common.search') }}</el-button>
+      <el-button @click="reset">{{ $t('common.reset') }}</el-button>
       <el-button link type="primary" @click="moreVisible = !moreVisible">
-        {{ moreVisible ? '收起筛选' : '更多筛选' }}
+        {{ moreVisible ? $t('sensor.collapseFilters') : $t('sensor.moreFilters') }}
       </el-button>
     </div>
 
     <div v-if="moreVisible" class="more-filter">
-      <el-select v-model="classFilter" clearable placeholder="设备大类" aria-label="设备大类">
+      <el-select v-model="classFilter" clearable :placeholder="$t('device.class')" :aria-label="$t('device.class')">
         <el-option v-for="c in classes" :key="c.deviceClass" :label="c.className" :value="c.deviceClass" />
       </el-select>
-      <el-select v-model="typeFilter" clearable placeholder="设备类型" aria-label="设备类型">
-        <el-option v-for="t in classTypes" :key="t.type" :label="t.typeName" :value="t.type" />
+      <el-select v-model="typeFilter" clearable :placeholder="$t('device.type')" :aria-label="$t('device.type')">
+        <el-option v-for="c in classTypes" :key="c.type" :label="c.typeName" :value="c.type" />
       </el-select>
-      <el-select v-model="connectFilter" clearable placeholder="接入方式" aria-label="接入方式">
-        <el-option label="通道直连" :value="0" />
-        <el-option label="485 透传" :value="1" />
+      <el-select v-model="connectFilter" clearable :placeholder="$t('device.connectType')" :aria-label="$t('device.connectType')">
+        <el-option :label="$t('device.connectDirect')" :value="0" />
+        <el-option :label="$t('device.connect485')" :value="1" />
       </el-select>
-      <el-select v-model="onlineFilter" clearable placeholder="设备状态" aria-label="设备状态">
-        <el-option label="在线" value="ON" />
-        <el-option label="离线" value="OFF" />
+      <el-select v-model="onlineFilter" clearable :placeholder="$t('common.status')" :aria-label="$t('common.status')">
+        <el-option :label="$t('common.online')" value="ON" />
+        <el-option :label="$t('common.offline')" value="OFF" />
       </el-select>
     </div>
 
     <div class="table-card" v-loading="loading">
-      <el-table :data="filtered" border style="width: 100%" empty-text="暂无数据">
-        <el-table-column label="序号" type="index" width="60" align="center" />
-        <el-table-column label="网关编码" min-width="150" show-overflow-tooltip>
+      <el-table :data="filtered" border style="width: 100%" :empty-text="$t('common.empty')">
+        <el-table-column :label="$t('common.page')" type="index" width="60" align="center" />
+        <el-table-column :label="$t('gateway.code')" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">{{ nodeOf(row.nodeCode)?.gatewayCode || '--' }}</template>
         </el-table-column>
-        <el-table-column prop="nodeCode" label="节点编码" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="deviceCode" label="设备编码" min-width="160" show-overflow-tooltip />
-        <el-table-column label="设备名称" min-width="150" show-overflow-tooltip>
+        <el-table-column prop="nodeCode" :label="$t('node.nodeCode')" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="deviceCode" :label="$t('device.code')" min-width="160" show-overflow-tooltip />
+        <el-table-column :label="$t('device.name')" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">{{ row.deviceName || '--' }}</template>
         </el-table-column>
-        <el-table-column label="设备类型" min-width="130">
+        <el-table-column :label="$t('device.type')" min-width="130">
           <template #default="{ row }">{{ typeName(row) }}</template>
         </el-table-column>
-        <el-table-column label="开关模式" width="100" align="center">
+        <el-table-column :label="$t('device.switchMode')" width="100" align="center">
           <template #default="{ row }">{{ switchMode(row) }}</template>
         </el-table-column>
-        <el-table-column label="设备状态" width="90" align="center">
+        <el-table-column :label="$t('common.status')" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.online === 1 ? 'success' : 'danger'" size="small" effect="light">
-              {{ row.online === 1 ? '在线' : '离线' }}
+              {{ row.online === 1 ? $t('common.online') : $t('common.offline') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="关联区域" min-width="130">
+        <el-table-column :label="$t('sensor.linkedArea')" min-width="130">
           <template #default="{ row }">{{ areaOf(row) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center" fixed="right">
+        <el-table-column :label="$t('common.actions')" width="100" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row)">查看详情</el-button>
+            <el-button link type="primary" @click="openDetail(row)">{{ $t('gateway.viewDetail') }}</el-button>
           </template>
         </el-table-column>
       </el-table>

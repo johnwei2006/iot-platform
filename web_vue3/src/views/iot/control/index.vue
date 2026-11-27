@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import DeviceControlPanel from './components/device-control-panel.vue';
 import RuleControlPanel from './components/rule-control-panel.vue';
 import ControlLogPanel from './components/control-log-panel.vue';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 type Tab = 'oneClick' | 'smart' | 'logs';
 const validTabs: Tab[] = ['oneClick', 'smart', 'logs'];
@@ -29,9 +31,9 @@ watch(() => route.query.areaId, (id) => {
 });
 
 const tabs = computed(() => [
-  { key: 'oneClick' as Tab, label: '一键控制' },
-  { key: 'smart' as Tab, label: '智能控制' },
-  { key: 'logs' as Tab, label: '控制记录' },
+  { key: 'oneClick' as Tab, label: t('control.tabOneClick') },
+  { key: 'smart' as Tab, label: t('control.tabSmart') },
+  { key: 'logs' as Tab, label: t('control.tabLogs') },
 ]);
 </script>
 

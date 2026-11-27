@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import {
@@ -9,6 +10,7 @@ import {
 import { fetchMenuTree } from '@/api/system/menu';
 import type { MenuNode, ProductRecord } from '@/types';
 
+const { t } = useI18n();
 const products = ref<ProductRecord[]>([]);
 const menuTree = ref<MenuNode[]>([]);
 const selectedId = ref('');
@@ -27,7 +29,7 @@ async function refreshProducts(keepSelection = true) {
       selectedId.value = products.value[0]?.id || '';
     }
   } catch (error) {
-    ElMessage.error((error as Error).message || '加载产品失败');
+    ElMessage.error((error as Error).message || t('product.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -41,7 +43,7 @@ async function loadMenus(productId: string) {
     menuTree.value = all;
     checkedMenuIds.value = bound.map((m) => m.id);
   } catch (error) {
-    ElMessage.error((error as Error).message || '加载产品菜单失败');
+    ElMessage.error((error as Error).message || t('product.menusLoadFailed'));
   } finally {
     binding.value = false;
   }
@@ -69,7 +71,7 @@ function openEdit(product: ProductRecord) {
 
 async function submit() {
   if (!form.name.trim() || (dialog.mode === 'create' && !form.code.trim())) {
-    ElMessage.warning('请填写产品编码与名称');
+    ElMessage.warning(t('product.codeNameRequired'));
     return;
   }
   try {
@@ -80,26 +82,26 @@ async function submit() {
         name: form.name.trim(), description: form.description, sort: form.sort, status: form.status,
       });
     }
-    ElMessage.success('保存成功');
+    ElMessage.success(t('gateway.saved'));
     dialog.visible = false;
     await refreshProducts();
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
 async function handleDelete(product: ProductRecord) {
   try {
-    await ElMessageBox.confirm(`确认删除产品「${product.name}」？该产品对机构的授权会一并移除。`, '删除确认', { type: 'warning' });
+    await ElMessageBox.confirm(t('product.deleteConfirm', { name: product.name }), t('common.deleteTitle'), { type: 'warning' });
   } catch {
     return;
   }
   try {
     await deleteProduct(product.id);
-    ElMessage.success('已删除');
+    ElMessage.success(t('control.deleted'));
     await refreshProducts(false);
   } catch (error) {
-    ElMessage.error((error as Error).message || '删除失败');
+    ElMessage.error((error as Error).message || t('control.deleteFailed'));
   }
 }
 
@@ -107,9 +109,9 @@ async function saveMenus() {
   if (!selectedId.value) return;
   try {
     await bindProductMenus(selectedId.value, checkedMenuIds.value);
-    ElMessage.success('产品菜单范围已更新，机构角色授权上限同步生效');
+    ElMessage.success(t('product.menusSaved'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存菜单失败');
+    ElMessage.error((error as Error).message || t('menu.loadFailed'));
   }
 }
 
@@ -122,34 +124,34 @@ onMounted(() => refreshProducts(false).then(() => loadMenus(selectedId.value)));
       <template #header>
         <div class="card-header">
           <div>
-            <strong>产品管理</strong>
-            <span class="hint">产品是机构功能上限，角色菜单只能在产品范围内细分</span>
+            <strong>{{ $t('product.title') }}</strong>
+            <span class="hint">{{ $t('product.hint') }}</span>
           </div>
           <el-button type="primary" size="small" :icon="Plus" v-permission="'system:product:create'" @click="openCreate">
-            新增产品
+            {{ $t('product.addProduct') }}
           </el-button>
         </div>
       </template>
       <el-table :data="products" stripe highlight-current-row :current-row-key="selectedId" row-key="id"
         @current-change="(row: ProductRecord) => (selectedId = row?.id || '')">
-        <el-table-column prop="code" label="编码" width="120">
+        <el-table-column prop="code" :label="$t('common.code')" width="120">
           <template #default="{ row }"><span class="mono">{{ row.code }}</span></template>
         </el-table-column>
-        <el-table-column prop="name" label="产品名称" min-width="140" />
-        <el-table-column prop="description" label="说明" min-width="220" />
-        <el-table-column prop="sort" label="排序" width="80" />
-        <el-table-column label="状态" width="100">
+        <el-table-column prop="name" :label="$t('product.name')" min-width="140" />
+        <el-table-column prop="description" :label="$t('product.description')" min-width="220" />
+        <el-table-column prop="sort" :label="$t('org.sort')" width="80" />
+        <el-table-column :label="$t('common.status')" width="100">
           <template #default="{ row }">
             <el-tag size="small" :type="row.status === 'DISABLED' ? 'danger' : 'success'">
-              {{ row.status === 'DISABLED' ? '停用' : '启用' }}
+              {{ row.status === 'DISABLED' ? $t('common.disable') : $t('common.enable') }}
             </el-tag>
-            <el-tag v-if="row.builtIn" size="small" type="info" class="built-tag">预置</el-tag>
+            <el-tag v-if="row.builtIn" size="small" type="info" class="built-tag">{{ $t('product.builtIn') }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column :label="$t('common.actions')" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" v-permission="'system:product:edit'" @click="openEdit(row)">编辑</el-button>
-            <el-button v-if="!row.builtIn" link type="danger" size="small" v-permission="'system:product:delete'" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="primary" size="small" v-permission="'system:product:edit'" @click="openEdit(row)">{{ $t('common.edit') }}</el-button>
+            <el-button v-if="!row.builtIn" link type="danger" size="small" v-permission="'system:product:delete'" @click="handleDelete(row)">{{ $t('common.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -158,8 +160,8 @@ onMounted(() => refreshProducts(false).then(() => loadMenus(selectedId.value)));
     <el-card shadow="never" class="kb-panel">
       <template #header>
         <div class="card-header">
-          <strong>产品-菜单配置</strong>
-          <span class="hint">勾选该产品包含的菜单与按钮；机构管理员仅能在此范围内分配角色菜单</span>
+          <strong>{{ $t('product.menuConfigTitle') }}</strong>
+          <span class="hint">{{ $t('product.menuConfigHint') }}</span>
         </div>
       </template>
       <div v-loading="binding" class="menu-area">
@@ -174,31 +176,31 @@ onMounted(() => refreshProducts(false).then(() => loadMenus(selectedId.value)));
           :key="selectedId"
           @check="(_data: any, check: any) => (checkedMenuIds = check.checkedKeys as string[])"
         />
-        <div v-else class="empty">暂无菜单，请先在菜单管理中创建</div>
+        <div v-else class="empty">{{ $t('product.noMenus') }}</div>
       </div>
       <div class="footer">
-        <el-button type="primary" v-permission="'system:product:bind-menu'" @click="saveMenus">保存菜单范围</el-button>
+        <el-button type="primary" v-permission="'system:product:bind-menu'" @click="saveMenus">{{ $t('product.saveMenuScope') }}</el-button>
       </div>
     </el-card>
 
-    <el-dialog v-model="dialog.visible" :title="dialog.mode === 'create' ? '新增产品' : '编辑产品'" width="480px">
+    <el-dialog v-model="dialog.visible" :title="dialog.mode === 'create' ? $t('product.addTitle') : $t('product.editTitle')" width="480px">
       <el-form label-width="90px">
-        <el-form-item label="产品编码">
-          <el-input v-model="form.code" :disabled="dialog.mode === 'edit'" placeholder="大写英文，如 IOT" />
+        <el-form-item :label="$t('product.code')">
+          <el-input v-model="form.code" :disabled="dialog.mode === 'edit'" :placeholder="$t('product.codePlaceholder')" />
         </el-form-item>
-        <el-form-item label="产品名称"><el-input v-model="form.name" placeholder="如 物联网" /></el-form-item>
-        <el-form-item label="产品说明"><el-input v-model="form.description" placeholder="简要描述该产品的功能范围" /></el-form-item>
-        <el-form-item label="排序"><el-input v-model="form.sort" placeholder="数字越小越靠前" /></el-form-item>
-        <el-form-item v-if="dialog.mode === 'edit'" label="状态">
+        <el-form-item :label="$t('product.name')"><el-input v-model="form.name" :placeholder="$t('product.namePlaceholder')" /></el-form-item>
+        <el-form-item :label="$t('product.description')"><el-input v-model="form.description" :placeholder="$t('product.descPlaceholder')" /></el-form-item>
+        <el-form-item :label="$t('org.sort')"><el-input v-model="form.sort" :placeholder="$t('org.sortPlaceholder')" /></el-form-item>
+        <el-form-item v-if="dialog.mode === 'edit'" :label="$t('common.status')">
           <el-radio-group v-model="form.status">
-            <el-radio value="ENABLED">启用</el-radio>
-            <el-radio value="DISABLED">停用</el-radio>
+            <el-radio value="ENABLED">{{ $t('common.enable') }}</el-radio>
+            <el-radio value="DISABLED">{{ $t('common.disable') }}</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="submit">保存</el-button>
+        <el-button @click="dialog.visible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submit">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
   </div>

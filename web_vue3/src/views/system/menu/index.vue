@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import { createMenu, deleteMenu, fetchMenuTree, updateMenu } from '@/api/system/menu';
 import MenuIconPicker from '@/components/MenuIconPicker.vue';
 import type { MenuNode } from '@/types';
 
-const TYPE_LABELS: Record<string, string> = { DIR: '目录', MENU: '菜单', BUTTON: '按钮' };
+const { t } = useI18n();
+const TYPE_KEYS: Record<string, string> = { DIR: 'menu.typeDir', MENU: 'menu.typeMenu', BUTTON: 'menu.typeButton' };
 
 const tree = ref<MenuNode[]>([]);
 const loading = ref(false);
@@ -24,12 +26,18 @@ const form = reactive({
   status: 'ENABLED',
 });
 
+function typeLabel(type?: string) {
+  if (!type) return '--';
+  const key = TYPE_KEYS[type];
+  return key ? t(key) : type;
+}
+
 async function refresh() {
   loading.value = true;
   try {
     tree.value = await fetchMenuTree();
   } catch (error) {
-    ElMessage.error((error as Error).message || '加载菜单失败');
+    ElMessage.error((error as Error).message || t('menu.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -68,11 +76,11 @@ function openEdit(node: MenuNode) {
 
 async function submit() {
   if (!form.name.trim()) {
-    ElMessage.warning('请输入名称');
+    ElMessage.warning(t('menu.nameRequired'));
     return;
   }
   if (form.type === 'BUTTON' && !form.perm.trim()) {
-    ElMessage.warning('按钮节点必须填写权限标识（如 system:org:create）');
+    ElMessage.warning(t('menu.permRequired'));
     return;
   }
   try {
@@ -98,26 +106,26 @@ async function submit() {
         status: form.status,
       });
     }
-    ElMessage.success('保存成功');
+    ElMessage.success(t('gateway.saved'));
     dialog.visible = false;
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
 async function handleDelete(node: MenuNode) {
   try {
-    await ElMessageBox.confirm(`确认删除菜单「${node.name}」？`, '删除确认', { type: 'warning' });
+    await ElMessageBox.confirm(t('menu.deleteConfirm', { name: node.name }), t('common.deleteTitle'), { type: 'warning' });
   } catch {
     return;
   }
   try {
     await deleteMenu(node.id);
-    ElMessage.success('已删除');
+    ElMessage.success(t('control.deleted'));
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '删除失败');
+    ElMessage.error((error as Error).message || t('control.deleteFailed'));
   }
 }
 
@@ -129,9 +137,9 @@ onMounted(refresh);
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <span>菜单管理（目录 / 菜单 / 按钮三级树）</span>
+          <span>{{ $t('menu.title') }}</span>
           <el-button type="primary" size="small" :icon="Plus" v-permission="'system:menu:create'" @click="openCreate()">
-            新增根菜单
+            {{ $t('menu.addRoot') }}
           </el-button>
         </div>
       </template>
@@ -146,25 +154,25 @@ onMounted(refresh);
           <div class="tree-node">
             <span>
               <el-tag size="small" :type="data.type === 'BUTTON' ? 'warning' : 'primary'" class="type-tag">
-                {{ TYPE_LABELS[data.type] || data.type }}
+                {{ typeLabel(data.type) }}
               </el-tag>
               <el-icon v-if="data.type !== 'BUTTON'" class="tree-icon">
                 <component :is="data.icon || (data.type === 'DIR' ? 'Folder' : 'Document')" />
               </el-icon>
               {{ data.name }}
               <span v-if="data.perm" class="perm-text">{{ data.perm }}</span>
-              <el-tag v-if="data.status === 'DISABLED'" size="small" type="danger">停用</el-tag>
+              <el-tag v-if="data.status === 'DISABLED'" size="small" type="danger">{{ $t('common.disable') }}</el-tag>
             </span>
             <span class="tree-actions">
               <el-button v-if="data.type !== 'BUTTON'" link type="primary" size="small"
                 v-permission="'system:menu:create'" @click="openCreate(data)">
-                新增子级
+                {{ $t('menu.addChild') }}
               </el-button>
               <el-button link type="primary" size="small" v-permission="'system:menu:edit'" @click="openEdit(data)">
-                编辑
+                {{ $t('common.edit') }}
               </el-button>
               <el-button link type="danger" size="small" v-permission="'system:menu:delete'" @click="handleDelete(data)">
-                删除
+                {{ $t('common.delete') }}
               </el-button>
             </span>
           </div>
@@ -172,43 +180,43 @@ onMounted(refresh);
       </el-tree>
     </el-card>
 
-    <el-dialog v-model="dialog.visible" :title="dialog.mode === 'create' ? '新增菜单' : '编辑菜单'" width="500px">
+    <el-dialog v-model="dialog.visible" :title="dialog.mode === 'create' ? $t('menu.addTitle') : $t('menu.editTitle')" width="500px">
       <el-form label-width="90px">
-        <el-form-item label="类型">
+        <el-form-item :label="$t('common.type')">
           <el-radio-group v-model="form.type" :disabled="dialog.mode === 'edit'">
-            <el-radio value="DIR">目录</el-radio>
-            <el-radio value="MENU">菜单</el-radio>
-            <el-radio value="BUTTON">按钮</el-radio>
+            <el-radio value="DIR">{{ $t('menu.typeDir') }}</el-radio>
+            <el-radio value="MENU">{{ $t('menu.typeMenu') }}</el-radio>
+            <el-radio value="BUTTON">{{ $t('menu.typeButton') }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="名称">
-          <el-input v-model="form.name" placeholder="显示名称" />
+        <el-form-item :label="$t('common.name')">
+          <el-input v-model="form.name" :placeholder="$t('role.namePlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="form.type === 'MENU'" label="路由路径">
-          <el-input v-model="form.path" placeholder="如 /system/org" />
+        <el-form-item v-if="form.type === 'MENU'" :label="$t('menu.routePath')">
+          <el-input v-model="form.path" :placeholder="$t('menu.routePathPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="form.type === 'MENU'" label="组件路径">
-          <el-input v-model="form.component" placeholder="views 下路径，如 system/org/index" />
+        <el-form-item v-if="form.type === 'MENU'" :label="$t('menu.componentPath')">
+          <el-input v-model="form.component" :placeholder="$t('menu.componentPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="form.type === 'BUTTON'" label="权限标识">
-          <el-input v-model="form.perm" placeholder="如 system:org:create" />
+        <el-form-item v-if="form.type === 'BUTTON'" :label="$t('menu.permLabel')">
+          <el-input v-model="form.perm" :placeholder="$t('menu.permPlaceholder')" />
         </el-form-item>
-        <el-form-item label="图标">
+        <el-form-item :label="$t('menu.icon')">
           <MenuIconPicker v-model="form.icon" />
         </el-form-item>
-        <el-form-item label="排序">
-          <el-input v-model="form.sort" placeholder="数字越小越靠前" />
+        <el-form-item :label="$t('org.sort')">
+          <el-input v-model="form.sort" :placeholder="$t('org.sortPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="dialog.mode === 'edit'" label="状态">
+        <el-form-item v-if="dialog.mode === 'edit'" :label="$t('common.status')">
           <el-radio-group v-model="form.status">
-            <el-radio value="ENABLED">启用</el-radio>
-            <el-radio value="DISABLED">停用</el-radio>
+            <el-radio value="ENABLED">{{ $t('common.enable') }}</el-radio>
+            <el-radio value="DISABLED">{{ $t('common.disable') }}</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="submit">保存</el-button>
+        <el-button @click="dialog.visible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submit">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
   </div>

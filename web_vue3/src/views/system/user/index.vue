@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { Plus, RefreshRight } from '@element-plus/icons-vue';
 import {
@@ -13,6 +14,7 @@ import { fetchOrgTree } from '@/api/system/org';
 import { fetchRoles } from '@/api/system/role';
 import type { AdminUser, OrgNode, RoleView } from '@/types';
 
+const { t } = useI18n();
 const users = ref<AdminUser[]>([]);
 const roles = ref<RoleView[]>([]);
 const orgTree = ref<OrgNode[]>([]);
@@ -42,7 +44,7 @@ async function refresh() {
     roles.value = r;
     orgTree.value = tree;
   } catch (error) {
-    ElMessage.error((error as Error).message || '加载用户失败');
+    ElMessage.error((error as Error).message || t('user.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -57,7 +59,7 @@ function openCreate() {
 
 async function submitCreate() {
   if (!createForm.username.trim() || createForm.password.length < 8) {
-    ElMessage.warning('用户名必填，密码至少 8 位');
+    ElMessage.warning(t('user.createInvalid'));
     return;
   }
   try {
@@ -66,11 +68,11 @@ async function submitCreate() {
       password: createForm.password,
       roles: createForm.roles,
     });
-    ElMessage.success('创建成功');
+    ElMessage.success(t('sensorGroups.created'));
     createDialog.visible = false;
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '创建失败');
+    ElMessage.error((error as Error).message || t('user.createFailed'));
   }
 }
 
@@ -88,11 +90,11 @@ async function submitAssign() {
       roles: assignForm.roles,
       orgId: assignForm.orgId || undefined,
     });
-    ElMessage.success('分配成功（令牌将重新签发生效）');
+    ElMessage.success(t('user.assignSaved'));
     assignDialog.visible = false;
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '分配失败');
+    ElMessage.error((error as Error).message || t('user.assignFailed'));
   }
 }
 
@@ -105,16 +107,16 @@ function openReset(user: AdminUser) {
 
 async function submitReset() {
   if (resetForm.password.length < 8) {
-    ElMessage.warning('密码至少 8 位');
+    ElMessage.warning(t('user.passwordTooShort'));
     return;
   }
   try {
     await resetAdminUserPassword(resetDialog.id, resetForm.password);
-    ElMessage.success('密码已重置，该用户全部会话已下线');
+    ElMessage.success(t('user.resetSaved'));
     resetDialog.visible = false;
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '重置失败');
+    ElMessage.error((error as Error).message || t('user.resetFailed'));
   }
 }
 
@@ -122,10 +124,10 @@ async function toggleStatus(user: AdminUser) {
   const target = user.status === 'DISABLED' ? 'ENABLED' : 'DISABLED';
   try {
     await updateAdminUser(user.id, { status: target });
-    ElMessage.success(target === 'DISABLED' ? '已禁用并强制下线' : '已启用');
+    ElMessage.success(target === 'DISABLED' ? t('user.disabledForced') : t('user.enabled'));
     await refresh();
   } catch (error) {
-    ElMessage.error((error as Error).message || '操作失败');
+    ElMessage.error((error as Error).message || t('common.failed'));
   }
 }
 
@@ -137,60 +139,60 @@ onMounted(refresh);
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <span>用户管理</span>
+          <span>{{ $t('user.title') }}</span>
           <div class="header-actions">
             <el-input
               v-model="keyword"
-              placeholder="搜索用户名"
+              :placeholder="$t('user.searchPlaceholder')"
               clearable
               style="width: 200px"
               size="small"
             />
             <el-button type="primary" size="small" :icon="Plus" v-permission="'system:user:create'" @click="openCreate">
-              新增用户
+              {{ $t('user.addUser') }}
             </el-button>
           </div>
         </div>
       </template>
 
       <el-table :data="filtered" stripe>
-        <el-table-column prop="username" label="用户名" min-width="140" />
-        <el-table-column label="角色" min-width="180">
+        <el-table-column prop="username" :label="$t('login.username')" min-width="140" />
+        <el-table-column :label="$t('user.role')" min-width="180">
           <template #default="{ row }">
             <el-tag v-for="role in row.roles" :key="role" size="small" class="role-tag">
               {{ role }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="所属机构" min-width="120">
+        <el-table-column :label="$t('user.org')" min-width="120">
           <template #default="{ row }">
             <span class="mono">{{ row.orgCode || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="数据权限" min-width="120">
+        <el-table-column :label="$t('user.dataScope')" min-width="120">
           <template #default="{ row }">
             <span class="mono">{{ row.dataScopes?.device || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90">
+        <el-table-column :label="$t('common.status')" width="90">
           <template #default="{ row }">
             <el-tag :type="row.status === 'DISABLED' ? 'danger' : 'success'" size="small">
-              {{ row.status === 'DISABLED' ? '禁用' : '启用' }}
+              {{ row.status === 'DISABLED' ? $t('user.disabled') : $t('user.enabled') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column :label="$t('common.actions')" width="240" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" v-permission="'system:user:assign'" @click="openAssign(row)">
-              机构/角色
+              {{ $t('user.assignOrgRole') }}
             </el-button>
             <el-button link type="warning" size="small" v-permission="'system:user:reset-password'" @click="openReset(row)">
               <el-icon class="btn-icon"><RefreshRight /></el-icon>
-              重置密码
+              {{ $t('user.resetPassword') }}
             </el-button>
             <el-button link :type="row.status === 'DISABLED' ? 'success' : 'danger'" size="small"
               v-permission="'system:user:edit'" @click="toggleStatus(row)">
-              {{ row.status === 'DISABLED' ? '启用' : '禁用' }}
+              {{ row.status === 'DISABLED' ? $t('user.enabled') : $t('user.disabled') }}
             </el-button>
           </template>
         </el-table-column>
@@ -198,36 +200,36 @@ onMounted(refresh);
     </el-card>
 
     <!-- 新增用户 -->
-    <el-dialog v-model="createDialog.visible" title="新增用户" width="460px">
+    <el-dialog v-model="createDialog.visible" :title="$t('user.addUser')" width="460px">
       <el-form label-width="80px">
-        <el-form-item label="用户名">
-          <el-input v-model="createForm.username" placeholder="登录用户名" />
+        <el-form-item :label="$t('login.username')">
+          <el-input v-model="createForm.username" :placeholder="$t('user.usernamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="初始密码">
-          <el-input v-model="createForm.password" type="password" show-password placeholder="至少 8 位" />
+        <el-form-item :label="$t('user.initialPassword')">
+          <el-input v-model="createForm.password" type="password" show-password :placeholder="$t('user.passwordPlaceholder')" />
         </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="createForm.roles" multiple placeholder="可多选" style="width: 100%">
+        <el-form-item :label="$t('user.role')">
+          <el-select v-model="createForm.roles" multiple :placeholder="$t('user.multiSelect')" style="width: 100%">
             <el-option v-for="role in roles" :key="role.id" :value="role.code" :label="`${role.name}（${role.code}）`" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="createDialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="submitCreate">创建</el-button>
+        <el-button @click="createDialog.visible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitCreate">{{ $t('system.confirmCreate') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 分配机构/角色 -->
-    <el-dialog v-model="assignDialog.visible" :title="`分配机构/角色 — ${assignDialog.username}`" width="460px">
+    <el-dialog v-model="assignDialog.visible" :title="`${$t('user.assignOrgRole')} — ${assignDialog.username}`" width="460px">
       <el-form label-width="80px">
-        <el-form-item label="角色">
-          <el-select v-model="assignForm.roles" multiple placeholder="可多选" style="width: 100%">
+        <el-form-item :label="$t('user.role')">
+          <el-select v-model="assignForm.roles" multiple :placeholder="$t('user.multiSelect')" style="width: 100%">
             <el-option v-for="role in roles" :key="role.id" :value="role.code" :label="`${role.name}（${role.code}）`" />
           </el-select>
-          <div class="form-tip">多角色时数据权限按实体取最宽范围</div>
+          <div class="form-tip">{{ $t('user.multiRoleTip') }}</div>
         </el-form-item>
-        <el-form-item label="所属机构">
+        <el-form-item :label="$t('user.org')">
           <el-tree-select
             v-model="assignForm.orgId"
             :data="orgTree"
@@ -235,28 +237,28 @@ onMounted(refresh);
             :props="{ label: 'name', children: 'children' }"
             check-strictly
             clearable
-            placeholder="选择机构（编码层级树）"
+            :placeholder="$t('user.orgPlaceholder')"
             style="width: 100%"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="assignDialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="submitAssign">保存分配</el-button>
+        <el-button @click="assignDialog.visible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitAssign">{{ $t('system.saveAssign') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 重置密码 -->
-    <el-dialog v-model="resetDialog.visible" :title="`重置密码 — ${resetDialog.username}`" width="420px">
+    <el-dialog v-model="resetDialog.visible" :title="`${$t('user.resetPassword')} — ${resetDialog.username}`" width="420px">
       <el-form label-width="80px">
-        <el-form-item label="新密码">
-          <el-input v-model="resetForm.password" type="password" show-password placeholder="至少 8 位" />
+        <el-form-item :label="$t('user.newPassword')">
+          <el-input v-model="resetForm.password" type="password" show-password :placeholder="$t('user.passwordPlaceholder')" />
         </el-form-item>
       </el-form>
-      <div class="form-warn">重置后该用户所有端会话立即失效，需重新登录。</div>
+      <div class="form-warn">{{ $t('user.resetWarn') }}</div>
       <template #footer>
-        <el-button @click="resetDialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="submitReset">确认重置</el-button>
+        <el-button @click="resetDialog.visible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitReset">{{ $t('system.confirmReset') }}</el-button>
       </template>
     </el-dialog>
   </div>

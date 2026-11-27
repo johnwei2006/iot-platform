@@ -1,23 +1,40 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { listControlLogs } from '@/api/iot/control';
 import type { ControlLog } from '@/types/kb';
 
+const { t } = useI18n();
 const props = defineProps<{ areaId?: string }>();
 
 const loading = ref(false);
 const logs = ref<ControlLog[]>([]);
 const filtered = ref<ControlLog[]>([]);
-const resultFilter = ref('全部');
+const resultFilter = ref('');
 
-const SOURCE_LABELS: Record<string, string> = { MANUAL: '手动', RULE: '自动规则', GROUP: '组合' };
+const SOURCE_KEYS: Record<string, string> = { MANUAL: 'control.sourceManual', RULE: 'control.sourceRule', GROUP: 'control.sourceGroup' };
 const RESULT_TYPES: Record<string, 'success' | 'info' | 'danger' | 'warning'> = {
   SUCCESS: 'success', PENDING: 'info', FAILED: 'danger', TIMEOUT: 'warning', PARTIAL: 'warning',
 };
 
+const filterOptions = computed(() => [
+  { value: '', label: t('common.all') },
+  { value: 'PENDING', label: 'PENDING' },
+  { value: 'SUCCESS', label: 'SUCCESS' },
+  { value: 'TIMEOUT', label: 'TIMEOUT' },
+  { value: 'FAILED', label: 'FAILED' },
+  { value: 'PARTIAL', label: 'PARTIAL' },
+]);
+
+function sourceLabel(source?: string) {
+  if (!source) return '--';
+  const key = SOURCE_KEYS[source];
+  return key ? t(key) : source;
+}
+
 function applyFilter() {
-  filtered.value = resultFilter.value === '全部'
+  filtered.value = !resultFilter.value
     ? logs.value
     : logs.value.filter((l) => l.result === resultFilter.value);
 }
@@ -29,7 +46,7 @@ async function refresh() {
     logs.value = res.data || [];
     applyFilter();
   } catch (error) {
-    ElMessage.error((error as Error).message || '控制记录加载失败');
+    ElMessage.error((error as Error).message || t('control.logsLoadFailed'));
   } finally {
     loading.value = false;
   }
@@ -47,29 +64,29 @@ onMounted(refresh);
     <el-card shadow="never">
       <template #header>
         <div class="head-row">
-          <span class="head-title">控制记录<span v-if="areaId"> · 当前区域</span></span>
-          <el-segmented v-model="resultFilter" :options="['全部', 'PENDING', 'SUCCESS', 'TIMEOUT', 'FAILED', 'PARTIAL']" @change="applyFilter" />
+          <span class="head-title">{{ $t('control.logsTitle') }}<span v-if="areaId"> · {{ $t('control.currentArea') }}</span></span>
+          <el-segmented v-model="resultFilter" :options="filterOptions" :props="{ value: 'value', label: 'label' }" @change="applyFilter" />
         </div>
       </template>
       <el-table :data="filtered" stripe>
-        <el-table-column label="时间" width="170">
+        <el-table-column :label="$t('control.logTime')" width="170">
           <template #default="{ row }">{{ (row.createdAt || '').replace('T', ' ').slice(0, 19) }}</template>
         </el-table-column>
-        <el-table-column label="设备" min-width="140">
+        <el-table-column :label="$t('device.title')" min-width="140">
           <template #default="{ row }">{{ row.deviceName || row.deviceId }}</template>
         </el-table-column>
-        <el-table-column label="动作" width="90">
+        <el-table-column :label="$t('control.action')" width="90">
           <template #default="{ row }">{{ row.action }}</template>
         </el-table-column>
-        <el-table-column label="来源" width="110">
-          <template #default="{ row }">{{ SOURCE_LABELS[row.source] || row.source }}<template v-if="row.ruleName"> · {{ row.ruleName }}</template></template>
+        <el-table-column :label="$t('control.source')" width="110">
+          <template #default="{ row }">{{ sourceLabel(row.source) }}<template v-if="row.ruleName"> · {{ row.ruleName }}</template></template>
         </el-table-column>
-        <el-table-column label="结果" width="110">
+        <el-table-column :label="$t('gatewayRecords.result')" width="110">
           <template #default="{ row }">
             <el-tag size="small" :type="RESULT_TYPES[row.result] || 'info'">{{ row.result }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="设备反馈" min-width="220">
+        <el-table-column :label="$t('control.deviceFeedback')" min-width="220">
           <template #default="{ row }">{{ row.detail }}</template>
         </el-table-column>
       </el-table>

@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance } from 'axios';
 import type { ApiResponse, LoginPayload, TokenResponse } from '@/types';
+import { i18n } from '@/locales';
 
 /**
  * 直连 auth-service 的独立客户端。
@@ -17,7 +18,7 @@ authHttp.interceptors.response.use(
   (response) => {
     const res = response.data as ApiResponse<unknown>;
     if (res && res.code !== undefined && res.code !== 200 && res.code !== 0) {
-      return Promise.reject(new Error(res.message || '认证失败'));
+      return Promise.reject(new Error(res.message || i18n.global.t('common.authFailed')));
     }
     return response;
   },

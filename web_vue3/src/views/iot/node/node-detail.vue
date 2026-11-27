@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { ArrowLeft, Edit } from '@element-plus/icons-vue';
 import { getNode, updateNode, type NodeEntity } from '@/api/iot/node';
@@ -20,6 +21,7 @@ import NodeDeviceTable from './components/node-device-table.vue';
 
 type Field = 'nodeName' | 'longitude' | 'latitude' | 'address';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const id = String(route.params.id);
@@ -45,7 +47,7 @@ async function loadList<T>(promise: Promise<{ data?: T[] }>, label: string): Pro
     const res = await promise;
     return res.data ?? [];
   } catch (error) {
-    console.warn(`${label}加载失败`, error);
+    console.warn(`${label} load failed`, error);
     return [];
   }
 }
@@ -67,9 +69,9 @@ async function applyPatch(patch: Partial<NodeEntity>) {
     const res = await updateNode(id, patch);
     node.value = res.data ?? node.value;
     activeField.value = null;
-    ElMessage.success('已保存');
+    ElMessage.success(t('gateway.saved'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
     activeField.value = null;
   }
 }
@@ -78,9 +80,9 @@ async function saveArea(areaId?: string) {
   try {
     const res = await updateNode(id, { areaId: areaId || '' });
     node.value = res.data ?? node.value;
-    ElMessage.success('安装区域已更新');
+    ElMessage.success(t('gateway.areaUpdated'));
   } catch (error) {
-    ElMessage.error((error as Error).message || '保存失败');
+    ElMessage.error((error as Error).message || t('gateway.saveFailed'));
   }
 }
 
@@ -111,13 +113,13 @@ async function load() {
     node.value = detail.data;
     const nodeCode = detail.data?.nodeCode;
     const [orgList, sensorList, deviceList, sc, sct, dc, dct] = await Promise.all([
-      loadList(fetchOrgList().then((data) => ({ data })), '机构'),
-      loadList(listSensors(nodeCode), '传感器'),
-      loadList(listControlDevices(nodeCode), '控制设备'),
-      loadList(listSensorClass(), '传感器大类字典'),
-      loadList(listSensorClassType(), '传感器类型字典'),
-      loadList(listDeviceClass(), '控制设备大类字典'),
-      loadList(listDeviceClassType(), '控制设备类型字典'),
+      loadList(fetchOrgList().then((data) => ({ data })), 'org'),
+      loadList(listSensors(nodeCode), 'sensor'),
+      loadList(listControlDevices(nodeCode), 'device'),
+      loadList(listSensorClass(), 'sensor-class'),
+      loadList(listSensorClassType(), 'sensor-class-type'),
+      loadList(listDeviceClass(), 'device-class'),
+      loadList(listDeviceClassType(), 'device-class-type'),
     ]);
     orgs.value = orgList;
     sensors.value = sensorList;
@@ -127,7 +129,7 @@ async function load() {
     deviceClasses.value = dc;
     deviceClassTypes.value = dct;
   } catch (error) {
-    ElMessage.error((error as Error).message || '节点详情加载失败');
+    ElMessage.error((error as Error).message || t('node.detailLoadFailed'));
     router.push('/iot/nodes');
   } finally {
     loading.value = false;
@@ -145,67 +147,67 @@ onMounted(load);
   <div class="node-detail-page" v-loading="loading">
     <header class="detail-header">
       <div class="title-wrap">
-        <el-button link :icon="ArrowLeft" aria-label="返回节点列表" @click="router.push('/iot/nodes')" />
+        <el-button link :icon="ArrowLeft" :aria-label="$t('node.backToList')" @click="router.push('/iot/nodes')" />
         <h2>{{ node?.nodeName || node?.nodeCode || '--' }}</h2>
         <el-tag :type="node?.online === 1 ? 'success' : 'danger'" size="small" effect="light">
-          {{ node?.online === 1 ? '在线' : '离线' }}
+          {{ node?.online === 1 ? $t('common.online') : $t('common.offline') }}
         </el-tag>
       </div>
       <div class="header-actions">
-        <el-button @click="startEdit('address')">安装位置</el-button>
-        <el-button type="primary" @click="showDeviceTab">查看控制设备</el-button>
+        <el-button @click="startEdit('address')">{{ $t('node.installLocation') }}</el-button>
+        <el-button type="primary" @click="showDeviceTab">{{ $t('node.viewDevices') }}</el-button>
       </div>
     </header>
 
     <div v-if="node" class="info-grid">
       <div class="info-cell">
-        <span class="info-label">节点名称</span>
+        <span class="info-label">{{ $t('node.name') }}</span>
         <div class="info-value">
           <el-input v-if="activeField === 'nodeName'" ref="editInputRef" v-model="draftValue" size="small"
                     @blur="save('nodeName')" @keyup.enter="save('nodeName')" />
           <template v-else>
             <span>{{ node.nodeName || '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑节点名称" @click="startEdit('nodeName')" />
+            <el-button link :icon="Edit" :aria-label="$t('node.editName')" @click="startEdit('nodeName')" />
           </template>
         </div>
       </div>
-      <div class="info-cell"><span class="info-label">机构名称</span><div class="info-value"><span>{{ orgName }}</span></div></div>
-      <div class="info-cell"><span class="info-label">机构编码</span><div class="info-value"><span>{{ node.orgCode || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">网关编码</span><div class="info-value"><span>{{ node.gatewayCode || '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">节点编码</span><div class="info-value"><span>{{ node.nodeCode }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('gateway.orgName') }}</span><div class="info-value"><span>{{ orgName }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('gateway.orgCode') }}</span><div class="info-value"><span>{{ node.orgCode || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('gateway.code') }}</span><div class="info-value"><span>{{ node.gatewayCode || '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('node.nodeCode') }}</span><div class="info-value"><span>{{ node.nodeCode }}</span></div></div>
       <div class="info-cell">
-        <span class="info-label">经纬度</span>
+        <span class="info-label">{{ $t('gateway.coords') }}</span>
         <div class="info-value coord-value">
           <template v-if="activeField === 'longitude' || activeField === 'latitude'">
-            <el-input ref="editInputRef" v-model="coordDraft.longitude" size="small" placeholder="经度"
+            <el-input ref="editInputRef" v-model="coordDraft.longitude" size="small" :placeholder="$t('gateway.longitude')"
                       @blur="saveCoords" @keyup.enter="saveCoords" />
             <span>,</span>
-            <el-input v-model="coordDraft.latitude" size="small" placeholder="纬度"
+            <el-input v-model="coordDraft.latitude" size="small" :placeholder="$t('gateway.latitude')"
                       @blur="saveCoords" @keyup.enter="saveCoords" />
           </template>
           <template v-else>
             <span>{{ node.longitude || node.latitude ? `${node.longitude ?? '--'}, ${node.latitude ?? '--'}` : '--' }}</span>
-            <el-button link :icon="Edit" aria-label="编辑经纬度" @click="startEdit('longitude')" />
+            <el-button link :icon="Edit" :aria-label="$t('gateway.editCoords')" @click="startEdit('longitude')" />
           </template>
         </div>
       </div>
-      <div class="info-cell"><span class="info-label">上报周期</span><div class="info-value"><span>{{ node.reportInterval ?? '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">信号质量</span><div class="info-value"><span>{{ node.rssi ?? '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">信噪比</span><div class="info-value"><span>{{ node.snr ?? '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">速率</span><div class="info-value"><span>{{ node.speed ?? '--' }}</span></div></div>
-      <div class="info-cell"><span class="info-label">电池电压</span><div class="info-value"><span>{{ node.batteryVoltage ?? '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('node.reportInterval') }}</span><div class="info-value"><span>{{ node.reportInterval ?? '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('node.rssi') }}</span><div class="info-value"><span>{{ node.rssi ?? '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('node.snr') }}</span><div class="info-value"><span>{{ node.snr ?? '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('node.speed') }}</span><div class="info-value"><span>{{ node.speed ?? '--' }}</span></div></div>
+      <div class="info-cell"><span class="info-label">{{ $t('node.batteryVoltage') }}</span><div class="info-value"><span>{{ node.batteryVoltage ?? '--' }}</span></div></div>
       <div class="info-cell">
-        <span class="info-label">安装区域</span>
+        <span class="info-label">{{ $t('gateway.area') }}</span>
         <div class="info-value">
           <AreaSelect
             :model-value="node.areaId"
-            placeholder="选择安装区域"
+            :placeholder="$t('gateway.selectArea')"
             @change="(area) => saveArea(area?.id)"
           />
         </div>
       </div>
       <div class="info-cell">
-        <span class="info-label">详细地址</span>
+        <span class="info-label">{{ $t('gateway.address') }}</span>
         <div class="info-value">
           <el-input v-if="activeField === 'address'" ref="editInputRef" v-model="draftValue" size="small"
                     @blur="save('address')" @keyup.enter="save('address')" />
@@ -214,12 +216,12 @@ onMounted(load);
       </div>
     </div>
 
-    <h3 class="section-title">基本信息</h3>
+    <h3 class="section-title">{{ $t('node.basicInfo') }}</h3>
     <el-tabs v-model="activeTab" class="detail-tabs">
-      <el-tab-pane label="传感器" name="sensor">
+      <el-tab-pane :label="$t('sensor.title')" name="sensor">
         <node-sensor-table :sensors="sensors" :classes="sensorClasses" :class-types="sensorClassTypes" />
       </el-tab-pane>
-      <el-tab-pane label="控制设备" name="device">
+      <el-tab-pane :label="$t('device.title')" name="device">
         <node-device-table :devices="devices" :classes="deviceClasses" :class-types="deviceClassTypes" />
       </el-tab-pane>
     </el-tabs>

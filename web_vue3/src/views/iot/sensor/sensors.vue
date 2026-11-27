@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { listNodes, type NodeEntity } from '@/api/iot/node';
@@ -11,6 +12,7 @@ import {
 import AreaSelect from '@/components/AreaSelect.vue';
 import { listAreas } from '@/api/iot/area';
 
+const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
 const sensors = ref<SensorEntity[]>([]);
@@ -88,7 +90,7 @@ async function load() {
     classTypes.value = typeRes.data ?? [];
     areaNames.value = new Map((areaRes.data ?? []).map((a) => [a.id, a.areaName]));
   } catch (error) {
-    ElMessage.error((error as Error).message || '传感器列表加载失败');
+    ElMessage.error((error as Error).message || t('sensor.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -103,78 +105,78 @@ onMounted(load);
 
 <template>
   <div class="sensor-page">
-    <h2 class="page-title">传感器管理</h2>
+    <h2 class="page-title">{{ $t('sensor.title') }}</h2>
 
     <div class="filter-bar">
       <div class="search-group">
-        <el-select v-model="codeField" class="field-select" aria-label="编号搜索字段">
-          <el-option label="传感器编号" value="sensorCode" />
+        <el-select v-model="codeField" class="field-select" :aria-label="$t('sensor.codeField')">
+          <el-option :label="$t('sensor.sensorCode')" value="sensorCode" />
         </el-select>
-        <el-input v-model="codeKey" class="search-input" clearable placeholder="请输入内容">
+        <el-input v-model="codeKey" class="search-input" clearable :placeholder="$t('common.search')">
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
       <div class="search-group">
-        <el-select v-model="nameField" class="field-select" aria-label="名称搜索字段">
-          <el-option label="传感器名称" value="sensorName" />
+        <el-select v-model="nameField" class="field-select" :aria-label="$t('sensor.nameField')">
+          <el-option :label="$t('sensor.name')" value="sensorName" />
         </el-select>
-        <el-input v-model="nameKey" class="search-input" clearable placeholder="请输入内容">
+        <el-input v-model="nameKey" class="search-input" clearable :placeholder="$t('common.search')">
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
       </div>
-      <AreaSelect v-model="areaFilter" class="area-select" placeholder="按关联区域筛选" />
-      <el-button type="primary" @click="load">搜索</el-button>
-      <el-button @click="reset">重置</el-button>
+      <AreaSelect v-model="areaFilter" class="area-select" :placeholder="$t('sensor.areaFilter')" />
+      <el-button type="primary" @click="load">{{ $t('common.search') }}</el-button>
+      <el-button @click="reset">{{ $t('common.reset') }}</el-button>
       <el-button link type="primary" @click="moreVisible = !moreVisible">
-        {{ moreVisible ? '收起筛选' : '更多筛选' }}
+        {{ moreVisible ? $t('sensor.collapseFilters') : $t('sensor.moreFilters') }}
       </el-button>
     </div>
 
     <div v-if="moreVisible" class="more-filter">
-      <el-select v-model="classFilter" clearable placeholder="传感器大类" aria-label="传感器大类">
+      <el-select v-model="classFilter" clearable :placeholder="$t('sensor.class')" :aria-label="$t('sensor.class')">
         <el-option v-for="c in classes" :key="c.sensorClass" :label="c.className" :value="c.sensorClass" />
       </el-select>
-      <el-select v-model="typeFilter" clearable placeholder="传感器类型" aria-label="传感器类型">
+      <el-select v-model="typeFilter" clearable :placeholder="$t('sensor.type')" :aria-label="$t('sensor.type')">
         <el-option v-for="t in classTypes" :key="t.classType" :label="t.classTypeName" :value="t.classType" />
       </el-select>
-      <el-input v-model="channelFilter" clearable placeholder="通道" aria-label="通道" />
-      <el-input v-model="unitFilter" clearable placeholder="单位" aria-label="单位" />
-      <el-select v-model="statusFilter" clearable placeholder="状态" aria-label="状态">
-        <el-option label="正常" value="OK" />
-        <el-option label="异常" value="ERR" />
+      <el-input v-model="channelFilter" clearable :placeholder="$t('sensor.channel')" :aria-label="$t('sensor.channel')" />
+      <el-input v-model="unitFilter" clearable :placeholder="$t('sensor.unit')" :aria-label="$t('sensor.unit')" />
+      <el-select v-model="statusFilter" clearable :placeholder="$t('common.status')" :aria-label="$t('common.status')">
+        <el-option :label="$t('sensor.normal')" value="OK" />
+        <el-option :label="$t('sensor.abnormal')" value="ERR" />
       </el-select>
     </div>
 
     <div class="table-card" v-loading="loading">
-      <el-table :data="filtered" border style="width: 100%" empty-text="暂无数据">
-        <el-table-column label="序号" type="index" width="60" align="center" />
-        <el-table-column label="节点名称" min-width="150" show-overflow-tooltip>
+      <el-table :data="filtered" border style="width: 100%" :empty-text="$t('common.empty')">
+        <el-table-column :label="$t('common.page')" type="index" width="60" align="center" />
+        <el-table-column :label="$t('node.name')" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">{{ nodeOf(row.nodeCode)?.nodeName || '--' }}</template>
         </el-table-column>
-        <el-table-column prop="nodeCode" label="节点编码" min-width="150" show-overflow-tooltip />
-        <el-table-column label="传感器类型" min-width="130">
+        <el-table-column prop="nodeCode" :label="$t('node.nodeCode')" min-width="150" show-overflow-tooltip />
+        <el-table-column :label="$t('sensor.type')" min-width="130">
           <template #default="{ row }">{{ typeName(row) }}</template>
         </el-table-column>
-        <el-table-column label="传感器名称" min-width="170" show-overflow-tooltip>
+        <el-table-column :label="$t('sensor.name')" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">{{ row.sensorName || '--' }}</template>
         </el-table-column>
-        <el-table-column prop="sensorCode" label="传感器编码" min-width="170" show-overflow-tooltip />
-        <el-table-column label="状态" width="90" align="center">
+        <el-table-column prop="sensorCode" :label="$t('sensor.sensorCode')" min-width="170" show-overflow-tooltip />
+        <el-table-column :label="$t('common.status')" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 0 ? 'success' : 'danger'" size="small" effect="light">
-              {{ row.status === 0 ? '正常' : '异常' }}
+              {{ row.status === 0 ? $t('sensor.normal') : $t('sensor.abnormal') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="关联区域" min-width="130">
+        <el-table-column :label="$t('sensor.linkedArea')" min-width="130">
           <template #default="{ row }">{{ areaName(row.areaId) }}</template>
         </el-table-column>
-        <el-table-column label="正常范围" min-width="130">
+        <el-table-column :label="$t('sensor.normalRange')" min-width="130">
           <template #default="{ row }">{{ normalRange(row) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center" fixed="right">
+        <el-table-column :label="$t('common.actions')" width="100" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row)">查看详情</el-button>
+            <el-button link type="primary" @click="openDetail(row)">{{ $t('gateway.viewDetail') }}</el-button>
           </template>
         </el-table-column>
       </el-table>

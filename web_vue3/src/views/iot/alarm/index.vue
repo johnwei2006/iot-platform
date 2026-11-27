@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { listAlarms } from '@/api/iot/alarms';
 import { listControlLogs } from '@/api/iot/control';
 import type { ControlLog } from '@/types/kb';
+
+const { t } = useI18n();
 
 interface AlarmRow {
   id: string;
@@ -18,24 +21,24 @@ interface AlarmRow {
 
 const loading = ref(false);
 const alarms = ref<AlarmRow[]>([]);
-const kind = ref('全部');
-const status = ref('全部');
+const kind = ref('');
+const status = ref('');
 const detailVisible = ref(false);
 const current = ref<AlarmRow | null>(null);
 const relatedLogs = ref<ControlLog[]>([]);
 
-const KIND_MAP: Record<string, string> = { 'threshold:': '指标超限', 'collect:': '采集异常', 'control:': '设备异常' };
+const KIND_KEYS: Record<string, string> = { 'threshold:': 'alarm.kindThreshold', 'collect:': 'alarm.kindCollect', 'control:': 'alarm.kindDevice' };
 
 function kindOf(a: AlarmRow) {
   const rule = a.rule || '';
-  for (const [prefix, label] of Object.entries(KIND_MAP)) {
-    if (rule.startsWith(prefix)) return label;
+  for (const [prefix, key] of Object.entries(KIND_KEYS)) {
+    if (rule.startsWith(prefix)) return t(key);
   }
-  return '设备异常';
+  return t('alarm.kindDevice');
 }
 
 const filtered = computed(() =>
-  alarms.value.filter((a) => (kind.value === '全部' || kindOf(a) === kind.value) && (status.value === '全部' || a.status === (status.value === '持续中' ? 'OPEN' : 'RESOLVED')))
+  alarms.value.filter((a) => (!kind.value || kindOf(a) === kind.value) && (!status.value || a.status === (status.value === 'OPEN' ? 'OPEN' : 'RESOLVED')))
 );
 
 async function refresh() {
@@ -44,7 +47,7 @@ async function refresh() {
     const res = await listAlarms();
     alarms.value = (res.data || []) as unknown as AlarmRow[];
   } catch (error) {
-    ElMessage.error((error as Error).message || '告警加载失败');
+    ElMessage.error((error as Error).message || t('alarm.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -70,34 +73,43 @@ onMounted(refresh);
     <el-card shadow="never">
       <template #header>
         <div class="filter-bar">
-          <el-segmented v-model="kind" :options="['全部', '指标超限', '采集异常', '设备异常']" />
-          <el-segmented v-model="status" :options="['全部', '持续中', '已恢复']" />
+          <el-segmented v-model="kind" :options="[
+            { value: '', label: $t('common.all') },
+            { value: $t('alarm.kindThreshold'), label: $t('alarm.kindThreshold') },
+            { value: $t('alarm.kindCollect'), label: $t('alarm.kindCollect') },
+            { value: $t('alarm.kindDevice'), label: $t('alarm.kindDevice') },
+          ]" :props="{ value: 'value', label: 'label' }" />
+          <el-segmented v-model="status" :options="[
+            { value: '', label: $t('common.all') },
+            { value: 'OPEN', label: $t('alarm.statusOpen') },
+            { value: 'RESOLVED', label: $t('alarm.statusResolved') },
+          ]" :props="{ value: 'value', label: 'label' }" />
         </div>
       </template>
-      <el-empty v-if="!filtered.length" description="当前筛选下没有告警" />
+      <el-empty v-if="!filtered.length" :description="$t('alarm.empty')" />
       <div v-else class="alarm-list">
-        <button v-for="a in filtered" :key="a.id" class="kb-tile alarm-item kb-press" :class="a.status === 'RESOLVED' ? 'is-ok' : kindOf(a) === '指标超限' ? 'kb-tile--hot' : 'kb-tile--warn'" @click="openDetail(a)">
+        <button v-for="a in filtered" :key="a.id" class="kb-tile alarm-item kb-press" :class="a.status === 'RESOLVED' ? 'is-ok' : kindOf(a) === $t('alarm.kindThreshold') ? 'kb-tile--hot' : 'kb-tile--warn'" @click="openDetail(a)">
           <div class="alarm-item__main">
             <span class="alarm-item__title">{{ a.deviceId }} · {{ a.message }}</span>
             <span class="alarm-item__sub">{{ kindOf(a) }} · {{ a.createdAt }}</span>
           </div>
-          <el-tag :type="a.status === 'RESOLVED' ? 'success' : 'danger'" size="small">{{ a.status === 'RESOLVED' ? '已恢复' : '持续中' }}</el-tag>
+          <el-tag :type="a.status === 'RESOLVED' ? 'success' : 'danger'" size="small">{{ a.status === 'RESOLVED' ? $t('alarm.statusResolved') : $t('alarm.statusOpen') }}</el-tag>
         </button>
       </div>
     </el-card>
 
-    <el-dialog v-model="detailVisible" title="告警详情" width="640px">
+    <el-dialog v-model="detailVisible" :title="$t('alarm.detailTitle')" width="640px">
       <template v-if="current">
         <el-descriptions :column="1" border>
-          <el-descriptions-item label="状态">{{ current.status === 'RESOLVED' ? '已恢复' : '持续中' }}</el-descriptions-item>
-          <el-descriptions-item label="类型">{{ kindOf(current) }}</el-descriptions-item>
-          <el-descriptions-item label="设备">{{ current.deviceId }}</el-descriptions-item>
-          <el-descriptions-item label="内容">{{ current.message }}</el-descriptions-item>
-          <el-descriptions-item label="触发时间">{{ current.createdAt }}</el-descriptions-item>
-          <el-descriptions-item label="恢复时间">{{ current.resolvedAt || '—' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('common.status')">{{ current.status === 'RESOLVED' ? $t('alarm.statusResolved') : $t('alarm.statusOpen') }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('common.type')">{{ kindOf(current) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('device.title')">{{ current.deviceId }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('alarm.content')">{{ current.message }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('alarm.triggerTime')">{{ current.createdAt }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('alarm.resolvedTime')">{{ current.resolvedAt || '—' }}</el-descriptions-item>
         </el-descriptions>
-        <h4 class="rel-title">关联控制记录</h4>
-        <el-empty v-if="!relatedLogs.length" description="无关联记录" :image-size="56" />
+        <h4 class="rel-title">{{ $t('alarm.relatedLogs') }}</h4>
+        <el-empty v-if="!relatedLogs.length" :description="$t('alarm.noRelatedLogs')" :image-size="56" />
         <div v-for="l in relatedLogs" :key="l.id" class="rel-row">
           <span>{{ l.createdAt }} · {{ l.action }} · {{ l.deviceName || l.deviceId }}</span>
           <el-tag size="small" :type="l.result === 'SUCCESS' ? 'success' : l.result === 'PENDING' ? 'info' : 'danger'">{{ l.result }}</el-tag>

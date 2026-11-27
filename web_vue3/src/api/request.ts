@@ -8,6 +8,9 @@ import { ElMessage } from 'element-plus';
 import type { ApiResponse } from '@/types';
 import { tokens } from '@/utils/token';
 import { refresh as refreshTokenApi } from '@/api/system/auth';
+import { i18n } from '@/locales';
+
+const t = i18n.global.t;
 
 /** 带重试标记的请求配置：避免刷新失败后无限重试。 */
 interface RetryableConfig extends InternalAxiosRequestConfig {
@@ -52,7 +55,7 @@ function expireSession(): void {
   tokens.clear();
   if (redirecting) return;
   redirecting = true;
-  ElMessage.error('登录已过期，请重新登录');
+  ElMessage.error(t('common.sessionExpired'));
   const loginPath = `${import.meta.env.BASE_URL}login`;
   if (window.location.pathname !== loginPath) {
     window.location.assign(loginPath);
@@ -79,7 +82,7 @@ service.interceptors.response.use(
       return Promise.reject({
         config: response.config,
         response: { status: res.code, data: res },
-        message: res.message || '请求失败',
+        message: res.message || t('common.requestFailed'),
       });
     }
     return res as unknown as AxiosResponse<ApiResponse>;
@@ -116,13 +119,13 @@ service.interceptors.response.use(
     }
 
     const messages: Record<number, string> = {
-      401: '未授权，请重新登录',
-      403: '拒绝访问',
-      404: '请求地址出错',
-      500: '服务器内部错误',
+      401: t('common.httpUnauthorized'),
+      403: t('common.httpForbidden'),
+      404: t('common.httpNotFound'),
+      500: t('common.httpServerError'),
     };
     ElMessage.error(
-      (status && messages[status]) || error?.response?.data?.message || error?.message || '请求失败',
+      (status && messages[status]) || error?.response?.data?.message || error?.message || t('common.requestFailed'),
     );
     return Promise.reject(error);
   },

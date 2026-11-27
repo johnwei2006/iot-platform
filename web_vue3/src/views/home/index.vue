@@ -30,9 +30,9 @@ onMounted(async () => {
 });
 
 const cards = [
-  { label: '设备总数', value: deviceCount, icon: Monitor, color: '#409eff', to: '/iot/gateways' },
-  { label: '在线设备', value: onlineCount, icon: Connection, color: '#67c23a', to: '/iot/gateways' },
-  { label: '未处理告警', value: alarmOpen, icon: Warning, color: '#e6a23c' },
+  { label: 'home.deviceTotal', value: deviceCount, icon: Monitor, color: '#409eff', to: '/iot/gateways' },
+  { label: 'home.onlineDevices', value: onlineCount, icon: Connection, color: '#67c23a', to: '/iot/gateways' },
+  { label: 'home.openAlarms', value: alarmOpen, icon: Warning, color: '#e6a23c' },
 ];
 
 function openCard(to?: string) {
@@ -42,7 +42,7 @@ function openCard(to?: string) {
 
 <template>
   <div class="home">
-    <h2>欢迎使用，{{ userStore.userInfo?.name || '用户' }}</h2>
+    <h2>{{ $t('home.welcome', { name: userStore.userInfo?.name || '' }) }}</h2>
     <el-row :gutter="16" class="stats">
       <el-col v-for="c in cards" :key="c.label" :span="8">
         <el-card shadow="hover" :class="{ 'is-clickable': !!c.to }" @click="openCard(c.to)">
@@ -50,7 +50,7 @@ function openCard(to?: string) {
             <el-icon :size="36" :color="c.color"><component :is="c.icon" /></el-icon>
             <div>
               <div class="stat-value">{{ c.value }}</div>
-              <div class="stat-label">{{ c.label }}</div>
+              <div class="stat-label">{{ $t(c.label) }}</div>
             </div>
           </div>
         </el-card>
