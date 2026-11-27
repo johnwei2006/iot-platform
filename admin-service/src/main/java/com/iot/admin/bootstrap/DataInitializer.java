@@ -73,6 +73,7 @@ public class DataInitializer implements ApplicationRunner {
             initGatewayMenu();
             initSensorDataMenu();
             initAreaMenu();
+            initProductionMenus();
             enforceControlMenuComponent();
             consolidateControlMenus();
             reorderIotMenus();
@@ -277,6 +278,7 @@ public class DataInitializer implements ApplicationRunner {
         java.util.Map<String, String> rootPathByCode = new java.util.HashMap<String, String>();
         rootPathByCode.put("SYS", "/system");
         rootPathByCode.put("IOT", "/iot");
+        rootPathByCode.put("PRODUCTION", "/production");
         for (Product product : productRepository.findAll()) {
             java.util.Optional<Menu> root = menuRepository.findByPath(rootPathByCode.getOrDefault(product.getCode(), ""));
             if (!root.isPresent()) {
@@ -296,6 +298,56 @@ public class DataInitializer implements ApplicationRunner {
             return;
         }
         staticMenu(iot.get().getId(), "首页", "/home", "House", "5");
+    }
+
+    /** 生产管理：独立产品 + 四个子菜单（网关/节点/传感器/控制设备生产入库），幂等。 */
+    private void initProductionMenus() {
+        if (!productRepository.findByCode("PRODUCTION").isPresent()) {
+            Product product = new Product();
+            product.setId(java.util.UUID.randomUUID().toString());
+            product.setCode("PRODUCTION");
+            product.setName("生产管理");
+            product.setDescription("设备生产入库、归属绑定与机构分配");
+            product.setSort("30");
+            product.setStatus("ENABLED");
+            product.setBuiltIn(true);
+            productRepository.save(product);
+            log.info("Bootstrap production product created");
+        }
+        ensureProductDir("生产管理", "/production", "30");
+        java.util.Optional<Menu> dir = menuRepository.findByPath("/production");
+        if (!dir.isPresent()) {
+            return;
+        }
+        Menu gatewayMenu = menuRepository.findByPath("/production/gateways").orElseGet(() ->
+                menu("生产网关", Menu.TYPE_MENU, dir.get().getId(), "/production/gateways",
+                        "production/gateways", "production:gateway:page", "10"));
+        buttonOnce(gatewayMenu.getId(), "生产新增", "production:gateway:create");
+        buttonOnce(gatewayMenu.getId(), "生产编辑", "production:gateway:edit");
+        buttonOnce(gatewayMenu.getId(), "生产删除", "production:gateway:delete");
+        buttonOnce(gatewayMenu.getId(), "分配机构", "production:gateway:assign");
+
+        Menu nodeMenu = menuRepository.findByPath("/production/nodes").orElseGet(() ->
+                menu("生产节点", Menu.TYPE_MENU, dir.get().getId(), "/production/nodes",
+                        "production/nodes", "production:node:page", "20"));
+        buttonOnce(nodeMenu.getId(), "生产新增", "production:node:create");
+        buttonOnce(nodeMenu.getId(), "生产编辑", "production:node:edit");
+        buttonOnce(nodeMenu.getId(), "生产删除", "production:node:delete");
+
+        Menu sensorMenu = menuRepository.findByPath("/production/sensors").orElseGet(() ->
+                menu("生产传感器", Menu.TYPE_MENU, dir.get().getId(), "/production/sensors",
+                        "production/sensors", "production:sensor:page", "30"));
+        buttonOnce(sensorMenu.getId(), "生产新增", "production:sensor:create");
+        buttonOnce(sensorMenu.getId(), "生产编辑", "production:sensor:edit");
+        buttonOnce(sensorMenu.getId(), "生产删除", "production:sensor:delete");
+
+        Menu ctrlMenu = menuRepository.findByPath("/production/control-devices").orElseGet(() ->
+                menu("生产控制设备", Menu.TYPE_MENU, dir.get().getId(), "/production/control-devices",
+                        "production/control-devices", "production:ctrldev:page", "40"));
+        buttonOnce(ctrlMenu.getId(), "生产新增", "production:ctrldev:create");
+        buttonOnce(ctrlMenu.getId(), "生产编辑", "production:ctrldev:edit");
+        buttonOnce(ctrlMenu.getId(), "生产删除", "production:ctrldev:delete");
+        log.info("Bootstrap production menus ensured");
     }
 
     /** 兼容旧数据：移除已下线的数据查询菜单及其授权，幂等。 */
@@ -432,6 +484,11 @@ public class DataInitializer implements ApplicationRunner {
         icons.put("/system/product", "Grid");
         icons.put("/screen", "Monitor");
         icons.put("/iot", "Monitor");
+        icons.put("/production", "Box");
+        icons.put("/production/gateways", "Connection");
+        icons.put("/production/nodes", "Cpu");
+        icons.put("/production/sensors", "Odometer");
+        icons.put("/production/control-devices", "SwitchButton");
         icons.put("/iot/control", "Cpu");
         icons.put("/iot/control/rules", "Timer");
         icons.put("/iot/control/logs", "Document");

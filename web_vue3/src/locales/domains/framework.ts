@@ -74,6 +74,7 @@ export default {
       '/iot': '物联网',
       '/screen': '大屏',
       '/farm': '农事管理',
+      '/production': '生产管理',
     },
     /** 菜单名（按 sys_menu.path 映射，未命中回退数据库名） */
     menus: {
@@ -93,6 +94,11 @@ export default {
       '/system/user': '用户管理',
       '/system/role': '角色管理',
       '/system/menu': '菜单管理',
+      '/production': '生产管理',
+      '/production/gateways': '生产网关',
+      '/production/nodes': '生产节点',
+      '/production/sensors': '生产传感器',
+      '/production/control-devices': '生产控制设备',
     },
   },
   en: {
@@ -168,6 +174,7 @@ export default {
       '/iot': 'IoT',
       '/screen': 'Screen',
       '/farm': 'Farm Management',
+      '/production': 'Production',
     },
     menus: {
       '/home': 'Home',
@@ -186,6 +193,11 @@ export default {
       '/system/user': 'User Management',
       '/system/role': 'Role Management',
       '/system/menu': 'Menu Management',
+      '/production': 'Production',
+      '/production/gateways': 'Production Gateways',
+      '/production/nodes': 'Production Nodes',
+      '/production/sensors': 'Production Sensors',
+      '/production/control-devices': 'Production Devices',
     },
   },
 } as const;

@@ -19,6 +19,7 @@ const PRODUCT_PATHS: Record<string, string> = {
   SCREEN: '/screen',
   IOT: '/iot',
   FARM: '/farm',
+  PRODUCTION: '/production',
 };
 
 const DEFAULT_PRODUCTS: ProductView[] = [
