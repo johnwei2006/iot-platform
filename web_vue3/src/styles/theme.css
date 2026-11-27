@@ -1,25 +1,32 @@
 /**
- * 科百云田 - 苹果风设计系统（web 端）
+ * 物联网平台 - 企业级设计系统（web 端）
  * 与 mini_uniapp/src/uni.scss 共享同一 token 命名。
+ *
+ * 三套配色风格（data-skin，由 stores/modules/theme.ts 写入）：
+ *   blue    企业蓝（默认，B 端稳重）
+ *   green   翡翠绿（品牌绿）
+ *   gray    石墨灰（极简中性）
+ * 每套均适配浅色（:root 默认结构与 [data-skin] 覆盖）与深色（[data-theme="dark"]）模式。
  * 引入顺序：element-plus css 之后再引入本文件（见 main.ts），覆盖 --el-* 实现深度定制。
  */
 
 :root {
-  /* 品牌色（园艺绿，按 iOS 语义层级展开） */
-  --kb-brand: #17573f;
-  --kb-brand-tint: #1f7a56;
-  --kb-brand-bright: #35a476;
-  --kb-brand-soft: #bae3ca;
-  --kb-brand-wash: #e9f4ec;
+  /* 品牌色（默认：企业蓝） */
+  --kb-brand: #1d4ed8;
+  --kb-brand-tint: #2563eb;
+  --kb-brand-bright: #6d9bf7;
+  --kb-brand-deep: #16349f;
+  --kb-brand-soft: #c3d6fa;
+  --kb-brand-wash: #eaf1fd;
 
   /* 背景 */
-  --kb-bg-page: #f5f7f4;
+  --kb-bg-page: #f4f6fa;
   --kb-bg-card: #ffffff;
-  --kb-bg-sunken: #eff5ef;
+  --kb-bg-sunken: #edf0f6;
 
   /* 文本 */
-  --kb-text: #142c24;
-  --kb-text-muted: #52665d;
+  --kb-text: #182640;
+  --kb-text-muted: #56637d;
   --kb-text-inverse: #ffffff;
 
   /* 语义色 */
@@ -29,28 +36,28 @@
   --kb-warning-bg: #fff1df;
   --kb-success: #2c7a4b;
   --kb-success-bg: #e9f4ec;
-  --kb-offline: #8a9a91;
-  --kb-link: #0a84ff;
+  --kb-offline: #8a949f;
+  --kb-link: #1d4ed8;
 
   /* 分隔与描边 */
-  --kb-line: #d8e2d9;
-  --kb-line-strong: #b9c9bd;
+  --kb-line: #d8deea;
+  --kb-line-strong: #b6c1d6;
 
-  /* 圆角 */
-  --kb-radius-card: 16px;
-  --kb-radius-tile: 14px;
-  --kb-radius-btn: 12px;
-  --kb-radius-input: 10px;
-  --kb-radius-sheet: 20px;
+  /* 圆角（企业级收敛，克制不花哨） */
+  --kb-radius-card: 12px;
+  --kb-radius-tile: 10px;
+  --kb-radius-btn: 8px;
+  --kb-radius-input: 8px;
+  --kb-radius-sheet: 14px;
   --kb-radius-pill: 999px;
 
-  /* 阴影（低阴影，克制） */
-  --kb-shadow-card: 0 8px 24px rgba(20, 44, 36, 0.08);
-  --kb-shadow-raised: 0 12px 32px rgba(20, 44, 36, 0.12);
+  /* 阴影（低阴影，降噪） */
+  --kb-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.06);
+  --kb-shadow-raised: 0 4px 12px rgba(16, 24, 40, 0.1), 0 12px 32px rgba(16, 24, 40, 0.12);
 
   /* 动效 */
   --kb-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --kb-duration: 240ms;
+  --kb-duration: 200ms;
 
   /* 字体 */
   --kb-font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
@@ -60,11 +67,46 @@
   --kb-fs-caption: 13px;
   --kb-tracking-heading: -0.4px;
 
-  /* 顶栏（深色基调 + 园艺绿强调） */
-  --kb-topbar-bg: #101e18;
+  /* 顶栏（深色基调 + 风格色强调） */
+  --kb-topbar-bg: #0e1a30;
   --kb-topbar-text: rgba(255, 255, 255, 0.72);
   --kb-topbar-active: var(--kb-brand-bright);
   --kb-sidebar-width: 208px;
+}
+
+/* 皮肤：翡翠绿（原品牌绿） */
+:root[data-skin="green"] {
+  --kb-brand: #17573f;
+  --kb-brand-tint: #1f7a56;
+  --kb-brand-bright: #35a476;
+  --kb-brand-deep: #123f2e;
+  --kb-brand-soft: #bae3ca;
+  --kb-brand-wash: #e9f4ec;
+  --kb-bg-page: #f5f7f4;
+  --kb-bg-sunken: #eff5ef;
+  --kb-text: #142c24;
+  --kb-text-muted: #52665d;
+  --kb-line: #d8e2d9;
+  --kb-line-strong: #b9c9bd;
+  --kb-offline: #8a9a91;
+  --kb-topbar-bg: #101e18;
+}
+
+/* 皮肤：石墨灰（极简中性） */
+:root[data-skin="gray"] {
+  --kb-brand: #3f4a5c;
+  --kb-brand-tint: #52607a;
+  --kb-brand-bright: #93a5bd;
+  --kb-brand-deep: #323c4c;
+  --kb-brand-soft: #cdd5e2;
+  --kb-brand-wash: #edf0f5;
+  --kb-bg-page: #f5f6f7;
+  --kb-bg-sunken: #eef0f2;
+  --kb-text: #212832;
+  --kb-text-muted: #5d6773;
+  --kb-line: #dce0e5;
+  --kb-line-strong: #c1c8d1;
+  --kb-topbar-bg: #14181e;
 }
 
 /* 大字号适老模式 */
@@ -76,15 +118,15 @@
   font-size: 17px;
 }
 
-/* Element Plus 深度定制 */
+/* Element Plus 深度定制（品牌梯度随皮肤联动） */
 :root {
   --el-color-primary: var(--kb-brand);
-  --el-color-primary-light-3: #3d7a63;
-  --el-color-primary-light-5: #6b9c88;
-  --el-color-primary-light-7: #a3c3b4;
-  --el-color-primary-light-8: #bae3ca;
-  --el-color-primary-light-9: #e9f4ec;
-  --el-color-primary-dark-2: #123f2e;
+  --el-color-primary-light-3: #5473e0;
+  --el-color-primary-light-5: #8ba6ea;
+  --el-color-primary-light-7: #c1d0f4;
+  --el-color-primary-light-8: #d5def8;
+  --el-color-primary-light-9: #eaf1fd;
+  --el-color-primary-dark-2: #16349f;
   --el-color-success: var(--kb-success);
   --el-color-warning: var(--kb-warning);
   --el-color-danger: var(--kb-danger);
@@ -96,11 +138,29 @@
   --el-border-color: var(--kb-line);
   --el-border-color-light: var(--kb-line);
   --el-border-radius-base: var(--kb-radius-input);
-  --el-border-radius-small: 8px;
+  --el-border-radius-small: 6px;
   --el-font-family: var(--kb-font);
 }
 
-/* 全局苹果风覆盖 */
+:root[data-skin="green"] {
+  --el-color-primary-light-3: #3d7a63;
+  --el-color-primary-light-5: #6b9c88;
+  --el-color-primary-light-7: #a3c3b4;
+  --el-color-primary-light-8: #bae3ca;
+  --el-color-primary-light-9: #e9f4ec;
+  --el-color-primary-dark-2: #123f2e;
+}
+
+:root[data-skin="gray"] {
+  --el-color-primary-light-3: #6a7690;
+  --el-color-primary-light-5: #929eae;
+  --el-color-primary-light-7: #bdc6d4;
+  --el-color-primary-light-8: #d3dae3;
+  --el-color-primary-light-9: #edf0f5;
+  --el-color-primary-dark-2: #323c4c;
+}
+
+/* 全局基础 */
 body {
   font-family: var(--kb-font);
   color: var(--kb-text);
@@ -116,7 +176,7 @@ body {
   border-bottom: 1px solid var(--kb-line);
 }
 
-/* 卡片：大圆角 + 低阴影 */
+/* 卡片：适中圆角 + 低阴影 */
 .el-card {
   border-radius: var(--kb-radius-card);
   border: 1px solid var(--kb-line);
@@ -130,10 +190,10 @@ body {
   padding: 14px 20px;
 }
 
-/* 主按钮：品牌绿 + 苹果按压反馈 */
+/* 主按钮：品牌色 + 克制按压反馈 */
 .el-button {
   border-radius: var(--kb-radius-btn);
-  font-weight: 600;
+  font-weight: 500;
   transition: transform var(--kb-duration) var(--kb-ease), opacity var(--kb-duration) var(--kb-ease);
 }
 .el-button--primary {
@@ -141,11 +201,11 @@ body {
   --el-button-border-color: var(--kb-brand);
   --el-button-hover-bg-color: var(--kb-brand-tint);
   --el-button-hover-border-color: var(--kb-brand-tint);
-  --el-button-active-bg-color: #123f2e;
-  --el-button-active-border-color: #123f2e;
+  --el-button-active-bg-color: var(--kb-brand-deep);
+  --el-button-active-border-color: var(--kb-brand-deep);
 }
 .el-button:not(.is-disabled):active {
-  transform: scale(0.96);
+  transform: scale(0.97);
   opacity: 0.92;
 }
 
@@ -156,7 +216,7 @@ body {
   border-radius: var(--kb-radius-input);
 }
 
-/* 对话框 / 抽屉：大圆角弹层 */
+/* 对话框 / 抽屉：圆角弹层 */
 .el-dialog {
   border-radius: var(--kb-radius-sheet);
   box-shadow: var(--kb-shadow-raised);
@@ -165,16 +225,25 @@ body {
   border-radius: var(--kb-radius-sheet) 0 0 var(--kb-radius-sheet);
 }
 
-/* 表格：细边框 + 弱化表头 */
+/* 表格：弱化表头 + 行悬停反馈 */
 .el-table {
   --el-table-border-color: var(--kb-line);
   --el-table-header-bg-color: var(--kb-bg-sunken);
   --el-table-header-text-color: var(--kb-text-muted);
+  --el-table-row-hover-bg-color: var(--kb-bg-sunken);
   border-radius: var(--kb-radius-card);
   overflow: hidden;
 }
+.el-table th.el-table__cell {
+  font-weight: 600;
+}
 
-/* 分段控件（iOS 风替代多按钮组） */
+/* 标签：小圆角，企业级观感 */
+.el-tag {
+  border-radius: 6px;
+}
+
+/* 分段控件（替代多按钮组） */
 .kb-segmented {
   display: inline-flex;
   padding: 3px;
@@ -247,16 +316,17 @@ body {
   opacity: 0;
 }
 
-/* 深色模式：手动切换（data-theme）或跟随系统（未显式指定时） */
+/* 深色模式（默认蓝皮肤），theme store 启动即写入 data-theme */
 :root[data-theme="dark"] {
-  --kb-bg-page: #0f1613;
-  --kb-bg-card: #17241e;
-  --kb-bg-sunken: #1d2c25;
-  --kb-text: #e8efe9;
-  --kb-text-muted: #9fb3a7;
-  --kb-line: #2a3c32;
-  --kb-brand-wash: rgba(53, 164, 118, 0.18);
-  --kb-topbar-bg: #0a120e;
+  --kb-bg-page: #0f141d;
+  --kb-bg-card: #17202f;
+  --kb-bg-sunken: #1c2739;
+  --kb-text: #e7ecf5;
+  --kb-text-muted: #9aa9c2;
+  --kb-line: #2a3850;
+  --kb-line-strong: #3c4c6b;
+  --kb-brand-wash: rgba(109, 155, 247, 0.16);
+  --kb-topbar-bg: #0a0f19;
   --el-menu-text-color: var(--kb-text);
   --el-menu-hover-bg-color: var(--kb-bg-sunken);
   --el-bg-color-page: var(--kb-bg-page);
@@ -268,23 +338,28 @@ body {
   --el-table-header-bg-color: var(--kb-bg-sunken);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --kb-bg-page: #0f1613;
-    --kb-bg-card: #17241e;
-    --kb-bg-sunken: #1d2c25;
-    --kb-text: #e8efe9;
-    --kb-text-muted: #9fb3a7;
-    --kb-line: #2a3c32;
-    --kb-brand-wash: rgba(53, 164, 118, 0.18);
-    --kb-topbar-bg: #0a120e;
-    --el-menu-text-color: var(--kb-text);
-    --el-menu-hover-bg-color: var(--kb-bg-sunken);
-    --el-bg-color-page: var(--kb-bg-page);
-    --el-bg-color: var(--kb-bg-card);
-    --el-text-color-primary: var(--kb-text);
-    --el-text-color-regular: var(--kb-text-muted);
-    --el-border-color: var(--kb-line);
-    --el-border-color-light: var(--kb-line);
-  }
+/* 深色模式：翡翠绿 */
+:root[data-theme="dark"][data-skin="green"] {
+  --kb-bg-page: #0f1613;
+  --kb-bg-card: #17241e;
+  --kb-bg-sunken: #1d2c25;
+  --kb-text: #e8efe9;
+  --kb-text-muted: #9fb3a7;
+  --kb-line: #2a3c32;
+  --kb-line-strong: #3c5244;
+  --kb-brand-wash: rgba(53, 164, 118, 0.18);
+  --kb-topbar-bg: #0a120e;
+}
+
+/* 深色模式：石墨灰 */
+:root[data-theme="dark"][data-skin="gray"] {
+  --kb-bg-page: #131518;
+  --kb-bg-card: #1b1f24;
+  --kb-bg-sunken: #22272e;
+  --kb-text: #e6e9ed;
+  --kb-text-muted: #9aa3ad;
+  --kb-line: #2d333b;
+  --kb-line-strong: #404954;
+  --kb-brand-wash: rgba(147, 165, 189, 0.16);
+  --kb-topbar-bg: #0d0f12;
 }

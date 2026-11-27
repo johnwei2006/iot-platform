@@ -5,7 +5,7 @@ import {
   QuestionFilled, Grid, ChatDotRound, SwitchButton, ArrowRight, User,
 } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/modules/user';
-import { useThemeStore, type FontSize, type ThemeMode } from '@/stores/modules/theme';
+import { useThemeStore, type FontSize, type ThemeMode, type ThemeSkin } from '@/stores/modules/theme';
 import { unreadCount } from '@/api/system/me';
 import { buildProducts, productOfPath, type ProductView } from '@/utils/productMenus';
 import type { MenuNode } from '@/types';
@@ -101,7 +101,7 @@ onMounted(() => {
           <p class="kb-popover-text">可按产品切换左侧菜单；消息角标显示未读消息。</p>
         </el-popover>
 
-        <el-popover placement="bottom-end" :width="254" trigger="click">
+        <el-popover placement="bottom-end" :width="300" trigger="click">
           <template #reference>
             <button type="button" class="kb-tool kb-tool--theme" aria-label="主题设置">
               <el-icon :size="18"><Grid /></el-icon>
@@ -109,6 +109,18 @@ onMounted(() => {
             </button>
           </template>
           <div class="kb-popover-title">外观设置</div>
+          <div class="kb-setting-row">
+            <span>风格</span>
+            <el-radio-group
+              :model-value="themeStore.skin"
+              size="small"
+              @update:model-value="(v: ThemeSkin) => themeStore.setSkin(v)"
+            >
+              <el-radio-button value="blue">企业蓝</el-radio-button>
+              <el-radio-button value="green">翡翠绿</el-radio-button>
+              <el-radio-button value="gray">石墨灰</el-radio-button>
+            </el-radio-group>
+          </div>
           <div class="kb-setting-row">
             <span>模式</span>
             <el-radio-group
