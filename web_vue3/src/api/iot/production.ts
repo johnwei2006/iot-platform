@@ -102,8 +102,8 @@ export function deleteProductionControlDevice(id: string): Promise<ApiResponse<n
   return request<null>({ url: `/api/production/control-devices/${id}`, method: 'DELETE' });
 }
 
-/** 表单打开时获取下一个自动编号（可按类型/大类计算编码片段）。 */
-export function getNextProductionCode(kind: ProductionKind, params?: { type?: number; clazz?: string }): Promise<ApiResponse<string>> {
+/** 表单打开时获取下一个自动编号（网关/节点按类型；传感器/设备需归属节点+通道）。 */
+export function getNextProductionCode(kind: ProductionKind, params?: { type?: number; nodeCode?: string; channel?: string }): Promise<ApiResponse<string>> {
   return request<string>({ url: '/api/production/next-code', method: 'GET', params: { kind, ...params } });
 }
 

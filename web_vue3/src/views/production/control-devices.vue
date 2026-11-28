@@ -108,7 +108,7 @@ const firstTypeOf = (clazz: string) =>
 async function refreshNextCode() {
   if (dialog.mode === 'edit' || codeDirty.value) return;
   try {
-    const res = await getNextProductionCode(KIND, { clazz: form.deviceClass });
+    const res = await getNextProductionCode(KIND, { nodeCode: form.nodeCode, channel: form.channel });
     form.deviceCode = res.data || '';
   } catch {
     // 预览失败时保留当前值，提交前仍会校验唯一性
@@ -117,7 +117,6 @@ async function refreshNextCode() {
 
 function onDeviceClassChange() {
   form.deviceClassType = firstTypeOf(form.deviceClass);
-  void refreshNextCode();
 }
 
 async function validateCode(): Promise<boolean> {
@@ -172,6 +171,10 @@ async function submit() {
   }
   if (dialog.mode === 'create' && !form.nodeCode) {
     ElMessage.warning(t('production.nodeRequired'));
+    return;
+  }
+  if (dialog.mode === 'create' && !String(form.channel).trim()) {
+    ElMessage.warning(t('production.channelRequired'));
     return;
   }
   if (!form.deviceClassType) {
@@ -299,11 +302,13 @@ onMounted(load);
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('production.slotPort')">
-          <el-input v-model="form.channel" style="width: 140px" :placeholder="$t('production.channelPlaceholder')" />
+          <el-input v-model="form.channel" style="width: 140px" :placeholder="$t('production.channelPlaceholder')"
+            @change="refreshNextCode" />
           <span class="form-tip">{{ $t('production.channelTip') }}</span>
         </el-form-item>
         <el-form-item :label="$t('production.boundNode')">
-          <el-select v-model="form.nodeCode" clearable filterable style="width: 100%" :placeholder="$t('production.selectNode')">
+          <el-select v-model="form.nodeCode" clearable filterable style="width: 100%" :placeholder="$t('production.selectNode')"
+            @change="refreshNextCode">
             <el-option v-for="n in nodes.filter((x) => !x.orgCode)" :key="n.nodeCode" :label="`${n.nodeCode}（${n.nodeName || ''}）`" :value="n.nodeCode" />
           </el-select>
         </el-form-item>

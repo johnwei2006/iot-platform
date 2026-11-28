@@ -81,9 +81,10 @@ public class ProductionController {
     @RequireRoles({"ADMIN"})
     public ApiResponse<?> nextCode(@RequestParam String kind,
                                    @RequestParam(required = false) Integer type,
-                                   @RequestParam(required = false) String clazz) {
+                                   @RequestParam(required = false) String nodeCode,
+                                   @RequestParam(required = false) String channel) {
         ProductionService.Kind k = ProductionService.Kind.valueOf(kind.toUpperCase());
-        return ApiResponse.success(productionService.nextCode(k, type, clazz));
+        return ApiResponse.success(productionService.nextCode(k, type, nodeCode, channel));
     }
 
     /** 编号唯一性校验；id 为编辑时排除自身。 */
@@ -99,6 +100,11 @@ public class ProductionController {
     @ExceptionHandler(ProductionService.DuplicateCodeException.class)
     public ApiResponse<?> duplicateCode(ProductionService.DuplicateCodeException e) {
         return ApiResponse.fail(409, e.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ApiResponse<?> badRequest(IllegalArgumentException e) {
+        return ApiResponse.fail(400, e.getMessage());
     }
 
     /* ---------- 生产入库（编号自动生成，可手动修改） ---------- */

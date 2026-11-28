@@ -24,13 +24,21 @@ import java.util.Optional;
  * 生产管理服务：生产阶段设备入库与分配。
  *
  * <p>与业务管理的差异：设备在创建时不属于任何机构（orgCode 为空），
- * 编号由后端按「前缀 + 类型片段 + 日期 + 当日流水」规则生成，分配网关到机构时
+ * 编号由后端按统一编码规则生成，分配网关到机构时
  * 所属节点、传感器与控制设备同步级联分配。</p>
+ *
+ * <p>统一编码规则：</p>
+ * <ul>
+ *   <li>网关 11 位：2 位类型（10-4G、20-5G、30-工控、40-第三方）+ 6 位生产日期 YYMMDD + 3 位当日流水；</li>
+ *   <li>节点 11 位：2 位类型（a0-采集、b0-控制、c0-虚拟、d0-第三方）+ 6 位生产日期 YYMMDD + 3 位当日流水；</li>
+ *   <li>传感器 13 位：归属节点编码首两位中的第二位改为 1，余下 9 位保持 + 2 位通道号；</li>
+ *   <li>控制设备 13 位：归属节点编码首两位中的第二位改为 2，余下 9 位保持 + 2 位通道号。</li>
+ * </ul>
  */
 @Service
 public class ProductionService {
 
-    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("yyMMdd");
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Autowired
@@ -45,15 +53,12 @@ public class ProductionService {
     /* ---------- 编号生成 ---------- */
 
     /**
-     * 按规则生成设备编号：前缀 + 类型片段 + yyyyMMdd + 4 位当日流水。
-     * 示例：4G 网关 GW4G202611270001、采集节点 NDCD202611270001。
+     * 按前缀 + 3 位当日流水生成网关/节点编号。
+     * 示例：4G 网关 10261128001、采集节点 a0261128001。
      *
-     * @param kind 设备大类（决定前缀与编号所在表）
-     * @param sub  类型片段（如 4G/CD/温湿度大类缩写），可为空
+     * @param prefix 类型前缀（2 位）+ 生产日期 YYMMDD（6 位）
      */
-    public synchronized String generateCode(Kind kind, String sub) {
-        String day = LocalDate.now().format(DAY);
-        String prefix = kind.prefix + (sub == null ? "" : sub) + day;
+    public synchronized String generateCode(Kind kind, String prefix) {
         List<String> codes = kind.codes(this, prefix);
         int max = 0;
         for (String code : codes) {
@@ -64,19 +69,64 @@ public class ProductionService {
                 // 非本规则生成的编码，跳过
             }
         }
-        return prefix + String.format("%04d", max + 1);
+        return prefix + String.format("%03d", max + 1);
     }
 
-    /** 表单展示用：按类型/大类生成下一个可用编号预览。 */
-    public String nextCode(Kind kind, Integer type, String clazz) {
-        return generateCode(kind, subOf(kind, type, clazz));
+    /** 传感器/控制设备编号：归属节点编码（第二位改写为 1/2）+ 2 位通道号。 */
+    public String generateChildCode(String nodeCode, String channel, char mark) {
+        if (nodeCode == null || nodeCode.isBlank() || nodeCode.length() < 2) {
+            throw new IllegalArgumentException("生成编号需要先选择归属节点");
+        }
+        if (channel == null || channel.isBlank()) {
+            throw new IllegalArgumentException("生成编号需要先填写通道号");
+        }
+        String ch = channel.trim();
+        if (ch.matches("\\d+")) {
+            ch = String.format("%02d", Integer.parseInt(ch));
+        }
+        if (ch.length() != 2) {
+            throw new IllegalArgumentException("通道号必须为 2 位");
+        }
+        return nodeCode.charAt(0) + String.valueOf(mark) + nodeCode.substring(2) + ch;
     }
 
-    private String subOf(Kind kind, Integer type, String clazz) {
+    /** 表单展示用：按类型/归属节点生成下一个可用编号预览（信息不足返回空串）。 */
+    public String nextCode(Kind kind, Integer type, String nodeCode, String channel) {
         return switch (kind) {
-            case GATEWAY -> gatewaySub(type);
-            case NODE -> nodeSub(type);
-            default -> classSub(clazz);
+            case GATEWAY -> generateCode(kind, gatewayPrefix(type) + LocalDate.now().format(DAY));
+            case NODE -> generateCode(kind, nodePrefix(type) + LocalDate.now().format(DAY));
+            case SENSOR -> childPreview(nodeCode, channel, '1');
+            case CTRL -> childPreview(nodeCode, channel, '2');
+        };
+    }
+
+    private String childPreview(String nodeCode, String channel, char mark) {
+        try {
+            return generateChildCode(nodeCode, channel, mark);
+        } catch (IllegalArgumentException e) {
+            return "";
+        }
+    }
+
+    /** 网关类型前缀：1-4G→10，2-工控→30，3-5G→20，其它/第三方→40。 */
+    static String gatewayPrefix(Integer gatewayType) {
+        if (gatewayType == null) return "40";
+        return switch (gatewayType) {
+            case 1 -> "10";
+            case 2 -> "30";
+            case 3 -> "20";
+            default -> "40";
+        };
+    }
+
+    /** 节点类型前缀：1-采集→a0，2-控制→b0，3-虚拟→c0，其它/第三方→d0。 */
+    static String nodePrefix(Integer nodeType) {
+        if (nodeType == null) return "d0";
+        return switch (nodeType) {
+            case 1 -> "a0";
+            case 2 -> "b0";
+            case 3 -> "c0";
+            default -> "d0";
         };
     }
 
@@ -102,11 +152,11 @@ public class ProductionService {
         };
     }
 
-    /** 用户自定义编码优先；留空则自动生成；重复编码拒绝入库。 */
-    private String resolveCode(Kind kind, String provided, String sub) {
+    /** 用户自定义编码优先；留空则按前缀自动生成；重复编码拒绝入库。 */
+    private String resolveCode(Kind kind, String provided, String prefix) {
         String code = provided == null ? "" : provided.trim();
         if (code.isEmpty()) {
-            return generateCode(kind, sub);
+            return generateCode(kind, prefix);
         }
         if (!codeAvailable(kind, code, null)) {
             throw new DuplicateCodeException(code);
@@ -114,7 +164,19 @@ public class ProductionService {
         return code;
     }
 
-    /** 设备大类：前缀 + 编号所在表。 */
+    /** 传感器/控制设备：自定义编码优先；留空则按归属节点+通道生成（信息不足或重复报错）。 */
+    private String resolveChildCode(Kind kind, String provided, String nodeCode, String channel, char mark) {
+        String code = provided == null ? "" : provided.trim();
+        if (!code.isEmpty()) {
+            if (!codeAvailable(kind, code, null)) {
+                throw new DuplicateCodeException(code);
+            }
+            return code;
+        }
+        return generateChildCode(nodeCode, channel, mark);
+    }
+
+    /** 设备大类：仅决定编号所在表。 */
     public enum Kind {
         GATEWAY("GW") {
             @Override List<String> codes(ProductionService svc, String prefix) {
@@ -150,36 +212,6 @@ public class ProductionService {
         abstract List<String> codes(ProductionService service, String prefix);
     }
 
-    /** 网关类型片段：1-4G，2-工控网关，3-5G，4-其它（不匹配值归入其它）。 */
-    static String gatewaySub(Integer gatewayType) {
-        if (gatewayType == null) return "OT";
-        return switch (gatewayType) {
-            case 1 -> "4G";
-            case 2 -> "GK";
-            case 3 -> "5G";
-            default -> "OT";
-        };
-    }
-
-    /** 节点类型片段：1-采集，2-控制，3-虚拟，4-第三方（不匹配值归入第三方）。 */
-    static String nodeSub(Integer nodeType) {
-        if (nodeType == null) return "DS";
-        return switch (nodeType) {
-            case 1 -> "CD";
-            case 2 -> "KZ";
-            case 3 -> "XN";
-            case 4 -> "DS";
-            default -> "DS";
-        };
-    }
-
-    /** 大类编码片段：取大类编码中的字母数字转大写，最多 2 位；为空回退 GN。 */
-    static String classSub(String clazz) {
-        if (clazz == null) return "GN";
-        String letters = clazz.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
-        return letters.isEmpty() ? "GN" : letters.substring(0, Math.min(2, letters.length()));
-    }
-
     private String randomSecret() {
         StringBuilder sb = new StringBuilder(32);
         for (int i = 0; i < 32; i++) {
@@ -193,7 +225,8 @@ public class ProductionService {
     /** 创建生产网关：编号自动生成，预共享密钥随机生成，不属于任何机构。 */
     public Gateway createGateway(Gateway src, String subject) {
         Date now = new Date();
-        src.setDeviceId(resolveCode(Kind.GATEWAY, src.getDeviceId(), gatewaySub(src.getGatewayType())));
+        src.setDeviceId(resolveCode(Kind.GATEWAY, src.getDeviceId(),
+                gatewayPrefix(src.getGatewayType()) + LocalDate.now().format(DAY)));
         src.setId(java.util.UUID.randomUUID().toString());
         src.setCreatedAt(now);
         src.setUpdatedAt(now);
@@ -209,7 +242,8 @@ public class ProductionService {
     /** 创建生产节点：编号自动生成，不属于任何机构。 */
     public Node createNode(Node src, String subject) {
         Date now = new Date();
-        src.setNodeCode(resolveCode(Kind.NODE, src.getNodeCode(), nodeSub(src.getNodeType())));
+        src.setNodeCode(resolveCode(Kind.NODE, src.getNodeCode(),
+                nodePrefix(src.getNodeType()) + LocalDate.now().format(DAY)));
         src.setId(java.util.UUID.randomUUID().toString());
         src.setCreateTime(now);
         src.setUpdateTime(now);
@@ -225,7 +259,7 @@ public class ProductionService {
     /** 创建生产传感器：编号自动生成，不属于任何机构。 */
     public Sensor createSensor(Sensor src, String subject) {
         Date now = new Date();
-        src.setSensorCode(resolveCode(Kind.SENSOR, src.getSensorCode(), classSub(src.getSensorClass())));
+        src.setSensorCode(resolveChildCode(Kind.SENSOR, src.getSensorCode(), src.getNodeCode(), src.getChannel(), '1'));
         src.setId(java.util.UUID.randomUUID().toString());
         src.setCreateTime(now);
         src.setUpdateTime(now);
@@ -241,7 +275,7 @@ public class ProductionService {
     /** 创建生产控制设备：编号自动生成，不属于任何机构。 */
     public DeviceCtrl createCtrl(DeviceCtrl src, String subject) {
         Date now = new Date();
-        src.setDeviceCode(resolveCode(Kind.CTRL, src.getDeviceCode(), classSub(src.getDeviceClass())));
+        src.setDeviceCode(resolveChildCode(Kind.CTRL, src.getDeviceCode(), src.getNodeCode(), src.getChannel(), '2'));
         src.setId(java.util.UUID.randomUUID().toString());
         src.setCreateTime(now);
         src.setUpdateTime(now);

@@ -277,3 +277,23 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261128-27-normalize-device-codes
+      author: iot-platform
+      comment: 统一网关/节点/传感器/控制设备编码为 11/11/13/13 位新规则，并同步改写全部编码引用
+      changes:
+        - sqlFile:
+            path: sql/027-normalize-device-codes.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-28-format-class-type-to-preset
+      author: iot-platform
+      comment: 传感器/控制设备大类与类型按预置字典格式化（旧字母编码→数字编码），同步单位与控制规则 deviceType，清理旧字典条目
+      changes:
+        - sqlFile:
+            path: sql/028-format-class-type-to-preset.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
