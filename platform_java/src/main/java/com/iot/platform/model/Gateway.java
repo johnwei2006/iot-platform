@@ -51,6 +51,53 @@ public class Gateway {
     /** 设备图片地址 */
     private String pic;
 
+    /** 0x06 网关信息上报字段：配置版本号 */
+    @TableField("config_version")
+    private Integer configVersion;
+    /** 0x06 上报网关编号（区别于平台内部 gateway_code） */
+    @TableField("gateway_id")
+    private String gatewayId;
+    @TableField("project_id")
+    private String projectId;
+    @TableField("heartbeat_interval")
+    private Integer heartbeatInterval;
+    @TableField("report_interval")
+    private Integer reportInterval;
+    @TableField("rtc_time")
+    private String rtcTime;
+    @TableField("system_server_url")
+    private String systemServerUrl;
+    @TableField("system_server_port")
+    private Integer systemServerPort;
+    @TableField("hardware_version")
+    private String hardwareVersion;
+    @TableField("gateway_mcuid")
+    private String gatewayMcuid;
+    @TableField("memory_total")
+    private Integer memoryTotal;
+    @TableField("memory_used")
+    private Integer memoryUsed;
+    @TableField("flash_total")
+    private Integer flashTotal;
+    @TableField("flash_used")
+    private Integer flashUsed;
+    @TableField("uplink_message_size")
+    private Integer uplinkMessageSize;
+    @TableField("downlink_message_size")
+    private Integer downlinkMessageSize;
+    /** 0x06 上报电池电压（与历史 power 字段分开保存） */
+    @TableField("battery")
+    private String battery;
+    @TableField("adapter_exists")
+    private Integer adapterExists;
+    @TableField("charging_enabled")
+    private Integer chargingEnabled;
+    @TableField("latest_reboot_time")
+    private String latestRebootTime;
+    /** 最近一次网关信息上报时间 */
+    @TableField("info_reported_at")
+    private Date infoReportedAt;
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getDeviceId() { return deviceId; }
@@ -89,4 +136,46 @@ public class Gateway {
     public void setPower(String power) { this.power = power; }
     public String getPic() { return pic; }
     public void setPic(String pic) { this.pic = pic; }
+    public Integer getConfigVersion() { return configVersion; }
+    public void setConfigVersion(Integer configVersion) { this.configVersion = configVersion; }
+    public String getGatewayId() { return gatewayId; }
+    public void setGatewayId(String gatewayId) { this.gatewayId = gatewayId; }
+    public String getProjectId() { return projectId; }
+    public void setProjectId(String projectId) { this.projectId = projectId; }
+    public Integer getHeartbeatInterval() { return heartbeatInterval; }
+    public void setHeartbeatInterval(Integer heartbeatInterval) { this.heartbeatInterval = heartbeatInterval; }
+    public Integer getReportInterval() { return reportInterval; }
+    public void setReportInterval(Integer reportInterval) { this.reportInterval = reportInterval; }
+    public String getRtcTime() { return rtcTime; }
+    public void setRtcTime(String rtcTime) { this.rtcTime = rtcTime; }
+    public String getSystemServerUrl() { return systemServerUrl; }
+    public void setSystemServerUrl(String systemServerUrl) { this.systemServerUrl = systemServerUrl; }
+    public Integer getSystemServerPort() { return systemServerPort; }
+    public void setSystemServerPort(Integer systemServerPort) { this.systemServerPort = systemServerPort; }
+    public String getHardwareVersion() { return hardwareVersion; }
+    public void setHardwareVersion(String hardwareVersion) { this.hardwareVersion = hardwareVersion; }
+    public String getGatewayMcuid() { return gatewayMcuid; }
+    public void setGatewayMcuid(String gatewayMcuid) { this.gatewayMcuid = gatewayMcuid; }
+    public Integer getMemoryTotal() { return memoryTotal; }
+    public void setMemoryTotal(Integer memoryTotal) { this.memoryTotal = memoryTotal; }
+    public Integer getMemoryUsed() { return memoryUsed; }
+    public void setMemoryUsed(Integer memoryUsed) { this.memoryUsed = memoryUsed; }
+    public Integer getFlashTotal() { return flashTotal; }
+    public void setFlashTotal(Integer flashTotal) { this.flashTotal = flashTotal; }
+    public Integer getFlashUsed() { return flashUsed; }
+    public void setFlashUsed(Integer flashUsed) { this.flashUsed = flashUsed; }
+    public Integer getUplinkMessageSize() { return uplinkMessageSize; }
+    public void setUplinkMessageSize(Integer uplinkMessageSize) { this.uplinkMessageSize = uplinkMessageSize; }
+    public Integer getDownlinkMessageSize() { return downlinkMessageSize; }
+    public void setDownlinkMessageSize(Integer downlinkMessageSize) { this.downlinkMessageSize = downlinkMessageSize; }
+    public String getBattery() { return battery; }
+    public void setBattery(String battery) { this.battery = battery; }
+    public Integer getAdapterExists() { return adapterExists; }
+    public void setAdapterExists(Integer adapterExists) { this.adapterExists = adapterExists; }
+    public Integer getChargingEnabled() { return chargingEnabled; }
+    public void setChargingEnabled(Integer chargingEnabled) { this.chargingEnabled = chargingEnabled; }
+    public String getLatestRebootTime() { return latestRebootTime; }
+    public void setLatestRebootTime(String latestRebootTime) { this.latestRebootTime = latestRebootTime; }
+    public Date getInfoReportedAt() { return infoReportedAt; }
+    public void setInfoReportedAt(Date infoReportedAt) { this.infoReportedAt = infoReportedAt; }
 }

@@ -210,3 +210,70 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261127-21-gateway-management-tables
+      author: iot-platform
+      comment: Gateway management config snapshots, command logs and local tasks
+      changes:
+        - sqlFile:
+            path: sql/021-gateway-management-tables.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261127-22-gateway-management-menus
+      author: iot-platform
+      comment: Gateway management menus and permissions
+      changes:
+        - sqlFile:
+            path: sql/022-gateway-management-menus.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-23-gateway-info-heartbeat
+      author: iot-platform
+      comment: Gateway reported info fields and heartbeat history table
+      changes:
+        - sqlFile:
+            path: sql/023-gateway-info-heartbeat.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-24-rename-gateway-heartbeat-to-info
+      author: iot-platform
+      comment: Rename gateway heartbeat history table to gateway info history
+      changes:
+        - sqlFile:
+            path: sql/024-rename-gateway-heartbeat-to-info.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-25-rename-gateway-config-snapshot
+      author: iot-platform
+      comment: Rename gateway config snapshot to config info and add config fields
+      changes:
+        - sqlFile:
+            path: sql/025-rename-gateway-config-snapshot.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-26-device-command-columns
+      author: iot-platform
+      comment: iot_device_ctrl 增加 on/off/set 下发指令字段（485 Hex，可空）
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: MARK_RAN
+        - not:
+            columnExists:
+              tableName: iot_device_ctrl
+              columnName: command_on
+      changes:
+        - sqlFile:
+            path: sql/026-add-device-command-columns.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true

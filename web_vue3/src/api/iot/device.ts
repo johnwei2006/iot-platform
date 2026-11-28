@@ -20,6 +20,12 @@ export interface DeviceCtrlEntity {
   latitude?: string;
   pic?: string;
   channel?: string;
+  /** 开指令（485 Hex格式） */
+  commandOn?: string;
+  /** 关指令（485 Hex格式） */
+  commandOff?: string;
+  /** 设置指令（485 Hex格式） */
+  commandSet?: string;
   connectType?: number;
   createBy?: string;
   createTime?: string;

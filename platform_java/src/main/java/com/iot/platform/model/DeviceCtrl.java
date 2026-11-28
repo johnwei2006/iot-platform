@@ -45,6 +45,12 @@ public class DeviceCtrl {
     private Integer isDeleted;
     /** 端口号 */
     private String channel;
+    /** 开指令（485 Hex格式） */
+    private String commandOn;
+    /** 关指令（485 Hex格式） */
+    private String commandOff;
+    /** 设置指令（485 Hex格式） */
+    private String commandSet;
     /** 连接形式 */
     private Integer connectType;
     /** 归属用户（SELF 数据权限） */
@@ -92,6 +98,12 @@ public class DeviceCtrl {
     public void setIsDeleted(Integer isDeleted) { this.isDeleted = isDeleted; }
     public String getChannel() { return channel; }
     public void setChannel(String channel) { this.channel = channel; }
+    public String getCommandOn() { return commandOn; }
+    public void setCommandOn(String commandOn) { this.commandOn = commandOn; }
+    public String getCommandOff() { return commandOff; }
+    public void setCommandOff(String commandOff) { this.commandOff = commandOff; }
+    public String getCommandSet() { return commandSet; }
+    public void setCommandSet(String commandSet) { this.commandSet = commandSet; }
     public Integer getConnectType() { return connectType; }
     public void setConnectType(Integer connectType) { this.connectType = connectType; }
     public String getOwnerUserId() { return ownerUserId; }

@@ -13,6 +13,7 @@ import alarm from './domains/alarm';
 import messages from './domains/messages';
 import system from './domains/system';
 import production from './domains/production';
+import gatewayManage from './domains/gatewayManage';
 
 export type AppLocale = 'zh-CN' | 'en';
 
@@ -35,6 +36,7 @@ const domainModules: Record<AppLocale, LocaleMessage>[] = [
   messages,
   system,
   production,
+  gatewayManage,
 ];
 
 function pickMessages(locale: AppLocale): LocaleMessage {

@@ -300,7 +300,7 @@ public class DataInitializer implements ApplicationRunner {
         staticMenu(iot.get().getId(), "首页", "/home", "House", "5");
     }
 
-    /** 生产管理：独立产品 + 四个子菜单（网关/节点/传感器/控制设备生产入库），幂等。 */
+    /** 生产管理：独立产品 + 生产入库菜单 + 网关管理目录及六个子菜单，幂等。 */
     private void initProductionMenus() {
         if (!productRepository.findByCode("PRODUCTION").isPresent()) {
             Product product = new Product();
@@ -347,7 +347,37 @@ public class DataInitializer implements ApplicationRunner {
         buttonOnce(ctrlMenu.getId(), "生产新增", "production:ctrldev:create");
         buttonOnce(ctrlMenu.getId(), "生产编辑", "production:ctrldev:edit");
         buttonOnce(ctrlMenu.getId(), "生产删除", "production:ctrldev:delete");
-        log.info("Bootstrap production menus ensured");
+
+        Menu gwDir = menuRepository.findByPath("/production/gateway-manage").orElseGet(() ->
+                menu("网关管理", Menu.TYPE_DIR, dir.get().getId(), "/production/gateway-manage", null, null, "25"));
+        ensureGatewayMenu(gwDir, "生产网关", "/production/gateways", "production/gateways", "production:gateway:page", "10");
+        ensureGatewayMenu(gwDir, "网关信息及配置", "/production/gateway/info-config", "production/gateway/info-config", "gateway:info:page", "20");
+        ensureGatewayMenu(gwDir, "网关节点", "/production/gateway/nodes", "production/gateway/nodes", "gateway:node:page", "30");
+        ensureGatewayMenu(gwDir, "网关传感器", "/production/gateway/sensors", "production/gateway/sensors", "gateway:sensor:page", "40");
+        ensureGatewayMenu(gwDir, "网关设备", "/production/gateway/devices", "production/gateway/devices", "gateway:device:page", "50");
+        ensureGatewayMenu(gwDir, "网关任务", "/production/gateway/tasks", "production/gateway/tasks", "gateway:task:page", "60");
+        log.info("Bootstrap gateway management menus ensured");
+    }
+
+    private void ensureGatewayMenu(Menu parent, String name, String path, String component, String perm, String sort) {
+        java.util.Optional<Menu> existing = menuRepository.findByPath(path);
+        Menu node;
+        if (existing.isPresent()) {
+            node = existing.get();
+            if (!parent.getId().equals(node.getParentId())) {
+                node.setParentId(parent.getId());
+                node.setName(name);
+                menuRepository.save(node);
+            }
+        } else {
+            node = menu(name, Menu.TYPE_MENU, parent.getId(), path, component, perm, sort);
+        }
+        if (perm.endsWith(":page")) {
+            String prefix = perm.substring(0, perm.length() - ":page".length());
+            buttonOnce(node.getId(), "查看", prefix + ":view");
+            buttonOnce(node.getId(), "下发配置", prefix + ":config");
+            buttonOnce(node.getId(), "远程重启", prefix + ":reboot");
+        }
     }
 
     /** 兼容旧数据：移除已下线的数据查询菜单及其授权，幂等。 */

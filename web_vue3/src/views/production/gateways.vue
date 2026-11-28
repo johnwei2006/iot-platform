@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
+import { useRouter } from 'vue-router';
 import {
   assignGatewayOrg,
   checkProductionCode,
@@ -17,6 +18,7 @@ import { fetchOrgList } from '@/api/system/org';
 import type { Device, OrgRecord } from '@/types';
 
 const { t } = useI18n();
+const router = useRouter();
 const loading = ref(false);
 const gateways = ref<Device[]>([]);
 const orgs = ref<OrgRecord[]>([]);
@@ -75,6 +77,10 @@ function orgName(code?: string) {
 }
 
 const isAssigned = (row: Device) => !!row.orgCode;
+
+function openGatewayPage(path: string, row: Device) {
+  router.push({ path, query: { gatewayCode: row.deviceId } });
+}
 
 function formatTime(value?: string) {
   if (!value) return '--';
@@ -250,16 +256,14 @@ onMounted(load);
         <el-table-column :label="$t('common.createTime')" width="160" align="center">
           <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column :label="$t('common.actions')" width="230" align="center" fixed="right">
+        <el-table-column :label="$t('common.actions')" width="300" align="center" fixed="right">
           <template #default="{ row }">
+            <el-button link type="primary" @click="openGatewayPage('/production/gateway/info-config', row)">{{ $t('common.detail') }}</el-button>
             <template v-if="!isAssigned(row)">
               <el-button link type="primary" v-permission="'production:gateway:edit'" @click="openEdit(row)">{{ $t('common.edit') }}</el-button>
               <el-button link type="success" v-permission="'production:gateway:assign'" @click="openAssign(row)">{{ $t('production.assignOrg') }}</el-button>
               <el-button link type="danger" v-permission="'production:gateway:delete'" @click="remove(row)">{{ $t('common.delete') }}</el-button>
             </template>
-            <el-tooltip v-else :content="$t('production.assignedLockTip')" placement="top">
-              <span class="locked">{{ $t('production.locked') }}</span>
-            </el-tooltip>
           </template>
         </el-table-column>
       </el-table>
