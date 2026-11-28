@@ -3,7 +3,7 @@ package com.iot.platform.service.gateway;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.model.GatewayConfigSnapshot;
-import com.iot.platform.repository.GatewayConfigSnapshotRepository;
+import com.iot.platform.repository.gateway.GatewayConfigSnapshotRepository;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

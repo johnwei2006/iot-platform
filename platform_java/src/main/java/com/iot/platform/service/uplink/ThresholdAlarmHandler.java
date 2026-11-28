@@ -37,17 +37,17 @@ public class ThresholdAlarmHandler implements UplinkHandler {
     private final SensorMetadataRegistry registry;
     private final com.iot.platform.repository.MessageRepository messageRepository;
     /** 传感器级阈值后备来源（iot_sensor.warn_min/warn_max，优先于网关级阈值） */
-    private final com.iot.platform.repository.SensorRepository sensorRepository;
-    private final com.iot.platform.repository.NodeRepository nodeRepository;
+    private final com.iot.platform.repository.sensor.SensorRepository sensorRepository;
+    private final com.iot.platform.repository.node.NodeRepository nodeRepository;
 
     public ThresholdAlarmHandler(MetricThresholdRepository thresholdRepository,
                                  AlarmRepository alarmRepository,
                                  SensorMetadataRegistry registry,
                                  com.iot.platform.repository.MessageRepository messageRepository,
                                  @org.springframework.beans.factory.annotation.Autowired(required = false)
-                                 com.iot.platform.repository.SensorRepository sensorRepository,
+                                 com.iot.platform.repository.sensor.SensorRepository sensorRepository,
                                  @org.springframework.beans.factory.annotation.Autowired(required = false)
-                                 com.iot.platform.repository.NodeRepository nodeRepository) {
+                                 com.iot.platform.repository.node.NodeRepository nodeRepository) {
         this.thresholdRepository = thresholdRepository;
         this.alarmRepository = alarmRepository;
         this.registry = registry;

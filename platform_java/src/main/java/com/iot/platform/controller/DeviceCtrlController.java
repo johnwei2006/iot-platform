@@ -5,7 +5,7 @@ import com.iot.platform.common.ResultCode;
 import com.iot.platform.model.DeviceCtrl;
 import com.iot.platform.security.RequireRoles;
 import com.iot.platform.security.datascope.DataScopeRegistry;
-import com.iot.platform.service.DeviceCtrlService;
+import com.iot.platform.service.device.DeviceCtrlService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;

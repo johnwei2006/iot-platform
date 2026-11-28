@@ -8,7 +8,7 @@ import com.iot.platform.model.Gateway;
 import com.iot.platform.mq.UplinkMessage;
 import com.iot.platform.repository.AlarmRepository;
 import com.iot.platform.repository.DataRecordRepository;
-import com.iot.platform.repository.GatewayRepository;
+import com.iot.platform.repository.gateway.GatewayRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;

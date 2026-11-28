@@ -3,7 +3,7 @@ package com.iot.platform.service.gateway;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.iot.platform.model.GatewayInfoHistory;
-import com.iot.platform.repository.GatewayInfoHistoryRepository;
+import com.iot.platform.repository.gateway.GatewayInfoHistoryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;

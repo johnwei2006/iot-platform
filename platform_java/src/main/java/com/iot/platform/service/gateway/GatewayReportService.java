@@ -2,7 +2,7 @@ package com.iot.platform.service.gateway;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.iot.platform.model.GatewayConfigSnapshot;
-import com.iot.platform.repository.GatewayConfigSnapshotRepository;
+import com.iot.platform.repository.gateway.GatewayConfigSnapshotRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -217,7 +217,6 @@ onMounted(load);
                     @blur="save('firmwareVersion')" @keyup.enter="save('firmwareVersion')" />
           <template v-else>
             <span>{{ device.firmwareVersion || '--' }}</span>
-            <el-button link :icon="Edit" :aria-label="$t('gateway.editFirmware')" @click="startEdit('firmwareVersion')" />
           </template>
         </div>
       </div>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue';
+import { computed, type WritableComputedRef } from 'vue';
 import type { GatewayConfigPayload } from '@/api/iot/gatewayManage';
 
-const props = defineProps<{ modelValue: GatewayConfigPayload; sending?: boolean }>();
+const model = defineModel<GatewayConfigPayload>({ default: () => ({}) });
+defineProps<{ sending?: boolean }>();
 const emit = defineEmits<{
-  'update:modelValue': [value: GatewayConfigPayload];
   send: [];
   reboot: [];
 }>();
@@ -14,50 +14,56 @@ const defaults: ConfigForm = {
   configVersion: 1, gatewayId: '', projectId: '', systemServerUrl: '', systemServerPort: 8080,
   businessServerUrl: '', heartbeatInterval: 30, reportInterval: 60, loraFreqGroup: 1,
 };
-const form = reactive<ConfigForm>({ ...defaults, ...props.modelValue });
-let applying = false;
 
-watch(() => props.modelValue, (value) => {
-  applying = true;
-  Object.assign(form, defaults, value);
-  applying = false;
-}, { deep: true });
+/** 表单完全由父级 modelValue 驱动，避免本地状态与异步预填互相回写。 */
+function field<K extends keyof ConfigForm>(key: K): WritableComputedRef<ConfigForm[K]> {
+  return computed({
+    get: () => (model.value[key] ?? defaults[key]) as ConfigForm[K],
+    set: (value: ConfigForm[K]) => { model.value = { ...model.value, [key]: value }; },
+  });
+}
 
-watch(form, (value) => {
-  if (!applying) emit('update:modelValue', { ...value });
-}, { deep: true });
+const configVersion = field('configVersion');
+const gatewayId = field('gatewayId');
+const projectId = field('projectId');
+const systemServerUrl = field('systemServerUrl');
+const systemServerPort = field('systemServerPort');
+const businessServerUrl = field('businessServerUrl');
+const heartbeatInterval = field('heartbeatInterval');
+const reportInterval = field('reportInterval');
+const loraFreqGroup = field('loraFreqGroup');
 </script>
 
 <template>
   <div class="config-form">
     <el-alert :title="$t('gatewayManage.loraTimeNote')" type="info" :closable="false" show-icon />
-    <el-form :model="form" label-width="140px" class="form">
+    <el-form label-width="140px" class="form">
       <el-form-item :label="$t('gatewayManage.configFields.configVersion')">
-        <el-input-number v-model="form.configVersion" :min="0" :max="255" controls-position="right" />
+        <el-input-number v-model="configVersion" :min="0" :max="255" controls-position="right" />
       </el-form-item>
       <el-form-item :label="$t('gatewayManage.configFields.gatewayId')">
-        <el-input v-model="form.gatewayId" maxlength="11" show-word-limit />
+        <el-input v-model="gatewayId" maxlength="11" show-word-limit />
       </el-form-item>
       <el-form-item :label="$t('gatewayManage.configFields.projectId')">
-        <el-input v-model="form.projectId" maxlength="11" show-word-limit />
+        <el-input v-model="projectId" maxlength="11" show-word-limit />
       </el-form-item>
       <el-form-item :label="$t('gatewayManage.configFields.systemServerUrl')">
-        <el-input v-model="form.systemServerUrl" maxlength="40" />
+        <el-input v-model="systemServerUrl" maxlength="40" />
       </el-form-item>
       <el-form-item :label="$t('gatewayManage.configFields.systemServerPort')">
-        <el-input-number v-model="form.systemServerPort" :min="1" :max="65535" controls-position="right" />
+        <el-input-number v-model="systemServerPort" :min="1" :max="65535" controls-position="right" />
       </el-form-item>
       <el-form-item :label="$t('gatewayManage.configFields.businessServerUrl')">
-        <el-input v-model="form.businessServerUrl" maxlength="30" />
+        <el-input v-model="businessServerUrl" maxlength="30" />
       </el-form-item>
       <el-form-item :label="$t('gatewayManage.configFields.heartbeatInterval')">
-        <el-input-number v-model="form.heartbeatInterval" :min="1" :max="65535" controls-position="right" />
+        <el-input-number v-model="heartbeatInterval" :min="1" :max="65535" controls-position="right" />
       </el-form-item>
       <el-form-item :label="$t('gatewayManage.configFields.reportInterval')">
-        <el-input-number v-model="form.reportInterval" :min="1" :max="65535" controls-position="right" />
+        <el-input-number v-model="reportInterval" :min="1" :max="65535" controls-position="right" />
       </el-form-item>
       <el-form-item :label="$t('gatewayManage.configFields.loraFreqGroup')">
-        <el-input-number v-model="form.loraFreqGroup" :min="0" :max="255" controls-position="right" />
+        <el-input-number v-model="loraFreqGroup" :min="0" :max="255" controls-position="right" />
       </el-form-item>
     </el-form>
     <div class="actions">

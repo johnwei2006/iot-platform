@@ -2,7 +2,7 @@ package com.iot.platform.controller;
 
 import com.iot.platform.security.JwtFilter;
 import com.iot.platform.security.datascope.DataScopeRegistry;
-import com.iot.platform.service.GatewayService;
+import com.iot.platform.service.gateway.GatewayService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;

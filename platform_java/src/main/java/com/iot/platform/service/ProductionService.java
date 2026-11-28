@@ -5,10 +5,10 @@ import com.iot.platform.model.DeviceCtrl;
 import com.iot.platform.model.Gateway;
 import com.iot.platform.model.Node;
 import com.iot.platform.model.Sensor;
-import com.iot.platform.repository.DeviceCtrlRepository;
-import com.iot.platform.repository.GatewayRepository;
-import com.iot.platform.repository.NodeRepository;
-import com.iot.platform.repository.SensorRepository;
+import com.iot.platform.repository.device.DeviceCtrlRepository;
+import com.iot.platform.repository.gateway.GatewayRepository;
+import com.iot.platform.repository.node.NodeRepository;
+import com.iot.platform.repository.sensor.SensorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -356,7 +356,6 @@ public class ProductionService {
         }
         if (patch.getName() != null) gateway.setName(patch.getName());
         if (patch.getGatewayType() != null) gateway.setGatewayType(patch.getGatewayType());
-        if (patch.getFirmwareVersion() != null) gateway.setFirmwareVersion(patch.getFirmwareVersion());
         if (patch.getPic() != null) gateway.setPic(patch.getPic());
         if (patch.getLongitude() != null) gateway.setLongitude(patch.getLongitude());
         if (patch.getLatitude() != null) gateway.setLatitude(patch.getLatitude());
@@ -364,7 +363,7 @@ public class ProductionService {
         return gatewayRepository.save(gateway);
     }
 
-    /** 更新生产节点（名称/类型/归属网关/固件/上报周期），已分配到机构则拒绝。 */
+    /** 更新生产节点（名称/归属网关/上报周期），已分配到机构则拒绝；类型、固件与虚拟节点网关保持不变。 */
     public Node updateNodeIfUnassigned(String id, Node patch) {
         Node node = nodeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("node not found: " + id));
@@ -372,9 +371,9 @@ public class ProductionService {
             throw new DeviceAssignedException();
         }
         if (patch.getNodeName() != null) node.setNodeName(patch.getNodeName());
-        if (patch.getNodeType() != null) node.setNodeType(patch.getNodeType());
-        if (patch.getGatewayCode() != null) node.setGatewayCode(patch.getGatewayCode().isBlank() ? null : patch.getGatewayCode());
-        if (patch.getFirmwareVersion() != null) node.setFirmwareVersion(patch.getFirmwareVersion());
+        if (patch.getGatewayCode() != null && !Integer.valueOf(3).equals(node.getNodeType())) {
+            node.setGatewayCode(patch.getGatewayCode().isBlank() ? null : patch.getGatewayCode());
+        }
         if (patch.getReportInterval() != null) node.setReportInterval(patch.getReportInterval());
         if (patch.getPic() != null) node.setPic(patch.getPic());
         node.setUpdateTime(new Date());

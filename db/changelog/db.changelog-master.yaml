@@ -297,3 +297,93 @@ databaseChangeLog:
             relativeToChangelogFile: true
             endDelimiter: ;
             splitStatements: true
+  - changeSet:
+      id: 20261128-29-node-management-menu
+      author: iot-platform
+      comment: 新增一级菜单「节点管理」，生产节点移至其下并同步产品-菜单授权
+      changes:
+        - sqlFile:
+            path: sql/029-node-management-menu.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-30-node-detail-menu
+      author: iot-platform
+      comment: 节点管理下新增二级菜单「节点详情」并同步产品-菜单授权
+      changes:
+        - sqlFile:
+            path: sql/030-node-detail-menu.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-31-fix-product-menu-backfill
+      author: iot-platform
+      comment: 修复 sys_product_menu 空 id 行并幂等回填节点管理/节点详情的产品授权
+      changes:
+        - sqlFile:
+            path: sql/031-fix-product-menu-backfill.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-32-node-menu-under-production
+      author: iot-platform
+      comment: 节点管理目录移至生产管理下与网关管理并列，生产节点更名为节点生产
+      changes:
+        - sqlFile:
+            path: sql/032-node-menu-under-production.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-33-node-config-menu
+      author: iot-platform
+      comment: 节点详情菜单更名为节点配置，路径/组件切换到 node-config 页面
+      changes:
+        - sqlFile:
+            path: sql/033-node-config-menu.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-34-remove-gateway-sensor-device-menus
+      author: iot-platform
+      comment: 删除网关管理下的网关传感器/网关设备菜单及其按钮与授权
+      changes:
+        - sqlFile:
+            path: sql/034-remove-gateway-sensor-device-menus.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-35-production-sensor-data-menu
+      author: iot-platform
+      comment: 生产管理下新增传感器数据二级菜单并同步产品授权
+      changes:
+        - sqlFile:
+            path: sql/035-production-sensor-data-menu.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-36-production-device-control-menu
+      author: iot-platform
+      comment: 生产管理下新增设备控制二级菜单及一键控制按钮权限
+      changes:
+        - sqlFile:
+            path: sql/036-production-device-control-menu.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true
+  - changeSet:
+      id: 20261128-37-production-view-folders
+      author: iot-platform
+      comment: 生产管理页面按 gateway/node/sensor/device 目录归类，同步迁移菜单组件路径
+      changes:
+        - sqlFile:
+            path: sql/037-production-view-folders.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;
+            splitStatements: true

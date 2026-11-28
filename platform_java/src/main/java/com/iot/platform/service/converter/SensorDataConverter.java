@@ -37,17 +37,17 @@ public class SensorDataConverter implements UplinkBusinessConverter {
     private final TdEngineProperties properties;
     private final SensorReadingWriter writer;
     /** DB 后备：内存缓存未命中时按 节点+通道 查 iot_sensor，重启不丢配置 */
-    private com.iot.platform.repository.SensorRepository sensorRepository;
-    private com.iot.platform.repository.NodeRepository nodeRepository;
+    private com.iot.platform.repository.sensor.SensorRepository sensorRepository;
+    private com.iot.platform.repository.node.NodeRepository nodeRepository;
 
     @Autowired
     public SensorDataConverter(SensorMetadataRegistry registry,
                                TdEngineProperties properties,
                                SensorReadingWriter writer,
                                @org.springframework.beans.factory.annotation.Autowired(required = false)
-                               com.iot.platform.repository.SensorRepository sensorRepository,
+                               com.iot.platform.repository.sensor.SensorRepository sensorRepository,
                                @org.springframework.beans.factory.annotation.Autowired(required = false)
-                               com.iot.platform.repository.NodeRepository nodeRepository) {
+                               com.iot.platform.repository.node.NodeRepository nodeRepository) {
         this.registry = registry;
         this.properties = properties;
         this.writer = writer;

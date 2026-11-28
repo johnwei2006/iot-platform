@@ -5,7 +5,7 @@ import com.iot.platform.common.ApiResponse;
 import com.iot.platform.constant.GatewayProtocolConstants;
 import com.iot.platform.model.GatewayCommandLog;
 import com.iot.platform.model.GatewayTask;
-import com.iot.platform.repository.GatewayRepository;
+import com.iot.platform.repository.gateway.GatewayRepository;
 import com.iot.platform.service.gateway.GatewayConfigDownlinkService;
 import com.iot.platform.service.gateway.GatewayConfigService;
 import com.iot.platform.service.gateway.GatewayInfoHistoryService;

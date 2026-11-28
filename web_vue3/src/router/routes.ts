@@ -47,6 +47,18 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: 'route.controlDeviceDetail', requiresAuth: true, roles: ['admin', 'user'] },
       },
       {
+        path: 'production/nodes/:id',
+        name: 'ProductionNodeDetail',
+        component: () => import('@/views/production/node/node-detail.vue'),
+        meta: { title: 'route.productionNodeDetail', requiresAuth: true, roles: ['admin', 'user'] },
+      },
+      {
+        path: 'production/node-config',
+        name: 'ProductionNodeConfig',
+        component: () => import('@/views/production/node/node-config.vue'),
+        meta: { title: 'route.productionNodeConfig', requiresAuth: true, roles: ['admin', 'user'] },
+      },
+      {
         path: 'iot/sensor-data/groups',
         name: 'SensorGroupManage',
         component: () => import('@/views/iot/sensor-data/groups.vue'),

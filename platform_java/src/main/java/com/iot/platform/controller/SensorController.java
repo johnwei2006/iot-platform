@@ -5,7 +5,7 @@ import com.iot.platform.common.ResultCode;
 import com.iot.platform.model.Sensor;
 import com.iot.platform.security.RequireRoles;
 import com.iot.platform.security.datascope.DataScopeRegistry;
-import com.iot.platform.service.SensorService;
+import com.iot.platform.service.sensor.SensorService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;

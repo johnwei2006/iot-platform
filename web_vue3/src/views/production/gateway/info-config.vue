@@ -15,7 +15,6 @@ import {
   listGatewayConfigs,
   listGatewayInfoHistory,
   listGatewayReports,
-  parseGatewayPayload,
   rebootGateway,
   type GatewayCommandRecord,
   type GatewayConfigPayload,
@@ -76,24 +75,26 @@ async function loadConfig() {
     ]);
     configRecords.value = configRes.data ?? [];
     configReports.value = reportRes.data ?? [];
-    applyLatestConfig();
   } catch (error) {
     console.error('gateway config load failed', error);
   }
 }
 
-function applyLatestConfig() {
+/** 预填现有网关配置：历史/记录作底层，网关当前上报信息优先覆盖。 */
+function applyConfig() {
   const pending = configRecords.value.find(
     (record) => record.status === 'PENDING' || record.status === 'FAILED');
   const success = configRecords.value.find((record) => record.status === 'SUCCESS');
-  const source = pending ?? success;
-  if (!source) return applyConfigReport();
-  const whitelisted: GatewayConfigPayload = {};
-  for (const key of GATEWAY_CONFIG_FIELDS) {
-    const value = source[key];
-    if (value !== undefined && value !== null) Object.assign(whitelisted, { [key]: value });
+  const layers: unknown[] = [pending, success, configReports.value[0], info.value];
+  const merged: GatewayConfigPayload = {};
+  for (const source of layers) {
+    if (!source || typeof source !== 'object') continue;
+    for (const key of GATEWAY_CONFIG_FIELDS) {
+      const value = (source as Record<string, unknown>)[key];
+      if (value !== undefined && value !== null) Object.assign(merged, { [key]: value });
+    }
   }
-  config.value = whitelisted;
+  config.value = merged;
 }
 
 async function loadCommands() {
@@ -108,24 +109,13 @@ async function loadCommands() {
 async function load() {
   if (!gatewayCode.value) return;
   await Promise.all([loadGatewayInfo(), loadInfoHistory(), loadConfig(), loadCommands()]);
+  applyConfig();
 }
 
 function onInfoHistoryChange(page: number, size: number) {
   infoHistoryPage.value = page;
   infoHistorySize.value = size;
   void loadInfoHistory();
-}
-
-function applyConfigReport() {
-  const latest = configReports.value[0];
-  if (!latest?.payload) return;
-  const decoded = parseGatewayPayload<GatewayConfigPayload>(latest.payload);
-  const whitelisted: GatewayConfigPayload = {};
-  for (const key of GATEWAY_CONFIG_FIELDS) {
-    const value = decoded[key];
-    if (value !== undefined && value !== null) Object.assign(whitelisted, { [key]: value });
-  }
-  config.value = whitelisted;
 }
 
 async function send() {
@@ -171,7 +161,15 @@ async function reboot() {
 
 watch(gatewayCode, () => {
   infoHistoryPage.value = 1;
-  load();
+  info.value = {};
+  infoReportedAt.value = undefined;
+  infoHistory.value = [];
+  infoHistoryTotal.value = 0;
+  configRecords.value = [];
+  configReports.value = [];
+  commands.value = [];
+  config.value = {};
+  void load();
 });
 onMounted(load);
 </script>

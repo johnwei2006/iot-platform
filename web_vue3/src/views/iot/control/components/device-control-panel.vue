@@ -1,43 +1,74 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { listAreas, type AreaEntity } from '@/api/iot/area';
 import { sendCommand } from '@/api/iot/control';
-import { listControlDevices, listDeviceClass, type DeviceClassDict, type DeviceCtrlEntity } from '@/api/iot/device';
+import {
+  getControlDeviceEntry,
+  listControlDevices,
+  listDeviceClass,
+  type DeviceClassDict,
+  type DeviceCtrlEntity,
+} from '@/api/iot/device';
+import { listNodes, type NodeEntity } from '@/api/iot/node';
 import AreaSelect from '@/components/AreaSelect.vue';
 import type { DeviceEntry } from '@/types/kb';
+
+const props = withDefaults(defineProps<{
+  nodeCode?: string;
+  groupBy?: 'area' | 'node';
+  showAreaFilter?: boolean;
+  titleKey?: string;
+  permission?: string;
+  useGatewayEntry?: boolean;
+}>(), {
+  nodeCode: '',
+  groupBy: 'area',
+  showAreaFilter: true,
+  titleKey: 'control.controlList',
+  permission: 'iot:control:issue',
+  useGatewayEntry: false,
+});
 
 const { t } = useI18n();
 const emit = defineEmits<{ 'show-logs': [{ areaId?: string; deviceId?: string }] }>();
 const loading = ref(false);
 const devices = ref<DeviceCtrlEntity[]>([]);
 const areas = ref<AreaEntity[]>([]);
+const nodes = ref<NodeEntity[]>([]);
 const deviceClasses = ref<DeviceClassDict[]>([]);
 const areaFilter = ref('');
 const keyword = ref('');
 const applying = ref(new Set<string>());
 
 const areaNameMap = computed(() => new Map(areas.value.map((a) => [a.id, a.areaName])));
+const nodeNameMap = computed(() => new Map(
+  nodes.value.map((n) => [n.nodeCode, `${n.nodeCode} - ${n.nodeName || ''}`]),
+));
 const classMap = computed(() => new Map(deviceClasses.value.map((c) => [c.deviceClass, c])));
 
 const groups = computed(() => {
   const kw = keyword.value.trim().toLowerCase();
   const filtered = devices.value.filter((d) => {
+    const hitNode = !props.nodeCode || d.nodeCode === props.nodeCode;
     const hitArea = !areaFilter.value || d.areaId === areaFilter.value;
     const hitName = !kw || (d.deviceName || d.deviceCode).toLowerCase().includes(kw);
-    return hitArea && hitName;
+    return hitNode && hitArea && hitName;
   });
-  const byArea = new Map<string, DeviceCtrlEntity[]>();
+  const byGroup = new Map<string, DeviceCtrlEntity[]>();
   for (const d of filtered) {
-    const key = d.areaId || '';
-    if (!byArea.has(key)) byArea.set(key, []);
-    byArea.get(key)!.push(d);
+    const key = props.groupBy === 'node' ? (d.nodeCode || '') : (d.areaId || '');
+    if (!byGroup.has(key)) byGroup.set(key, []);
+    byGroup.get(key)!.push(d);
   }
-  return Array.from(byArea.entries()).map(([areaId, list]) => ({
-    areaId,
-    areaName: areaNameMap.value.get(areaId) || t('control.unassignedArea'),
+  return Array.from(byGroup.entries()).map(([key, list]) => ({
+    key,
+    areaId: props.groupBy === 'node' ? undefined : key,
+    areaName: props.groupBy === 'node'
+      ? (nodeNameMap.value.get(key) || key || '--')
+      : (areaNameMap.value.get(key) || t('control.unassignedArea')),
     devices: list,
   }));
 });
@@ -86,10 +117,23 @@ async function issue(entry: DeviceEntry, action: string, value?: string, key?: s
   }
 }
 
-function toggleDevice(d: DeviceCtrlEntity, on: boolean) {
+async function resolveEntry(d: DeviceCtrlEntity): Promise<DeviceEntry> {
+  if (props.useGatewayEntry && d.id) {
+    try {
+      const res = await getControlDeviceEntry(d.id);
+      if (res.data) return res.data;
+    } catch (error) {
+      ElMessage.error((error as Error).message || t('control.loadFailed'));
+    }
+  }
+  return entryOf(d);
+}
+
+async function toggleDevice(d: DeviceCtrlEntity, on: boolean) {
   const key = d.id || d.deviceCode;
   if (applying.value.has(key)) return;
-  void issue(entryOf(d), on ? 'ON' : 'OFF', undefined, key);
+  const entry = await resolveEntry(d);
+  void issue(entry, on ? 'ON' : 'OFF', undefined, key);
 }
 
 function openAreaLogs(areaId?: string) {
@@ -109,11 +153,18 @@ async function load() {
   loading.value = true;
   try {
     const [deviceRes, areaRes, classRes] = await Promise.all([
-      listControlDevices(), listAreas(), listDeviceClass(),
+      listControlDevices(props.nodeCode || undefined), listAreas(), listDeviceClass(),
     ]);
     devices.value = deviceRes.data || [];
     areas.value = areaRes.data || [];
     deviceClasses.value = classRes.data || [];
+    if (props.groupBy === 'node') {
+      try {
+        nodes.value = (await listNodes()).data || [];
+      } catch {
+        nodes.value = [];
+      }
+    }
   } catch (error) {
     ElMessage.error((error as Error).message || t('control.loadFailed'));
   } finally {
@@ -122,6 +173,9 @@ async function load() {
 }
 
 onMounted(load);
+watch(() => props.nodeCode, () => {
+  void load();
+});
 </script>
 
 <template>
@@ -129,9 +183,9 @@ onMounted(load);
     <el-card shadow="never">
       <template #header>
         <div class="head-row">
-          <span class="head-title">{{ $t('control.controlList') }}</span>
+          <span class="head-title">{{ $t(titleKey) }}</span>
           <div class="filter-row">
-            <AreaSelect v-model="areaFilter" class="area-select" :placeholder="$t('control.selectArea')" />
+            <AreaSelect v-if="showAreaFilter" v-model="areaFilter" class="area-select" :placeholder="$t('control.selectArea')" />
             <el-input v-model="keyword" class="search-input" :placeholder="$t('control.searchDevice')" clearable>
               <template #prefix><el-icon><Search /></el-icon></template>
             </el-input>
@@ -142,7 +196,7 @@ onMounted(load);
       </template>
 
       <el-empty v-if="!groups.length" :description="$t('control.noDevices')" :image-size="90" />
-      <section v-for="group in groups" :key="group.areaId || 'none'" class="group-section">
+      <section v-for="group in groups" :key="group.key || 'none'" class="group-section">
         <div class="group-head">
           <span class="group-title">{{ group.areaName }}</span>
           <el-button link type="primary" class="log-link" @click="openAreaLogs(group.areaId || undefined)">{{ $t('control.tabLogs') }}</el-button>
@@ -164,7 +218,7 @@ onMounted(load);
                 :model-value="isOn(d)"
                 :disabled="d.online === 0 || applying.has(d.id || d.deviceCode)"
                 :loading="applying.has(d.id || d.deviceCode)"
-                v-permission="'iot:control:issue'"
+                v-permission="permission"
                 @change="(val: boolean) => toggleDevice(d, val)"
               />
               <el-dropdown trigger="click" @command="openDeviceLogs(d)">

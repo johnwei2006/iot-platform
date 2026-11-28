@@ -2,7 +2,7 @@ package com.iot.platform.service.uplink;
 
 import com.iot.platform.model.Gateway;
 import com.iot.platform.mq.UplinkMessage;
-import com.iot.platform.repository.GatewayRepository;
+import com.iot.platform.repository.gateway.GatewayRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;

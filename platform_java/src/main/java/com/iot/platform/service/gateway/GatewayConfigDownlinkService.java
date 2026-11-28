@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.constant.GatewayProtocolConstants;
 import com.iot.platform.mq.DownlinkMessage;
 import com.iot.platform.model.GatewayCommandLog;
-import com.iot.platform.repository.GatewayCommandLogRepository;
+import com.iot.platform.repository.gateway.GatewayCommandLogRepository;
 import com.iot.platform.service.DownlinkService;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import org.slf4j.Logger;

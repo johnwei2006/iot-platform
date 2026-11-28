@@ -74,6 +74,7 @@ public class DataInitializer implements ApplicationRunner {
             initSensorDataMenu();
             initAreaMenu();
             initProductionMenus();
+            removeGatewaySensorDeviceMenus();
             enforceControlMenuComponent();
             consolidateControlMenus();
             reorderIotMenus();
@@ -321,7 +322,7 @@ public class DataInitializer implements ApplicationRunner {
         }
         Menu gatewayMenu = menuRepository.findByPath("/production/gateways").orElseGet(() ->
                 menu("生产网关", Menu.TYPE_MENU, dir.get().getId(), "/production/gateways",
-                        "production/gateways", "production:gateway:page", "10"));
+                        "production/gateway/gateways", "production:gateway:page", "10"));
         buttonOnce(gatewayMenu.getId(), "生产新增", "production:gateway:create");
         buttonOnce(gatewayMenu.getId(), "生产编辑", "production:gateway:edit");
         buttonOnce(gatewayMenu.getId(), "生产删除", "production:gateway:delete");
@@ -329,32 +330,39 @@ public class DataInitializer implements ApplicationRunner {
 
         Menu nodeMenu = menuRepository.findByPath("/production/nodes").orElseGet(() ->
                 menu("生产节点", Menu.TYPE_MENU, dir.get().getId(), "/production/nodes",
-                        "production/nodes", "production:node:page", "20"));
+                        "production/node/nodes", "production:node:page", "20"));
         buttonOnce(nodeMenu.getId(), "生产新增", "production:node:create");
         buttonOnce(nodeMenu.getId(), "生产编辑", "production:node:edit");
         buttonOnce(nodeMenu.getId(), "生产删除", "production:node:delete");
 
         Menu sensorMenu = menuRepository.findByPath("/production/sensors").orElseGet(() ->
                 menu("生产传感器", Menu.TYPE_MENU, dir.get().getId(), "/production/sensors",
-                        "production/sensors", "production:sensor:page", "30"));
+                        "production/sensor/sensors", "production:sensor:page", "30"));
         buttonOnce(sensorMenu.getId(), "生产新增", "production:sensor:create");
         buttonOnce(sensorMenu.getId(), "生产编辑", "production:sensor:edit");
         buttonOnce(sensorMenu.getId(), "生产删除", "production:sensor:delete");
 
         Menu ctrlMenu = menuRepository.findByPath("/production/control-devices").orElseGet(() ->
                 menu("生产控制设备", Menu.TYPE_MENU, dir.get().getId(), "/production/control-devices",
-                        "production/control-devices", "production:ctrldev:page", "40"));
+                        "production/device/control-devices", "production:ctrldev:page", "40"));
         buttonOnce(ctrlMenu.getId(), "生产新增", "production:ctrldev:create");
         buttonOnce(ctrlMenu.getId(), "生产编辑", "production:ctrldev:edit");
         buttonOnce(ctrlMenu.getId(), "生产删除", "production:ctrldev:delete");
 
+        menuRepository.findByPath("/production/sensor-data").orElseGet(() ->
+                menu("传感器数据", Menu.TYPE_MENU, dir.get().getId(), "/production/sensor-data",
+                        "production/sensor/sensor-data", "production:sensor_data:page", "50"));
+
+        Menu deviceControlMenu = menuRepository.findByPath("/production/device-control").orElseGet(() ->
+                menu("设备控制", Menu.TYPE_MENU, dir.get().getId(), "/production/device-control",
+                        "production/device/device-control", "production:device_control:page", "60"));
+        buttonOnce(deviceControlMenu.getId(), "一键控制", "production:device_control:issue");
+
         Menu gwDir = menuRepository.findByPath("/production/gateway-manage").orElseGet(() ->
                 menu("网关管理", Menu.TYPE_DIR, dir.get().getId(), "/production/gateway-manage", null, null, "25"));
-        ensureGatewayMenu(gwDir, "生产网关", "/production/gateways", "production/gateways", "production:gateway:page", "10");
+        ensureGatewayMenu(gwDir, "生产网关", "/production/gateways", "production/gateway/gateways", "production:gateway:page", "10");
         ensureGatewayMenu(gwDir, "网关信息及配置", "/production/gateway/info-config", "production/gateway/info-config", "gateway:info:page", "20");
         ensureGatewayMenu(gwDir, "网关节点", "/production/gateway/nodes", "production/gateway/nodes", "gateway:node:page", "30");
-        ensureGatewayMenu(gwDir, "网关传感器", "/production/gateway/sensors", "production/gateway/sensors", "gateway:sensor:page", "40");
-        ensureGatewayMenu(gwDir, "网关设备", "/production/gateway/devices", "production/gateway/devices", "gateway:device:page", "50");
         ensureGatewayMenu(gwDir, "网关任务", "/production/gateway/tasks", "production/gateway/tasks", "gateway:task:page", "60");
         log.info("Bootstrap gateway management menus ensured");
     }
@@ -378,6 +386,45 @@ public class DataInitializer implements ApplicationRunner {
             buttonOnce(node.getId(), "下发配置", prefix + ":config");
             buttonOnce(node.getId(), "远程重启", prefix + ":reboot");
         }
+    }
+
+    /** 兼容旧数据：移除网关传感器/网关设备菜单及其授权，幂等。 */
+    private void removeGatewaySensorDeviceMenus() {
+        java.util.List<String> targets = new java.util.ArrayList<String>();
+        for (String path : java.util.List.of("/production/gateway/sensors", "/production/gateway/devices")) {
+            java.util.Optional<Menu> old = menuRepository.findByPath(path);
+            if (!old.isPresent()) {
+                continue;
+            }
+            targets.add(old.get().getId());
+            for (Menu child : menuRepository.findByParentId(old.get().getId())) {
+                targets.add(child.getId());
+            }
+        }
+        for (String perm : java.util.List.of(
+                "gateway:sensor:page", "gateway:sensor:view", "gateway:sensor:config", "gateway:sensor:reboot",
+                "gateway:device:page", "gateway:device:view", "gateway:device:config", "gateway:device:reboot")) {
+            menuRepository.findByPerm(perm).ifPresent(m -> {
+                if (!targets.contains(m.getId())) {
+                    targets.add(m.getId());
+                }
+            });
+        }
+        if (targets.isEmpty()) {
+            return;
+        }
+        for (com.iot.admin.product.ProductMenu relation : productMenuRepository.findByMenuIds(targets)) {
+            productMenuRepository.delete(relation);
+        }
+        for (com.iot.admin.role.Role role : roleRepository.findAll()) {
+            if (role.getMenuIds() != null && role.getMenuIds().removeAll(targets)) {
+                roleRepository.save(role);
+            }
+        }
+        for (String id : targets) {
+            menuRepository.findById(id).ifPresent(menuRepository::delete);
+        }
+        log.info("Bootstrap removed gateway sensor/device menus: {}", targets.size());
     }
 
     /** 兼容旧数据：移除已下线的数据查询菜单及其授权，幂等。 */
@@ -519,6 +566,7 @@ public class DataInitializer implements ApplicationRunner {
         icons.put("/production/nodes", "Cpu");
         icons.put("/production/sensors", "Odometer");
         icons.put("/production/control-devices", "SwitchButton");
+        icons.put("/production/device-control", "SwitchButton");
         icons.put("/iot/control", "Cpu");
         icons.put("/iot/control/rules", "Timer");
         icons.put("/iot/control/logs", "Document");

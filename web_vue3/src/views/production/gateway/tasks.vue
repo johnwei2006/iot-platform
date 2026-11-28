@@ -98,7 +98,7 @@ onMounted(load);
         <CommandLogTable :commands="commands" />
       </div>
     </div>
-    <el-dialog v-model="editorVisible" :title="editing?.id ? $t('gatewayManage.editTask') : $t('gatewayManage.addTask')" width="620px">
+    <el-dialog v-model="editorVisible" :title="editing?.id ? $t('gatewayManage.editTask') : $t('gatewayManage.addTask')" width="min(980px, 96vw)" top="4vh">
       <TaskEditor v-if="editing" :model-value="editing" @update:model-value="save" />
     </el-dialog>
   </GatewayConsole>

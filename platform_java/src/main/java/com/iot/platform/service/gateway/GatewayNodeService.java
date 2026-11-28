@@ -4,9 +4,9 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.iot.platform.model.DeviceCtrl;
 import com.iot.platform.model.Node;
 import com.iot.platform.model.Sensor;
-import com.iot.platform.repository.DeviceCtrlRepository;
-import com.iot.platform.repository.NodeRepository;
-import com.iot.platform.repository.SensorRepository;
+import com.iot.platform.repository.device.DeviceCtrlRepository;
+import com.iot.platform.repository.node.NodeRepository;
+import com.iot.platform.repository.sensor.SensorRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

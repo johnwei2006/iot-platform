@@ -29,7 +29,7 @@ public class ControlCommandController {
     @Autowired
     private ControlRuleService ruleService;
     @Autowired
-    private com.iot.platform.service.DeviceCtrlService deviceCtrlService;
+    private com.iot.platform.service.device.DeviceCtrlService deviceCtrlService;
 
     /**
      * 手动下发，两种选设备方式（至少其一）：

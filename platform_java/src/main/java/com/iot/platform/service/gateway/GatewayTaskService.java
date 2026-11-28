@@ -3,7 +3,7 @@ package com.iot.platform.service.gateway;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.iot.platform.constant.GatewayProtocolConstants;
 import com.iot.platform.model.GatewayTask;
-import com.iot.platform.repository.GatewayTaskRepository;
+import com.iot.platform.repository.gateway.GatewayTaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

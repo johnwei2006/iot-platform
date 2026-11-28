@@ -5,7 +5,7 @@ import com.iot.platform.common.ResultCode;
 import com.iot.platform.model.Gateway;
 import com.iot.platform.security.RequireRoles;
 import com.iot.platform.security.datascope.DataScopeRegistry;
-import com.iot.platform.service.GatewayService;
+import com.iot.platform.service.gateway.GatewayService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iot.platform.constant.GatewayProtocolConstants;
 import com.iot.platform.model.GatewayConfigSnapshot;
-import com.iot.platform.repository.GatewayConfigSnapshotRepository;
+import com.iot.platform.repository.gateway.GatewayConfigSnapshotRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
